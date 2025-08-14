@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  prompts   Prompt[]
+  likes     Like[]
+  bookmarks Bookmark[]
+}
+
+model Prompt {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  content     String
+  category    String
+  tags        String   // JSON string array
+  aiModel     String
+  previewImage String?
+  isPublic    Boolean  @default(true)
+  
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  likes       Like[]
+  bookmarks   Bookmark[]
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  promptId  Int
+  
+  user      User     @relation(fields: [userId], references: [id])
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, promptId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  promptId  Int
+  
+  user      User     @relation(fields: [userId], references: [id])
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, promptId])
+}

@@ -1,0 +1,67 @@
+import React from 'react';
+import { Prompt } from '@/types/prompt';
+
+interface PromptCardProps {
+  prompt: Prompt;
+  onLike: (id: number) => void;
+}
+
+const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 h-full flex flex-col">
+      <h3 className="text-lg font-semibold mb-1 line-clamp-1" title={prompt.title}>
+        {prompt.title}
+      </h3>
+      <div className="text-sm text-gray-500 mb-2">
+        {prompt.author} · {prompt.date}
+      </div>
+      <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
+        {prompt.description}
+      </p>
+      <div className="mb-3">
+        {prompt.tags.map((tag, index) => (
+          <span
+            key={index}
+            className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded mr-2 mb-1"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+      <div className="flex justify-end items-center text-sm">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center">
+            <svg className="w-4 h-4 text-yellow-500 fill-current" viewBox="0 0 20 20">
+              <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+            </svg>
+            <span className="ml-1">{prompt.rating.toFixed(1)}</span>
+          </span>
+          <span className="text-gray-500">·</span>
+          <button
+            onClick={() => onLike(prompt.id)}
+            className="flex items-center hover:scale-110 transition-transform"
+          >
+            <svg
+              className={`w-4 h-4 ${
+                prompt.isLiked ? 'text-red-500 fill-current' : 'text-gray-500'
+              }`}
+              viewBox="0 0 20 20"
+              fill={prompt.isLiked ? 'currentColor' : 'none'}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+              />
+            </svg>
+            <span className="ml-1">{prompt.likes}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PromptCard;
