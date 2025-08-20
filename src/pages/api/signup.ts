@@ -1,35 +1,62 @@
+// src/pages/api/signup.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { createClient } from '@supabase/supabase-js';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
+type Json = { ok?: boolean; error?: string; userId?: string };
 
-  const { name, email, password } = req.body || {};
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: '이름/이메일/비밀번호는 필수입니다.' });
+export default async function handler(req: NextApiRequest, res: NextApiResponse<Json>) {
+  // 1) 메서드 가드
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' }); // ← JSON 보장
   }
 
   try {
-    // 1) 서버에서 안전하게 유저 생성 (이메일 확인을 건너뛰고 바로 사용하려면 email_confirm: true)
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    // 2) 바디 파싱 & 검증
+    const { name, email, password } = req.body ?? {};
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'name, email, password가 필요합니다.' });
+    }
+    if (String(password).length < 6) {
+      return res.status(400).json({ error: '비밀번호는 6자 이상이어야 합니다.' });
+    }
+
+    // 3) 환경변수 확인
+    const url = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE; // 서버 전용 키
+    if (!url || !serviceKey) {
+      return res.status(500).json({ error: 'Server env not configured (SUPABASE_URL / SERVICE_ROLE)' });
+    }
+
+    // 4) 서비스 키로 Admin 클라이언트 생성
+    const supabase = createClient(url, serviceKey);
+
+    // 5) 유저 생성 (email_confirm true: 즉시 활성화)
+    const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // 이메일 인증 생략하고 즉시 활성화 (원하면 false로)
+      email_confirm: true,
       user_metadata: { name },
     });
+    if (createErr) {
+      return res.status(400).json({ error: `auth createUser: ${createErr.message}` });
+    }
+    const userId = created?.user?.id;
+    if (!userId) {
+      return res.status(500).json({ error: '사용자 ID를 가져오지 못했습니다.' });
+    }
 
-    if (error) return res.status(400).json({ message: error.message });
-
-    // 2) (선택) profiles 같은 RLS 테이블에 프로필 행 만들어두기
-    //    Supabase에서 profiles 테이블 만들고 RLS ON + 정책 구성했다면:
-    // const { error: profileErr } = await supabaseAdmin
+    // 6) (선택) 프로필 테이블에 추가
+    // 테이블/정책이 없다면 이 블록은 주석 처리해도 됩니다.
+    // const { error: insertErr } = await supabase
     //   .from('profiles')
-    //   .insert({ id: data.user?.id, name });
-    // if (profileErr) console.warn('profiles insert error', profileErr);
+    //   .insert({ id: userId, name, email });
+    // if (insertErr) {
+    //   return res.status(400).json({ error: `profiles insert: ${insertErr.message}` });
+    // }
 
-    return res.status(201).json({ ok: true, user: data.user });
+    return res.status(200).json({ ok: true, userId });
   } catch (e: any) {
-    console.error(e);
-    return res.status(500).json({ message: e.message ?? '서버 오류' });
+    // 예외도 JSON으로
+    return res.status(500).json({ error: e?.message || 'unknown server error' });
   }
 }
