@@ -2,48 +2,61 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
   id: string;
-  name: string;
-  email: string;
+  name?: string | null;
+  email: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// JSON/HTML 안전 파서
+async function safeJson(res: Response) {
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    return res.json();
+  }
+  const text = await res.text(); // HTML/텍스트면 그대로 표시용
+  return { ok: false, error: text };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 첫 로드 시 세션 확인
   useEffect(() => {
-    // 서버에서 현재 사용자 정보 가져오기
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me', {
-          credentials: 'include',
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        const data = await safeJson(res);
+
+        if (res.ok && data?.user) {
+          setUser({
+            id: data.user.id,
+            email: data.user.email ?? null,
+            name: data.user.user_metadata?.name ?? data.user.name ?? null,
+          });
+          localStorage.setItem('user', JSON.stringify({
+            id: data.user.id,
+            email: data.user.email ?? null,
+            name: data.user.user_metadata?.name ?? data.user.name ?? null,
+          }));
         } else {
-          // 인증되지 않은 경우 로컬 스토리지도 클리어
+          // 인증 안됨 or /api/auth/me 없음(404 HTML) → 비로그인 처리
           localStorage.removeItem('user');
           setUser(null);
         }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        // 에러 발생 시 로컬 스토리지 확인
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
+      } catch (err) {
+        // 네트워크 에러 시 로컬 캐시 fallback
+        const stored = localStorage.getItem('user');
+        if (stored) setUser(JSON.parse(stored));
       } finally {
         setIsLoading(false);
       }
@@ -55,29 +68,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // 쿠키 세션 쓰는 경우 필수
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await res.json();
+    const data = await safeJson(res);
 
-    if (!res.ok) {
-      throw new Error(data.message || '로그인에 실패했습니다.');
+    if (!res.ok || data?.ok === false) {
+      throw new Error(data?.message || data?.error || '로그인에 실패했습니다.');
     }
 
-    setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    // Supabase 로그인 API가 반환한 user 형식 맞춰 저장
+    const u = data.user || data?.data?.user || null;
+    if (!u) throw new Error('로그인 응답 사용자 정보가 없습니다.');
+
+    const nextUser: User = {
+      id: u.id,
+      email: u.email ?? null,
+      name: u.user_metadata?.name ?? u.name ?? null,
+    };
+    setUser(nextUser);
+    localStorage.setItem('user', JSON.stringify(nextUser));
   };
 
   const logout = async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    });
-    
+    try {
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      // /api/auth/logout 이 없을 수도 있으니 안전 파싱만 하고 무시
+      await safeJson(res);
+    } catch {}
     setUser(null);
     localStorage.removeItem('user');
   };
@@ -92,9 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };

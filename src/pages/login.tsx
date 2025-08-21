@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Header from '@/components/Header';
-import { useAuth } from '@/contexts/AuthContext';
 
 const LoginPage = () => {
   const router = useRouter();
-  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -27,12 +25,32 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password);
-      // 이전 페이지로 돌아가거나 홈으로 이동
-      const returnUrl = router.query.returnUrl as string || '/';
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      // 응답이 JSON이 아닐 때를 대비
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error('서버 응답을 처리할 수 없습니다.');
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.message || data?.error || '로그인에 실패했습니다.');
+      }
+
+      // 성공: 홈 또는 returnUrl로 이동
+      const returnUrl = (router.query.returnUrl as string) || '/';
       router.push(returnUrl);
-    } catch (error: any) {
-      setError(error.message);
+    } catch (err: any) {
+      setError(err?.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -45,7 +63,7 @@ const LoginPage = () => {
         <div className="max-w-md w-full">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h1 className="text-2xl font-bold text-center mb-8">로그인</h1>
-            
+
             {error && (
               <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
                 {error}
