@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabaseClient';
 import { verifyToken } from '@/lib/auth';
 import * as cookie from 'cookie';
 
@@ -41,45 +41,58 @@ export default async function handler(
   }
 
   try {
-    const prompt = await prisma.prompt.create({
-      data: {
+    // Supabase에 프롬프트 저장
+    const { data: prompt, error } = await supabase
+      .from('prompts')
+      .insert({
         title,
         description,
         content,
         category,
-        tags: JSON.stringify(tags ? tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []),
-        aiModel,
-        previewImage: previewImage || null,
-        isPublic: isPublic ?? true,
-        authorId: decoded.userId,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            bookmarks: true,
-          },
-        },
-      },
-    });
+        tags: tags ? tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : [],
+        ai_model: aiModel,
+        preview_image: previewImage || null,
+        is_public: isPublic ?? true,
+        author_id: decoded.userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select(`
+        *,
+        author:users(id, name, email),
+        likes:prompt_likes(count),
+        bookmarks:prompt_bookmarks(count)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return res.status(500).json({ message: '프롬프트 생성 중 오류가 발생했습니다.' });
+    }
+
+    // 응답 데이터 구성
+    const responsePrompt = {
+      id: prompt.id,
+      title: prompt.title,
+      description: prompt.description,
+      content: prompt.content,
+      category: prompt.category,
+      tags: prompt.tags,
+      aiModel: prompt.ai_model,
+      previewImage: prompt.preview_image,
+      isPublic: prompt.is_public,
+      authorId: prompt.author_id,
+      createdAt: prompt.created_at,
+      updatedAt: prompt.updated_at,
+      likes: prompt.likes?.[0]?.count || 0,
+      bookmarks: prompt.bookmarks?.[0]?.count || 0,
+      author: prompt.author?.name || 'Unknown',
+      date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
+      rating: 0,
+    };
 
     res.status(201).json({
-      prompt: {
-        ...prompt,
-        tags: JSON.parse(prompt.tags),
-        likes: prompt._count.likes,
-        bookmarks: prompt._count.bookmarks,
-        author: prompt.author.name,
-        date: prompt.createdAt.toISOString().split('T')[0].replace(/-/g, '.'),
-        rating: 0,
-      },
+      prompt: responsePrompt,
     });
   } catch (error) {
     console.error('Create prompt error:', error);
