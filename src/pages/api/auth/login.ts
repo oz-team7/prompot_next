@@ -1,50 +1,74 @@
-// src/pages/api/login.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = process.env.SUPABASE_URL!;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;
-
-// 항상 JSON만 돌려주도록 래퍼
-function sendJSON(res: NextApiResponse, status: number, body: any) {
-  res.status(status).setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify(body));
-}
+import { prisma } from '@/lib/prisma';
+import { verifyPassword, generateToken } from '@/lib/auth';
+import * as cookie from 'cookie';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return sendJSON(res, 405, { ok: false, error: 'Method Not Allowed' });
-  }
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    return sendJSON(res, 500, { ok: false, error: 'Missing Supabase env (URL/ANON)' });
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
   try {
-    const { email, password } = req.body || {};
+    const { email, password } = req.body;
+
     if (!email || !password) {
-      return sendJSON(res, 400, { ok: false, error: 'email and password are required' });
+      return res.status(400).json({ 
+        success: false,
+        message: '이메일과 비밀번호를 입력해주세요.' 
+      });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false },
+    // 사용자 조회
+    const user = await prisma.user.findUnique({
+      where: { email },
     });
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      return sendJSON(res, 401, { ok: false, error: error.message });
+    if (!user) {
+      return res.status(401).json({ 
+        success: false,
+        message: '이메일 또는 비밀번호가 올바르지 않습니다.' 
+      });
     }
 
-    // 필요하면 여기서 쿠키에 토큰 저장 로직 추가 가능
-    // res.setHeader('Set-Cookie', ...)
+    // 비밀번호 검증
+    const isValidPassword = await verifyPassword(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ 
+        success: false,
+        message: '이메일 또는 비밀번호가 올바르지 않습니다.' 
+      });
+    }
 
-    return sendJSON(res, 200, {
-      ok: true,
-      user: data.user,
-      access_token: data.session?.access_token,
-      refresh_token: data.session?.refresh_token,
+    // JWT 토큰 생성
+    const token = generateToken(user.id);
+
+    // 쿠키 설정
+    res.setHeader(
+      'Set-Cookie',
+      cookie.serialize('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 * 7, // 7일
+        path: '/',
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      message: '로그인이 완료되었습니다.',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
     });
-  } catch (e: any) {
-    return sendJSON(res, 500, { ok: false, error: e?.message || 'Login failed' });
+  } catch (error: any) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: '서버 오류가 발생했습니다.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
