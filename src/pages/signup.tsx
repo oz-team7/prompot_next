@@ -52,6 +52,7 @@ const SignupPage = () => {
       });
 
       const data = await res.json();
+      console.log('Signup response:', data);
       if (!res.ok) {
         throw new Error(data.message || '회원가입에 실패했습니다.');
       }
