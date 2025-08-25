@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBookmarks } from '@/contexts/BookmarkContext';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import { Prompt } from '@/types/prompt';
@@ -11,6 +12,7 @@ const PromptDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { isAuthenticated } = useAuth();
+  const { isBookmarked, toggleBookmark, loading: bookmarkLoading } = useBookmarks();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -26,9 +28,7 @@ const PromptDetailPage = () => {
 
   const fetchPrompt = async () => {
     try {
-      const res = await fetch(`/api/prompts/${id}`, {
-        credentials: 'include', // 인증 쿠키 포함
-      });
+      const res = await fetch(`/api/prompts/${id}`);
       if (!res.ok) {
         if (res.status === 401) {
           throw new Error('로그인이 필요합니다.');
@@ -37,6 +37,8 @@ const PromptDetailPage = () => {
       }
       const data = await res.json();
       setPrompt(data.prompt);
+      
+
     } catch (error: any) {
       console.error('Fetch prompt error:', error);
       setToastMessage(error.message || '프롬프트를 불러올 수 없습니다.');
@@ -49,6 +51,38 @@ const PromptDetailPage = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+
+
+  const handleBookmarkToggle = async () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (bookmarkLoading) return;
+
+    try {
+      if (!prompt?.id) return;
+
+      const newBookmarkStatus = await toggleBookmark(prompt.id);
+      
+      setToastMessage(newBookmarkStatus ? '북마크에 추가되었습니다!' : '북마크에서 제거되었습니다.');
+      setToastType('success');
+      setShowToast(true);
+      
+      // 프롬프트의 북마크 수 업데이트
+      setPrompt(prev => prev ? {
+        ...prev,
+        bookmarks: newBookmarkStatus ? (prev.bookmarks || 0) + 1 : Math.max(0, (prev.bookmarks || 0) - 1)
+      } : null);
+    } catch (error: any) {
+      console.error('북마크 토글 오류:', error);
+      setToastMessage(error.message || '북마크 토글에 실패했습니다.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
@@ -107,6 +141,38 @@ const PromptDetailPage = () => {
                     <span className="font-semibold">{prompt.rating.toFixed(1)}</span>
                   </div>
                 </div>
+              </div>
+              
+              {/* 북마크 버튼 */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBookmarkToggle}
+                  disabled={bookmarkLoading}
+                  className={`flex items-center justify-center p-2 rounded-lg transition-colors ${
+                    isBookmarked(prompt?.id || '')
+                      ? 'bg-primary text-white hover:bg-orange-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  } ${bookmarkLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <svg
+                    className={`w-6 h-6 ${isBookmarked(prompt?.id || '') ? 'fill-current' : 'fill-none'}`}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                    />
+                  </svg>
+
+                </button>
+                
+                {/* 북마크 수 */}
+                <span className="text-sm text-gray-500">
+                  {prompt.bookmarks || 0}
+                </span>
               </div>
             </div>
             

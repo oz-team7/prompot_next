@@ -2,6 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
+import { useBookmarks } from '@/contexts/BookmarkContext';
 
 interface BookmarkPanelProps {
   isOpen: boolean;
@@ -18,7 +19,17 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
   prompts,
   onRemoveBookmark,
 }) => {
+  const { toggleBookmark } = useBookmarks();
   const bookmarkedItems = prompts.filter(prompt => bookmarkedPrompts.includes(prompt.id));
+
+  const handleRemoveBookmark = async (id: string) => {
+    try {
+      await toggleBookmark(id);
+      onRemoveBookmark(id);
+    } catch (error) {
+      console.error('북마크 제거 오류:', error);
+    }
+  };
 
   return (
     <>
@@ -91,7 +102,7 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            onRemoveBookmark(prompt.id);
+                            handleRemoveBookmark(prompt.id);
                           }}
                           className="text-xs text-red-500 hover:text-red-700"
                         >

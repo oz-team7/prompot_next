@@ -5,8 +5,8 @@ import PromptCardCompact from './PromptCardCompact';
 import BookmarkPanel from './BookmarkPanel';
 import { useSearch } from '@/contexts/SearchContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBookmarks } from '@/contexts/BookmarkContext';
 import { usePrompts } from '@/hooks/usePrompts';
-import { supabase } from '@/lib/supabaseClient';
 
 interface PromptGridProps {
   prompts?: Prompt[];  // 외부에서 전달받는 프롬프트 (옵셔널)
@@ -29,6 +29,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const router = useRouter();
   const { searchQuery } = useSearch();
   const { isAuthenticated } = useAuth();
+  const { bookmarkedPrompts, isBookmarked, toggleBookmark } = useBookmarks();
   const { prompts: apiPrompts, loading, error, refetch } = usePrompts();
   
   // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
@@ -38,7 +39,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>(promptsData);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('none');
-  const [bookmarkedPrompts, setBookmarkedPrompts] = useState<string[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
 
   // API에서 데이터를 가져온 경우 prompts 상태 업데이트
@@ -50,33 +50,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
   }, [apiPrompts, initialPrompts, useAPI]);
 
-  // 북마크 상태 초기화
-  useEffect(() => {
-    if (isAuthenticated && prompts.length > 0) {
-      const fetchBookmarks = async () => {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.access_token) {
-            const response = await fetch('/api/bookmarks', {
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-              },
-            });
-            
-            if (response.ok) {
-              const data = await response.json();
-              const bookmarkIds = data.bookmarks?.map((b: any) => b.prompt_id) || [];
-              setBookmarkedPrompts(bookmarkIds);
-            }
-          }
-        } catch (error) {
-          console.error('북마크 상태 초기화 오류:', error);
-        }
-      };
 
-      fetchBookmarks();
-    }
-  }, [isAuthenticated, prompts]);
 
   const categories: { value: CategoryType; label: string }[] = [
     { value: 'all', label: '전체' },
@@ -109,48 +83,20 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
 
     try {
-      // Supabase 세션에서 액세스 토큰 가져오기
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('인증 토큰이 없습니다.');
-      }
-
-      const response = await fetch('/api/bookmarks/toggle', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ promptId: id }),
-      });
-
-      if (!response.ok) {
-        throw new Error('북마크 토글에 실패했습니다.');
-      }
-
-      const data = await response.json();
+            const isBookmarked = await toggleBookmark(id);
       
-      if (data.success) {
-        // 북마크 상태 업데이트
-        setBookmarkedPrompts(prev =>
-          data.isBookmarked 
-            ? [...prev, id]
-            : prev.filter(bid => bid !== id)
-        );
-
-        // 프롬프트 목록의 북마크 상태도 업데이트
-        setPrompts(prevPrompts =>
-          prevPrompts.map(prompt =>
-            prompt.id === id
-              ? {
-                  ...prompt,
-                  isBookmarked: data.isBookmarked,
-                  bookmarks: data.isBookmarked ? (prompt.bookmarks || 0) + 1 : Math.max(0, (prompt.bookmarks || 0) - 1),
-                }
-              : prompt
-          )
-        );
-      }
+      // 프롬프트 목록의 북마크 상태도 업데이트
+      setPrompts(prevPrompts =>
+        prevPrompts.map(prompt =>
+          prompt.id === id
+            ? {
+                ...prompt,
+                isBookmarked,
+                bookmarks: isBookmarked ? (prompt.bookmarks || 0) + 1 : Math.max(0, (prompt.bookmarks || 0) - 1),
+              }
+            : prompt
+        )
+      );
     } catch (error) {
       console.error('Bookmark toggle error:', error);
       // 에러 처리 (토스트 메시지 등)

@@ -4,15 +4,16 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBookmarks } from '@/contexts/BookmarkContext';
 import { usePrompts } from '@/hooks/usePrompts';
 import { Prompt } from '@/types/prompt';
 import Toast from '@/components/Toast';
-import { supabase } from '@/lib/supabaseClient';
 import { getAIModelName, getAIModelIcon } from '@/utils/aiModels';
 
 const MyPage = () => {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { bookmarkedPrompts: bookmarkIds, refreshBookmarks } = useBookmarks();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings'>('prompts');
   const { prompts: allPrompts, loading, error, refetch } = usePrompts({ author: true });
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
@@ -38,39 +39,21 @@ const MyPage = () => {
 
   // 북마크된 프롬프트 가져오기
   useEffect(() => {
-    const fetchBookmarks = async () => {
-      if (!isAuthenticated) return;
-      
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return;
-
-        const response = await fetch('/api/bookmarks', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const bookmarkedPrompts = data.bookmarks
-            .filter((bookmark: any) => bookmark.prompt)
-            .map((bookmark: any) => ({
-              ...bookmark.prompt,
-              aiModel: bookmark.prompt.aiModel ? {
-                name: getAIModelName(bookmark.prompt.aiModel),
-                icon: getAIModelIcon(bookmark.prompt.aiModel),
-              } : undefined,
-            }));
-          setBookmarkedPrompts(bookmarkedPrompts);
-        }
-      } catch (error) {
-        console.error('Failed to fetch bookmarks:', error);
-      }
-    };
-
-    fetchBookmarks();
-  }, [isAuthenticated]);
+    if (isAuthenticated && allPrompts.length > 0 && bookmarkIds.length > 0) {
+      const bookmarkedPrompts = allPrompts
+        .filter(prompt => bookmarkIds.includes(prompt.id))
+        .map(prompt => ({
+          ...prompt,
+          aiModel: prompt.aiModel ? {
+            name: getAIModelName(prompt.aiModel),
+            icon: getAIModelIcon(prompt.aiModel),
+          } : undefined,
+        }));
+      setBookmarkedPrompts(bookmarkedPrompts);
+    } else {
+      setBookmarkedPrompts([]);
+    }
+  }, [isAuthenticated, allPrompts, bookmarkIds]);
 
   const handleDelete = (id: string) => {
     setDeleteTargetId(id);
@@ -97,24 +80,10 @@ const MyPage = () => {
 
   const handleRemoveBookmark = async (id: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
-
-      const response = await fetch('/api/bookmarks/toggle', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ promptId: id }),
-      });
-
-      if (response.ok) {
-        setBookmarkedPrompts(prev => prev.filter(p => p.id !== id));
-        setShowToast(true);
-        setToastMessage('북마크가 제거되었습니다.');
-        setToastType('success');
-      }
+      await refreshBookmarks();
+      setShowToast(true);
+      setToastMessage('북마크가 제거되었습니다.');
+      setToastType('success');
     } catch (error) {
       console.error('Failed to remove bookmark:', error);
       setShowToast(true);
