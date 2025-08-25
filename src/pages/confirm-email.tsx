@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ConfirmEmailPage = () => {
   const router = useRouter();
+  const { login } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const [countdown, setCountdown] = useState(5);
+  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
 
   useEffect(() => {
     // URL에서 이메일과 토큰 파라미터 확인
@@ -17,6 +20,12 @@ const ConfirmEmailPage = () => {
       // 이메일 인증 완료 처리
       setStatus('success');
       setMessage(`${email} 계정의 이메일 인증이 완료되었습니다!`);
+      
+      // 자동 로그인 시도 (한 번만)
+      if (!autoLoginAttempted) {
+        setAutoLoginAttempted(true);
+        handleAutoLogin(email as string);
+      }
       
       // 5초 카운트다운 후 로그인 페이지로 이동
       const timer = setInterval(() => {
@@ -35,7 +44,30 @@ const ConfirmEmailPage = () => {
       setStatus('error');
       setMessage('잘못된 접근입니다.');
     }
-  }, [router.query, router]);
+  }, [router.query, router, autoLoginAttempted]);
+
+  const handleAutoLogin = async (email: string) => {
+    try {
+      // 이메일 인증 완료 후 자동 로그인 시도
+      const response = await fetch('/api/auth/confirm-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // 자동 로그인 성공 시 홈페이지로 이동
+          router.push('/?login_success=true');
+        }
+      }
+    } catch (error) {
+      console.error('자동 로그인 실패:', error);
+    }
+  };
 
   const handleGoToLogin = () => {
     const { email } = router.query;
@@ -110,11 +142,11 @@ const ConfirmEmailPage = () => {
                 </button>
               )}
               
-                                    <div className="text-center">
-                        <Link href="/" className="text-primary hover:text-orange-600 text-sm">
-                          홈페이지로 돌아가기
-                        </Link>
-                      </div>
+              <div className="text-center">
+                <Link href="/" className="text-primary hover:text-orange-600 text-sm">
+                  홈페이지로 돌아가기
+                </Link>
+              </div>
             </div>
 
           </div>
