@@ -30,7 +30,7 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
   const [loading, setLoading] = useState(false);
 
   // 북마크 상태 확인
-  const checkBookmarkStatus = async (promptId: string): Promise<boolean> => {
+  const checkBookmarkStatus = (promptId: string): boolean => {
     return bookmarkedPrompts.includes(promptId);
   };
 

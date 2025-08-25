@@ -40,15 +40,15 @@ const MyPage = () => {
   // 북마크된 프롬프트 가져오기
   useEffect(() => {
     if (isAuthenticated && allPrompts.length > 0 && bookmarkIds.length > 0) {
-      const bookmarkedPrompts = allPrompts
-        .filter(prompt => bookmarkIds.includes(prompt.id))
-        .map(prompt => ({
-          ...prompt,
-          aiModel: prompt.aiModel ? {
-            name: getAIModelName(prompt.aiModel),
-            icon: getAIModelIcon(prompt.aiModel),
-          } : undefined,
-        }));
+                const bookmarkedPrompts = allPrompts
+            .filter(prompt => bookmarkIds.includes(prompt.id))
+            .map(prompt => ({
+              ...prompt,
+              aiModel: typeof prompt.aiModel === 'string' ? {
+                name: getAIModelName(prompt.aiModel),
+                icon: getAIModelIcon(prompt.aiModel),
+              } : prompt.aiModel,
+            }));
       setBookmarkedPrompts(bookmarkedPrompts);
     } else {
       setBookmarkedPrompts([]);
