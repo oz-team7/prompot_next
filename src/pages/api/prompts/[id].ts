@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/lib/prisma';
-import { verifyToken } from '@/lib/auth';
-import * as cookie from 'cookie';
+import { supabase } from '@/lib/supabaseClient';
 
 export default async function handler(
   req: NextApiRequest,
@@ -13,26 +11,13 @@ export default async function handler(
     return res.status(400).json({ message: '유효하지 않은 프롬프트 ID입니다.' });
   }
 
-  // 인증 확인
-  const cookies = cookie.parse(req.headers.cookie || '');
-  const token = cookies['auth-token'];
-
-  if (!token) {
-    return res.status(401).json({ message: '인증이 필요합니다.' });
-  }
-
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    return res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
-  }
-
   switch (req.method) {
     case 'GET':
-      return handleGet(req, res, parseInt(id));
+      return handleGet(req, res, id);
     case 'PUT':
-      return handleUpdate(req, res, parseInt(id), decoded.userId);
+      return handleUpdate(req, res, id);
     case 'DELETE':
-      return handleDelete(req, res, parseInt(id), decoded.userId);
+      return handleDelete(req, res, id);
     default:
       return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -41,45 +26,52 @@ export default async function handler(
 async function handleGet(
   req: NextApiRequest,
   res: NextApiResponse,
-  promptId: number
+  promptId: string
 ) {
   try {
-    const prompt = await prisma.prompt.findUnique({
-      where: { id: promptId },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            bookmarks: true,
-          },
-        },
-      },
-    });
+    // Supabase에서 프롬프트 조회
+    const { data: prompt, error } = await supabase
+      .from('prompts')
+      .select(`
+        *,
+        author:profiles(id, name, email),
+        likes:prompt_likes(count),
+        bookmarks:prompt_bookmarks(count)
+      `)
+      .eq('id', promptId)
+      .single();
+
+    if (error) {
+      console.error('Supabase select error:', error);
+      return res.status(404).json({ message: '프롬프트를 찾을 수 없습니다.' });
+    }
 
     if (!prompt) {
       return res.status(404).json({ message: '프롬프트를 찾을 수 없습니다.' });
     }
 
     // AI 모델 이름과 아이콘 정보 추가
-    const aiModelInfo = getAIModelInfo(prompt.aiModel);
+    const aiModelInfo = getAIModelInfo(prompt.ai_model);
 
     res.status(200).json({
       prompt: {
-        ...prompt,
-        tags: JSON.parse(prompt.tags),
-        likes: prompt._count.likes,
-        bookmarks: prompt._count.bookmarks,
-        author: prompt.author.name,
-        date: prompt.createdAt.toISOString().split('T')[0].replace(/-/g, '.'),
-        rating: 0, // 평점 기능은 아직 구현되지 않음
+        id: prompt.id,
+        title: prompt.title,
+        description: prompt.description,
+        content: prompt.content,
+        category: prompt.category,
+        tags: prompt.tags || [],
         aiModel: aiModelInfo,
+        previewImage: prompt.preview_image,
+        isPublic: prompt.is_public,
+        authorId: prompt.author_id,
+        createdAt: prompt.created_at,
+        updatedAt: prompt.updated_at,
+        likes: prompt.likes?.[0]?.count || 0,
+        bookmarks: prompt.bookmarks?.[0]?.count || 0,
+        author: prompt.author?.name || 'Unknown',
+        date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
+        rating: 0, // 평점 기능은 아직 구현되지 않음
       },
     });
   } catch (error) {
@@ -132,61 +124,81 @@ function getAIModelInfo(modelId: string) {
 async function handleUpdate(
   req: NextApiRequest,
   res: NextApiResponse,
-  promptId: number,
-  userId: string
+  promptId: string
 ) {
   try {
-    // 프롬프트 소유자 확인
-    const prompt = await prisma.prompt.findUnique({
-      where: { id: promptId },
-      select: { authorId: true },
-    });
+    // Supabase Auth로 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      req.headers.authorization?.replace('Bearer ', '') || ''
+    );
 
-    if (!prompt) {
+    if (authError || !user) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+
+    // 프롬프트 소유자 확인
+    const { data: prompt, error: promptError } = await supabase
+      .from('prompts')
+      .select('author_id')
+      .eq('id', promptId)
+      .single();
+
+    if (promptError || !prompt) {
       return res.status(404).json({ message: '프롬프트를 찾을 수 없습니다.' });
     }
 
-    if (prompt.authorId !== userId) {
+    if (prompt.author_id !== user.id) {
       return res.status(403).json({ message: '이 프롬프트를 수정할 권한이 없습니다.' });
     }
 
     const { title, description, content, category, tags, aiModel, previewImage, isPublic } = req.body;
 
-    const updatedPrompt = await prisma.prompt.update({
-      where: { id: promptId },
-      data: {
+    const { data: updatedPrompt, error: updateError } = await supabase
+      .from('prompts')
+      .update({
         title,
         description,
         content,
         category,
-        tags: JSON.stringify(tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)),
-        aiModel,
-        previewImage,
-        isPublic,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        _count: {
-          select: {
-            likes: true,
-            bookmarks: true,
-          },
-        },
-      },
-    });
+        tags: tags ? tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : [],
+        ai_model: aiModel,
+        preview_image: previewImage,
+        is_public: isPublic,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', promptId)
+      .select(`
+        *,
+        author:profiles(id, name, email),
+        likes:prompt_likes(count),
+        bookmarks:prompt_bookmarks(count)
+      `)
+      .single();
+
+    if (updateError) {
+      console.error('Update error:', updateError);
+      return res.status(500).json({ message: '프롬프트 수정 중 오류가 발생했습니다.' });
+    }
 
     res.status(200).json({
       prompt: {
-        ...updatedPrompt,
-        tags: JSON.parse(updatedPrompt.tags),
-        likes: updatedPrompt._count.likes,
-        bookmarks: updatedPrompt._count.bookmarks,
+        id: updatedPrompt.id,
+        title: updatedPrompt.title,
+        description: updatedPrompt.description,
+        content: updatedPrompt.content,
+        category: updatedPrompt.category,
+        tags: updatedPrompt.tags || [],
+        aiModel: getAIModelInfo(updatedPrompt.ai_model),
+        previewImage: updatedPrompt.preview_image,
+        isPublic: updatedPrompt.is_public,
+        authorId: updatedPrompt.author_id,
+        createdAt: updatedPrompt.created_at,
+        updatedAt: updatedPrompt.updated_at,
+        likes: updatedPrompt.likes?.[0]?.count || 0,
+        bookmarks: updatedPrompt.bookmarks?.[0]?.count || 0,
+        author: updatedPrompt.author?.name || 'Unknown',
+        date: new Date(updatedPrompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
+        rating: 0,
       },
     });
   } catch (error) {
@@ -198,28 +210,43 @@ async function handleUpdate(
 async function handleDelete(
   req: NextApiRequest,
   res: NextApiResponse,
-  promptId: number,
-  userId: string
+  promptId: string
 ) {
   try {
-    // 프롬프트 소유자 확인
-    const prompt = await prisma.prompt.findUnique({
-      where: { id: promptId },
-      select: { authorId: true },
-    });
+    // Supabase Auth로 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      req.headers.authorization?.replace('Bearer ', '') || ''
+    );
 
-    if (!prompt) {
+    if (authError || !user) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+
+    // 프롬프트 소유자 확인
+    const { data: prompt, error: promptError } = await supabase
+      .from('prompts')
+      .select('author_id')
+      .eq('id', promptId)
+      .single();
+
+    if (promptError || !prompt) {
       return res.status(404).json({ message: '프롬프트를 찾을 수 없습니다.' });
     }
 
-    if (prompt.authorId !== userId) {
+    if (prompt.author_id !== user.id) {
       return res.status(403).json({ message: '이 프롬프트를 삭제할 권한이 없습니다.' });
     }
 
     // 관련된 likes와 bookmarks도 함께 삭제됩니다 (cascade)
-    await prisma.prompt.delete({
-      where: { id: promptId },
-    });
+    const { error: deleteError } = await supabase
+      .from('prompts')
+      .delete()
+      .eq('id', promptId);
+
+    if (deleteError) {
+      console.error('Delete error:', deleteError);
+      return res.status(500).json({ message: '프롬프트 삭제 중 오류가 발생했습니다.' });
+    }
 
     res.status(200).json({ message: '프롬프트가 성공적으로 삭제되었습니다.' });
   } catch (error) {
