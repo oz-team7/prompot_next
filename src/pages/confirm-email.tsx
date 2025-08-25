@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Header from '@/components/Header';
-import { useAuth } from '@/contexts/AuthContext';
 
 const ConfirmEmailPage = () => {
   const router = useRouter();
-  const { login } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const [countdown, setCountdown] = useState(5);
-  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
 
   useEffect(() => {
     // URL에서 이메일과 토큰 파라미터 확인
@@ -21,18 +18,14 @@ const ConfirmEmailPage = () => {
       setStatus('success');
       setMessage(`${email} 계정의 이메일 인증이 완료되었습니다!`);
       
-      // 자동 로그인 시도 (한 번만)
-      if (!autoLoginAttempted) {
-        setAutoLoginAttempted(true);
-        handleAutoLogin(email as string);
-      }
-      
       // 5초 카운트다운 후 로그인 페이지로 이동
       const timer = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            router.push('/login?email_confirmed=true&email=' + encodeURIComponent(email as string));
+            // 현재 도메인을 기반으로 로그인 페이지 URL 생성
+            const loginUrl = `${window.location.origin}/login?email_confirmed=true&email=${encodeURIComponent(email as string)}`;
+            router.push(loginUrl);
             return 0;
           }
           return prev - 1;
@@ -44,34 +37,13 @@ const ConfirmEmailPage = () => {
       setStatus('error');
       setMessage('잘못된 접근입니다.');
     }
-  }, [router.query, router, autoLoginAttempted]);
-
-  const handleAutoLogin = async (email: string) => {
-    try {
-      // 이메일 인증 완료 후 자동 로그인 시도
-      const response = await fetch('/api/auth/confirm-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // 자동 로그인 성공 시 홈페이지로 이동
-          router.push('/?login_success=true');
-        }
-      }
-    } catch (error) {
-      console.error('자동 로그인 실패:', error);
-    }
-  };
+  }, [router.query, router]);
 
   const handleGoToLogin = () => {
     const { email } = router.query;
-    router.push('/login?email_confirmed=true&email=' + encodeURIComponent(email as string));
+    // 현재 도메인을 기반으로 로그인 페이지 URL 생성
+    const loginUrl = `${window.location.origin}/login?email_confirmed=true&email=${encodeURIComponent(email as string)}`;
+    router.push(loginUrl);
   };
 
   if (status === 'loading') {
@@ -109,10 +81,10 @@ const ConfirmEmailPage = () => {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">이메일 인증 완료! 🎉</h1>
                 <p className="text-gray-700 mb-4">{message}</p>
                 
-                {/* 카운트다운 */}
+                {/* 자동 이동 안내 */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                   <p className="text-blue-800 text-sm">
-                    <strong>{countdown}초</strong> 후 로그인 페이지로 자동 이동합니다.
+                    <strong>{countdown}초 후</strong> 로그인 페이지로 자동 이동합니다.
                   </p>
                 </div>
               </div>

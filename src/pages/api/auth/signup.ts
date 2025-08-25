@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, getSiteUrl } from '@/lib/supabaseClient';
 
 export default async function handler(
   req: NextApiRequest,
@@ -42,6 +42,12 @@ export default async function handler(
       });
     }
 
+    // 동적으로 사이트 URL 가져오기
+    const siteUrl = getSiteUrl();
+    const emailRedirectTo = `${siteUrl}/confirm-email?email=${encodeURIComponent(email)}&type=signup`;
+    
+    console.log('이메일 리다이렉트 URL:', emailRedirectTo);
+
     // Supabase Auth로 사용자 생성
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -50,7 +56,7 @@ export default async function handler(
         data: {
           name: name,
         },
-        emailRedirectTo: `https://prompot-next-mgpq7pqo2-prompots-projects.vercel.app/confirm-email?email=${encodeURIComponent(email)}&type=signup`,
+        emailRedirectTo: emailRedirectTo,
       },
     });
 
