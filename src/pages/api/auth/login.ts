@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/lib/prisma';
-import { verifyPassword, generateToken } from '@/lib/auth';
-import * as cookie from 'cookie';
+import { supabase } from '@/lib/supabaseClient';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -18,50 +16,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 사용자 조회
-    const user = await prisma.user.findUnique({
-      where: { email },
+    // Supabase Auth로 로그인
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    if (!user) {
+    if (error) {
+      console.error('Login error:', error);
       return res.status(401).json({ 
         success: false,
         message: '이메일 또는 비밀번호가 올바르지 않습니다.' 
       });
     }
 
-    // 비밀번호 검증
-    const isValidPassword = await verifyPassword(password, user.password);
-    if (!isValidPassword) {
+    if (!data.user) {
       return res.status(401).json({ 
         success: false,
-        message: '이메일 또는 비밀번호가 올바르지 않습니다.' 
+        message: '사용자 정보를 찾을 수 없습니다.' 
       });
     }
 
-    // JWT 토큰 생성
-    const token = generateToken(user.id);
+    // 사용자 프로필 정보 가져오기
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('id, name, email')
+      .eq('id', data.user.id)
+      .single();
 
-    // 쿠키 설정
-    res.setHeader(
-      'Set-Cookie',
-      cookie.serialize('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7, // 7일
-        path: '/',
-      })
-    );
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return res.status(500).json({ 
+        success: false,
+        message: '사용자 프로필을 가져올 수 없습니다.' 
+      });
+    }
 
     res.status(200).json({
       success: true,
       message: '로그인이 완료되었습니다.',
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
+        id: profile.id,
+        email: profile.email,
+        name: profile.name,
       },
+      session: data.session,
     });
   } catch (error: any) {
     console.error('Login error:', error);

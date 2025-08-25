@@ -2,7 +2,7 @@
 
 -- 사용자 테이블 (auth.users와 연동)
 CREATE TABLE IF NOT EXISTS public.users (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  id UUID PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 
 -- 프롬프트 테이블
 CREATE TABLE IF NOT EXISTS public.prompts (
-  id BIGSERIAL PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -27,18 +27,18 @@ CREATE TABLE IF NOT EXISTS public.prompts (
 
 -- 좋아요 테이블
 CREATE TABLE IF NOT EXISTS public.prompt_likes (
-  id BIGSERIAL PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  prompt_id BIGINT REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, prompt_id)
 );
 
 -- 북마크 테이블
 CREATE TABLE IF NOT EXISTS public.prompt_bookmarks (
-  id BIGSERIAL PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  prompt_id BIGINT REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
+  prompt_id UUID REFERENCES public.prompts(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, prompt_id)
 );

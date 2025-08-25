@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/lib/supabaseClient';
-import { verifyToken } from '@/lib/auth';
-import * as cookie from 'cookie';
 
 // API body size 제한 설정 (4MB)
 export const config = {
@@ -20,27 +18,23 @@ export default async function handler(
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  // 인증 확인
-  const cookies = cookie.parse(req.headers.cookie || '');
-  const token = cookies['auth-token'];
-
-  if (!token) {
-    return res.status(401).json({ message: '인증이 필요합니다.' });
-  }
-
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    return res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
-  }
-  
-  const { title, description, content, category, tags, aiModel, previewImage, isPublic } = req.body;
-
-  // 유효성 검사
-  if (!title || !description || !content || !category || !aiModel) {
-    return res.status(400).json({ message: '필수 항목을 모두 입력해주세요.' });
-  }
-
   try {
+    // Supabase Auth로 인증 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      req.headers.authorization?.replace('Bearer ', '') || ''
+    );
+
+    if (authError || !user) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+    
+    const { title, description, content, category, tags, aiModel, previewImage, isPublic } = req.body;
+
+    // 유효성 검사
+    if (!title || !description || !content || !category || !aiModel) {
+      return res.status(400).json({ message: '필수 항목을 모두 입력해주세요.' });
+    }
+
     // Supabase에 프롬프트 저장
     const { data: prompt, error } = await supabase
       .from('prompts')
@@ -53,7 +47,7 @@ export default async function handler(
         ai_model: aiModel,
         preview_image: previewImage || null,
         is_public: isPublic ?? true,
-        author_id: decoded.userId,
+        author_id: user.id, // UUID 형식
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
