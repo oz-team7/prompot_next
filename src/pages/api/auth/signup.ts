@@ -50,6 +50,7 @@ export default async function handler(
         data: {
           name: name,
         },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/confirm-email?email=${encodeURIComponent(email)}&type=signup`,
       },
     });
 

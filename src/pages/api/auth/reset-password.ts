@@ -19,8 +19,8 @@ export default async function handler(
     console.log('비밀번호 재설정 요청:', { email });
 
     // Supabase 비밀번호 재설정 이메일 발송
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'http://localhost:3000/login?email_confirmed=true&email=' + encodeURIComponent(email),
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/confirm-email?email=${encodeURIComponent(email)}&type=recovery`,
     });
 
     if (error) {
@@ -32,7 +32,7 @@ export default async function handler(
       });
     }
 
-    console.log('비밀번호 재설정 이메일 발송 성공:', data);
+    console.log('비밀번호 재설정 이메일 발송 성공');
 
     res.status(200).json({
       success: true,
