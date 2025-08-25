@@ -93,30 +93,32 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
               </svg>
               <span>{prompt.rating.toFixed(1)}</span>
             </span>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                onLike(prompt.id);
-              }}
-              className="flex items-center gap-1 hover:scale-110 transition-transform"
-            >
-              <svg
-                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
-                  prompt.isLiked ? 'text-red-500 fill-current' : 'text-gray-400'
-                }`}
-                viewBox="0 0 20 20"
-                fill={prompt.isLiked ? 'currentColor' : 'none'}
-                stroke="currentColor"
+            {onLike && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onLike(prompt.id);
+                }}
+                className="flex items-center gap-1 hover:scale-110 transition-transform"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                />
-              </svg>
-              <span>{prompt.likes}</span>
-            </button>
+                <svg
+                  className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
+                    prompt.isLiked ? 'text-red-500 fill-current' : 'text-gray-400'
+                  }`}
+                  viewBox="0 0 20 20"
+                  fill={prompt.isLiked ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                  />
+                </svg>
+                <span>{prompt.likes}</span>
+              </button>
+            )}
           </div>
           <span className="text-xs text-gray-500">{prompt.author}</span>
         </div>

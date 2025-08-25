@@ -45,3 +45,72 @@ JWT_SECRET=your-jwt-secret-key
 ### 데이터베이스 오류
 - `supabase-setup-new.sql`이 올바르게 실행되었는지 확인
 - RLS 정책이 올바르게 설정되었는지 확인
+
+## 🚨 문제 해결
+
+### 일반적인 오류들
+
+1. **"Invalid API key"**: 환경 변수가 제대로 설정되지 않음
+2. **"Email not confirmed"**: 이메일 인증이 필요함
+3. **"Invalid login credentials"**: 이메일 또는 비밀번호가 잘못됨
+4. **"new row violates row-level security policy"**: RLS 정책 문제
+
+### 해결 방법
+
+1. 환경 변수 재설정
+2. 개발 서버 재시작
+3. 브라우저 캐시 삭제
+4. Supabase 대시보드에서 설정 확인
+
+### RLS 정책 문제 해결
+
+**문제**: 회원가입 후 프로필 생성 실패로 로그인이 안 되는 경우
+
+**해결 단계**:
+1. Supabase 대시보드 → SQL 편집기
+2. 다음 SQL 실행:
+
+```sql
+-- 기존 정책 삭제
+DROP POLICY IF EXISTS "Users can manage own profile" ON profiles;
+
+-- 새로운 정책 생성
+CREATE POLICY "Users can create profiles during signup"
+ON profiles FOR INSERT
+WITH CHECK (true);
+
+CREATE POLICY "Users can view own profile"
+ON profiles FOR SELECT
+USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile"
+ON profiles FOR UPDATE
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can delete own profile"
+ON profiles FOR DELETE
+USING (auth.uid() = id);
+```
+
+3. 정책 적용 후 회원가입 재시도
+
+### 프로필 수동 생성 (임시 해결책)
+
+**현재 프로필이 없는 사용자들을 위한 임시 해결책**:
+
+1. Supabase 대시보드 → Table Editor → profiles
+2. "Insert Row" 클릭
+3. 다음 정보 입력:
+   - `id`: Supabase Auth에서 생성된 사용자 ID (로그에서 확인)
+   - `name`: 사용자 이름
+   - `email`: 사용자 이메일
+   - `created_at`: 현재 시간
+   - `updated_at`: 현재 시간
+
+4. "Save" 클릭
+5. 로그인 시도
+
+**로그에서 사용자 ID 확인 방법**:
+- 개발 서버 콘솔에서 "사용자 생성 성공: [ID]" 메시지 확인
+- 또는 Supabase 대시보드 → Authentication → Users에서 확인

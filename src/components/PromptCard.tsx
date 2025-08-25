@@ -3,7 +3,7 @@ import { Prompt } from '@/types/prompt';
 
 interface PromptCardProps {
   prompt: Prompt;
-  onLike: (id: number) => void;
+  onLike: (id: string) => void;
 }
 
 const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike }) => {

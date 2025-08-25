@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Header from '@/components/Header';
 
 const ConfirmEmailPage = () => {
@@ -109,11 +110,11 @@ const ConfirmEmailPage = () => {
                 </button>
               )}
               
-              <div className="text-center">
-                <a href="/" className="text-primary hover:text-orange-600 text-sm">
-                  홈페이지로 돌아가기
-                </a>
-              </div>
+                                    <div className="text-center">
+                        <Link href="/" className="text-primary hover:text-orange-600 text-sm">
+                          홈페이지로 돌아가기
+                        </Link>
+                      </div>
             </div>
 
           </div>

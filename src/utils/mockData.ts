@@ -2,7 +2,7 @@ import { Prompt } from '@/types/prompt';
 
 export const mockPrompts: Prompt[] = [
   {
-    id: 1,
+    id: "1",
     title: '고객 응대 매뉴얼 작성',
     author: '이안녕',
     date: '2025.01.13',
@@ -19,7 +19,7 @@ export const mockPrompts: Prompt[] = [
     }
   },
   {
-    id: 2,
+    id: "2",
     title: '소설 플롯 생성기',
     author: '홍안녕',
     date: '2025.07.18',
@@ -36,7 +36,7 @@ export const mockPrompts: Prompt[] = [
     }
   },
   {
-    id: 3,
+    id: "3",
     title: '강의 노트 자동 정리',
     author: '김안녕',
     date: '2025.05.24',
@@ -53,7 +53,7 @@ export const mockPrompts: Prompt[] = [
     }
   },
   {
-    id: 4,
+    id: "4",
     title: '코스메틱 광고 이미지',
     author: '박안녕',
     date: '2025.07.18',
@@ -70,7 +70,7 @@ export const mockPrompts: Prompt[] = [
     }
   },
   {
-    id: 5,
+    id: "5",
     title: '자동 코드 리뷰어',
     author: '황안녕',
     date: '2025.02.27',
@@ -87,7 +87,7 @@ export const mockPrompts: Prompt[] = [
     }
   },
   {
-    id: 6,
+    id: "6",
     title: '피규어 스타일 이미지',
     author: '정안녕',
     date: '2025.07.14',

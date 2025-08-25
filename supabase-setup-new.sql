@@ -65,11 +65,23 @@ ALTER TABLE public.prompt_bookmarks ENABLE ROW LEVEL SECURITY;
 
 -- 8. RLS 정책 설정
 
--- profiles 테이블: 사용자는 자신의 프로필만 관리 가능
-CREATE POLICY "Users can manage own profile"
-ON profiles FOR ALL
+-- profiles 테이블: 회원가입 시 프로필 생성 허용, 이후 자신의 프로필만 관리
+CREATE POLICY "Users can create profiles during signup"
+ON profiles FOR INSERT
+WITH CHECK (true); -- 회원가입 시에는 모든 사용자 허용
+
+CREATE POLICY "Users can view own profile"
+ON profiles FOR SELECT
+USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile"
+ON profiles FOR UPDATE
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can delete own profile"
+ON profiles FOR DELETE
+USING (auth.uid() = id);
 
 -- prompts 테이블: 모든 사용자가 공개 프롬프트를 볼 수 있음
 CREATE POLICY "Anyone can view public prompts" ON public.prompts

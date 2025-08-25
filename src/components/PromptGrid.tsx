@@ -50,6 +50,34 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
   }, [apiPrompts, initialPrompts, useAPI]);
 
+  // 북마크 상태 초기화
+  useEffect(() => {
+    if (isAuthenticated && prompts.length > 0) {
+      const fetchBookmarks = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const response = await fetch('/api/bookmarks', {
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const bookmarkIds = data.bookmarks?.map((b: any) => b.prompt_id) || [];
+              setBookmarkedPrompts(bookmarkIds);
+            }
+          }
+        } catch (error) {
+          console.error('북마크 상태 초기화 오류:', error);
+        }
+      };
+
+      fetchBookmarks();
+    }
+  }, [isAuthenticated, prompts]);
+
   const categories: { value: CategoryType; label: string }[] = [
     { value: 'all', label: '전체' },
     { value: 'work', label: '업무/마케팅' },
@@ -59,7 +87,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     { value: 'image', label: '이미지/아트' },
   ];
 
-  const handleLike = (id: number) => {
+  const handleLike = (id: string) => {
     setPrompts(prevPrompts =>
       prevPrompts.map(prompt =>
         prompt.id === id
