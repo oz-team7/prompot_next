@@ -50,7 +50,7 @@ export default async function handler(
         data: {
           name: name,
         },
-        emailRedirectTo: `https://prompot-next-nx0ivemvq-prompots-projects.vercel.app/confirm-email?email=${encodeURIComponent(email)}&type=signup`,
+        emailRedirectTo: `https://prompot-next-mgpq7pqo2-prompots-projects.vercel.app/confirm-email?email=${encodeURIComponent(email)}&type=signup`,
       },
     });
 

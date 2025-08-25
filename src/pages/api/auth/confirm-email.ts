@@ -41,7 +41,7 @@ export default async function handler(
         type: 'magiclink',
         email: email,
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://prompot-next-epeozctqv-prompots-projects.vercel.app'}/?login_success=true`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://prompot-next-mgpq7pqo2-prompots-projects.vercel.app'}/?login_success=true`,
         }
       });
 
