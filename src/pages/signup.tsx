@@ -73,11 +73,8 @@ const SignupPage = () => {
 
       setShowToast(true);
 
-      // 이메일 확인 안내 메시지만 표시 (인증 완료 알림은 표시하지 않음)
-      setTimeout(() => {
-        setShowToast(false);
-        // showEmailConfirmation은 실제 이메일 인증 완료 후에만 표시
-      }, 3000);
+      // 이메일 확인 안내 메시지는 사용자가 직접 닫을 때까지 유지
+      // setTimeout 제거하여 자동으로 사라지지 않도록 함
     } catch (err: any) {
       setError(err.message || '회원가입 중 오류가 발생했습니다.');
     } finally {
@@ -142,19 +139,20 @@ const SignupPage = () => {
             )}
 
             {showToast && (
-              <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <h3 className="text-sm font-medium text-green-800 mb-1">
+              <div className="flex items-center justify-center min-h-[400px]">
+                <div className="text-center p-8 bg-green-100 border border-green-400 text-green-700 rounded-lg shadow-lg max-w-md w-full">
+                  <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 bg-green-200 rounded-full flex items-center justify-center mb-4">
+                      <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-green-800 mb-3">
                       회원가입이 완료되었습니다! 🎉
                     </h3>
-                    <p className="text-sm text-green-700">
-                      <strong>{formData.email}</strong>로 확인 이메일을 발송했습니다.<br />
+                    <p className="text-green-700 leading-relaxed">
+                      <strong>{formData.email}</strong>로<br />
+                      확인 이메일을 발송했습니다.<br />
                       이메일을 확인하여 인증을 완료해주세요.
                     </p>
                   </div>
@@ -197,86 +195,90 @@ const SignupPage = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  이름
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="이름을 입력하세요"
-                />
-              </div>
+            {!showToast && (
+              <>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      이름
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="이름을 입력하세요"
+                    />
+                  </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  이메일
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="이메일을 입력하세요"
-                />
-              </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      이메일
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="이메일을 입력하세요"
+                    />
+                  </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  비밀번호
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength={6}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="비밀번호를 입력하세요 (최소 6자)"
-                />
-              </div>
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      비밀번호
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      minLength={6}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="비밀번호를 입력하세요 (최소 6자)"
+                    />
+                  </div>
 
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  비밀번호 확인
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="비밀번호를 다시 입력하세요"
-                />
-              </div>
+                  <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      비밀번호 확인
+                    </label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="비밀번호를 다시 입력하세요"
+                    />
+                  </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? '회원가입 중...' : '회원가입'}
-              </button>
-            </form>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? '회원가입 중...' : '회원가입'}
+                  </button>
+                </form>
 
-            <div className="mt-6 text-center">
-              <Link href="/login" className="text-primary hover:text-orange-600">
-                이미 계정이 있으신가요? 로그인
-              </Link>
-            </div>
+                <div className="mt-6 text-center">
+                  <Link href="/login" className="text-primary hover:text-orange-600">
+                    이미 계정이 있으신가요? 로그인
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </main>
