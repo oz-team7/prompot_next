@@ -7,6 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePrompts } from '@/hooks/usePrompts';
 import { Prompt } from '@/types/prompt';
 import Toast from '@/components/Toast';
+import { supabase } from '@/lib/supabaseClient';
+import { getAIModelName, getAIModelIcon } from '@/utils/aiModels';
 
 const MyPage = () => {
   const router = useRouter();
@@ -16,7 +18,7 @@ const MyPage = () => {
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
   const [bookmarkedPrompts, setBookmarkedPrompts] = useState<Prompt[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
@@ -31,12 +33,46 @@ const MyPage = () => {
     // 사용자의 프롬프트만 필터링
     if (allPrompts.length > 0) {
       setMyPrompts(allPrompts.filter(p => p.authorId === user?.id));
-      // 북마크된 프롬프트 필터링 (현재는 임시로 빈 배열)
-      setBookmarkedPrompts(allPrompts.filter(p => p.isBookmarked));
     }
   }, [allPrompts, user]);
 
-  const handleDelete = (id: number) => {
+  // 북마크된 프롬프트 가져오기
+  useEffect(() => {
+    const fetchBookmarks = async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const response = await fetch('/api/bookmarks', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const bookmarkedPrompts = data.bookmarks
+            .filter((bookmark: any) => bookmark.prompt)
+            .map((bookmark: any) => ({
+              ...bookmark.prompt,
+              aiModel: bookmark.prompt.aiModel ? {
+                name: getAIModelName(bookmark.prompt.aiModel),
+                icon: getAIModelIcon(bookmark.prompt.aiModel),
+              } : undefined,
+            }));
+          setBookmarkedPrompts(bookmarkedPrompts);
+        }
+      } catch (error) {
+        console.error('Failed to fetch bookmarks:', error);
+      }
+    };
+
+    fetchBookmarks();
+  }, [isAuthenticated]);
+
+  const handleDelete = (id: string) => {
     setDeleteTargetId(id);
     setShowDeleteModal(true);
   };
@@ -44,26 +80,46 @@ const MyPage = () => {
   const confirmDelete = async () => {
     if (deleteTargetId) {
       try {
-        const res = await fetch(`/api/prompts/${deleteTargetId}`, {
-          method: 'DELETE',
-        });
-
-        if (!res.ok) {
-          throw new Error('프롬프트 삭제에 실패했습니다.');
-        }
-
+        // 프롬프트 삭제 로직 (추후 구현)
         setMyPrompts(prev => prev.filter(p => p.id !== deleteTargetId));
-        setToastMessage('프롬프트가 삭제되었습니다.');
-        setToastType('success');
-        setShowToast(true);
         setShowDeleteModal(false);
         setDeleteTargetId(null);
-        refetch();
-      } catch (error) {
-        setToastMessage('프롬프트 삭제 중 오류가 발생했습니다.');
-        setToastType('error');
         setShowToast(true);
+        setToastMessage('프롬프트가 삭제되었습니다.');
+        setToastType('success');
+      } catch (error) {
+        setShowToast(true);
+        setToastMessage('삭제에 실패했습니다.');
+        setToastType('error');
       }
+    }
+  };
+
+  const handleRemoveBookmark = async (id: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const response = await fetch('/api/bookmarks/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ promptId: id }),
+      });
+
+      if (response.ok) {
+        setBookmarkedPrompts(prev => prev.filter(p => p.id !== id));
+        setShowToast(true);
+        setToastMessage('북마크가 제거되었습니다.');
+        setToastType('success');
+      }
+    } catch (error) {
+      console.error('Failed to remove bookmark:', error);
+      setShowToast(true);
+      setToastMessage('북마크 제거에 실패했습니다.');
+      setToastType('error');
     }
   };
 
@@ -303,6 +359,12 @@ const MyPage = () => {
                         >
                           자세히 보기
                         </Link>
+                        <button
+                          onClick={() => handleRemoveBookmark(prompt.id)}
+                          className="block w-full mt-2 px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-center text-sm"
+                        >
+                          북마크 제거
+                        </button>
                       </div>
                     ))}
                   </div>

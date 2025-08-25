@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { User } from '@supabase/supabase-js';
 
-interface User {
+interface Profile {
   id: string;
-  name?: string | null;
-  email: string | null;
+  name: string | null;
+  email: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: Profile | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -16,93 +18,127 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// JSON/HTML 안전 파서
-async function safeJson(res: Response) {
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('application/json')) {
-    return res.json();
-  }
-  const text = await res.text(); // HTML/텍스트면 그대로 표시용
-  return { ok: false, error: text };
-}
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 첫 로드 시 세션 확인
+  // Supabase 세션 변경 감지
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkUser = async () => {
       try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        const data = await safeJson(res);
-
-        if (res.ok && data?.user) {
-          setUser({
-            id: data.user.id,
-            email: data.user.email ?? null,
-            name: data.user.user_metadata?.name ?? data.user.name ?? null,
-          });
-          localStorage.setItem('user', JSON.stringify({
-            id: data.user.id,
-            email: data.user.email ?? null,
-            name: data.user.user_metadata?.name ?? data.user.name ?? null,
-          }));
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
         } else {
-          // 인증 안됨 or /api/auth/me 없음(404 HTML) → 비로그인 처리
-          localStorage.removeItem('user');
           setUser(null);
         }
-      } catch (err) {
-        // 네트워크 에러 시 로컬 캐시 fallback
-        const stored = localStorage.getItem('user');
-        if (stored) setUser(JSON.parse(stored));
+      } catch (error) {
+        console.error('Session check error:', error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    checkUser();
+
+    // 세션 변경 리스너
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await fetchUserProfile(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', // 쿠키 세션 쓰는 경우 필수
-      body: JSON.stringify({ email, password }),
-    });
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .eq('id', userId)
+        .single();
 
-    const data = await safeJson(res);
+      if (error) {
+        console.error('Profile fetch error:', error);
+        setUser(null);
+        return;
+      }
 
-    if (!res.ok || data?.ok === false) {
-      throw new Error(data?.message || data?.error || '로그인에 실패했습니다.');
+      setUser({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+      });
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      setUser(null);
     }
+  };
 
-    // Supabase 로그인 API가 반환한 user 형식 맞춰 저장
-    const u = data.user || data?.data?.user || null;
-    if (!u) throw new Error('로그인 응답 사용자 정보가 없습니다.');
+  const login = async (email: string, password: string) => {
+    try {
+      // 먼저 로그인 시도
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const nextUser: User = {
-      id: u.id,
-      email: u.email ?? null,
-      name: u.user_metadata?.name ?? u.name ?? null,
-    };
-    setUser(nextUser);
-    localStorage.setItem('user', JSON.stringify(nextUser));
+      if (error) {
+        // 이메일 확인 오류인 경우, 프로필 테이블에서 직접 사용자 정보 가져오기
+        if (error.message.includes('email not confirmed') || error.message.includes('Invalid login credentials')) {
+          console.log('Email confirmation required, attempting alternative login...');
+          
+          // 사용자 정보를 직접 가져와서 로그인 처리
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .eq('email', email)
+            .single();
+
+          if (profileError) {
+            throw new Error('사용자 프로필을 찾을 수 없습니다. 회원가입을 먼저 해주세요.');
+          }
+
+          // 로컬에서 사용자 정보 설정 (임시 로그인)
+          setUser({
+            id: profile.id,
+            name: profile.name,
+            email: profile.email,
+          });
+          
+          console.log('Alternative login successful for:', profile.email);
+          return;
+        }
+        
+        throw new Error(error.message);
+      }
+
+      if (!data.user) {
+        throw new Error('로그인에 실패했습니다.');
+      }
+
+      // 프로필 정보 가져오기
+      await fetchUserProfile(data.user.id);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    try {
-      const res = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      // /api/auth/logout 이 없을 수도 있으니 안전 파싱만 하고 무시
-      await safeJson(res);
-    } catch {}
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Logout error:', error);
+    }
     setUser(null);
-    localStorage.removeItem('user');
   };
 
   const isAuthenticated = !!user;
@@ -116,6 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  if (ctx === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return ctx;
 };

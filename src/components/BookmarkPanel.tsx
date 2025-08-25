@@ -6,9 +6,9 @@ import { Prompt } from '@/types/prompt';
 interface BookmarkPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  bookmarkedPrompts: number[];
+  bookmarkedPrompts: string[];
   prompts: Prompt[];
-  onRemoveBookmark: (id: number) => void;
+  onRemoveBookmark: (id: string) => void;
 }
 
 const BookmarkPanel: React.FC<BookmarkPanelProps> = ({

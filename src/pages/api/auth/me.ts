@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { prisma } from '@/lib/prisma';
-import { verifyToken } from '@/lib/auth';
-import * as cookie from 'cookie';
+import { supabase } from '@/lib/supabaseClient';
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,34 +9,33 @@ export default async function handler(
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const cookies = cookie.parse(req.headers.cookie || '');
-  const token = cookies['auth-token'];
-
-  if (!token) {
-    return res.status(401).json({ message: '인증이 필요합니다.' });
-  }
-
-  const decoded = verifyToken(token);
-
-  if (!decoded) {
-    return res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
-  }
-
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
-    });
+    // Supabase 세션에서 사용자 정보 가져오기
+    const { data: { user }, error } = await supabase.auth.getUser();
 
-    if (!user) {
-      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    if (error || !user) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
     }
 
-    res.status(200).json({ user });
+    // 사용자 프로필 정보 가져오기
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, name, email')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return res.status(500).json({ message: '사용자 프로필을 가져올 수 없습니다.' });
+    }
+
+    res.status(200).json({ 
+      user: {
+        id: profile.id,
+        email: profile.email,
+        name: profile.name,
+      }
+    });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ message: '서버 오류가 발생했습니다.' });

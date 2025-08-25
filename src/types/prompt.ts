@@ -1,5 +1,5 @@
 export interface Prompt {
-  id: number;
+  id: string; // UUID 형식으로 변경
   title: string;
   author: string;
   authorId?: string;

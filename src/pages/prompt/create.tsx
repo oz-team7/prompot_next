@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import Toast from '@/components/Toast';
+import { supabase } from '@/lib/supabaseClient';
 
 type CategoryType = 'work' | 'dev' | 'design' | 'edu' | 'image';
 
@@ -133,12 +134,18 @@ const CreatePromptPage = () => {
     }
 
     try {
+      // Supabase 세션에서 액세스 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('로그인이 필요합니다. 다시 로그인해주세요.');
+      }
+
       const res = await fetch('/api/prompts/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           previewImage,

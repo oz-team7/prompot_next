@@ -51,12 +51,12 @@ export default async function handler(
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .select(`
-        *,
-        author:users(id, name, email),
-        likes:prompt_likes(count),
-        bookmarks:prompt_bookmarks(count)
-      `)
+                   .select(`
+               *,
+               author:profiles(id, name, email),
+               likes:prompt_likes(count),
+               bookmarks:prompt_bookmarks(count)
+             `)
       .single();
 
     if (error) {

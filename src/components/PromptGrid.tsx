@@ -6,6 +6,7 @@ import BookmarkPanel from './BookmarkPanel';
 import { useSearch } from '@/contexts/SearchContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePrompts } from '@/hooks/usePrompts';
+import { supabase } from '@/lib/supabaseClient';
 
 interface PromptGridProps {
   prompts?: Prompt[];  // 외부에서 전달받는 프롬프트 (옵셔널)
@@ -37,7 +38,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>(promptsData);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('none');
-  const [bookmarkedPrompts, setBookmarkedPrompts] = useState<number[]>([]);
+  const [bookmarkedPrompts, setBookmarkedPrompts] = useState<string[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
 
   // API에서 데이터를 가져온 경우 prompts 상태 업데이트
@@ -72,10 +73,60 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     );
   };
 
-  const handleBookmark = (id: number) => {
-    setBookmarkedPrompts(prev =>
-      prev.includes(id) ? prev.filter(bid => bid !== id) : [...prev, id]
-    );
+  const handleBookmark = async (id: string) => {
+    if (!isAuthenticated) {
+      // 로그인이 필요한 경우 처리
+      router.push('/login');
+      return;
+    }
+
+    try {
+      // Supabase 세션에서 액세스 토큰 가져오기
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
+
+      const response = await fetch('/api/bookmarks/toggle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ promptId: id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('북마크 토글에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // 북마크 상태 업데이트
+        setBookmarkedPrompts(prev =>
+          data.isBookmarked 
+            ? [...prev, id]
+            : prev.filter(bid => bid !== id)
+        );
+
+        // 프롬프트 목록의 북마크 상태도 업데이트
+        setPrompts(prevPrompts =>
+          prevPrompts.map(prompt =>
+            prompt.id === id
+              ? {
+                  ...prompt,
+                  isBookmarked: data.isBookmarked,
+                  bookmarks: data.isBookmarked ? (prompt.bookmarks || 0) + 1 : Math.max(0, (prompt.bookmarks || 0) - 1),
+                }
+              : prompt
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Bookmark toggle error:', error);
+      // 에러 처리 (토스트 메시지 등)
+    }
   };
 
   useEffect(() => {

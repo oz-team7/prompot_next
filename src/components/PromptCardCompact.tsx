@@ -5,8 +5,8 @@ import { Prompt } from '@/types/prompt';
 
 interface PromptCardCompactProps {
   prompt: Prompt;
-  onLike: (id: number) => void;
-  onBookmark?: (id: number) => void;
+  onLike?: (id: string) => void;
+  onBookmark?: (id: string) => void;
   isBookmarked?: boolean;
 }
 
