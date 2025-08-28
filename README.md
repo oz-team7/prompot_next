@@ -1,11 +1,12 @@
-﻿# PRD: PROMPOT - 프롬프트 공유 플랫폼 (Updated v1.1)
+# PRD: PROMPOT - 프롬프트 공유 플랫폼 (Updated v2.0)
 
 ## 문서 정보
 - 제목: 프롬프트 프롬프트를 저장/정리/공유할 수 있는 무료 플랫폼 서비스  
-- 버전 정보: v1.1  
+- 버전 정보: v2.0  
 - 작성일자: 2025.08.14  
+- 최종 수정: 2025.08.28
 - 작성자: PROMPOT Team (태웅, 민호, 은지)  
-- 상태: Draft (지속적인 업데이트)  
+- 상태: Production Ready  
 
 ---
 
@@ -123,52 +124,56 @@
 - OAuth 인증 (Google, Kakao)  
 - 파일 저장: S3 Compatible  
 
-### Backend (Local Development - v1.1)
+### Backend (v2.0 - Supabase 통합)
 - Next.js API Routes
-- Prisma ORM + SQLite
-- JWT 인증 (bcryptjs + jsonwebtoken)
+- Supabase (PostgreSQL + Auth + Storage)
+- Supabase Auth (OAuth 지원)
 - Cookie 기반 세션 관리
+- Row Level Security (RLS) 활성화
 
-### DB Schema 설계
-**Production (MongoDB)**
-- users, prompts, bookmarks, reviews, reports
+### DB Schema 설계 (Supabase PostgreSQL)
 
-**Local Development (SQLite)**
-```prisma
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  prompts   Prompt[]
-  likes     Like[]
-  bookmarks Bookmark[]
-}
+**테이블 구조**
+```sql
+-- profiles 테이블 (Supabase Auth와 연동)
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
 
-model Prompt {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  content     String
-  category    String
-  tags        String   // JSON string array
-  previewImage String?
-  author      User     @relation(fields: [authorId], references: [id])
-  likes       Like[]
-  bookmarks   Bookmark[]
-}
+-- prompts 테이블
+CREATE TABLE prompts (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  content TEXT NOT NULL,
+  category TEXT NOT NULL,
+  tags JSONB,
+  ai_model TEXT,
+  preview_image TEXT,
+  is_public BOOLEAN DEFAULT true,
+  author_id UUID REFERENCES profiles(id) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
 
-model Like {
-  user      User     @relation(fields: [userId], references: [id])
-  prompt    Prompt   @relation(fields: [promptId], references: [id])
-  @@unique([userId, promptId])
-}
+-- likes 테이블 (예정)
+CREATE TABLE likes (
+  user_id UUID REFERENCES profiles(id),
+  prompt_id INTEGER REFERENCES prompts(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  PRIMARY KEY (user_id, prompt_id)
+);
 
-model Bookmark {
-  user      User     @relation(fields: [userId], references: [id])
-  prompt    Prompt   @relation(fields: [promptId], references: [id])
-  @@unique([userId, promptId])
-}
+-- bookmarks 테이블 (예정)
+CREATE TABLE bookmarks (
+  user_id UUID REFERENCES profiles(id),
+  prompt_id INTEGER REFERENCES prompts(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  PRIMARY KEY (user_id, prompt_id)
+);
 ```
 
 ---
@@ -212,16 +217,34 @@ model Bookmark {
 - ✅ 북마크 기능 (이미지 미리보기 포함)
 - ✅ 프롬프트 상세 페이지
 - ✅ 로그인 보호 기능 (블러 처리)
-- ✅ 로컬 백엔드 환경 구성 (Prisma + SQLite)
-- ✅ 사용자 인증 API (회원가입, 로그인, 로그아웃)
-- ✅ Supabase 백엔드 통합 (v1.2 추가)
+- ✅ Supabase 백엔드 완전 통합 (v2.0)
+- ✅ Supabase Auth 마이그레이션 완료
+- ✅ Prisma 제거 및 Supabase 직접 쿼리 전환
+- ✅ RLS (Row Level Security) 활성화
+- ✅ 환경변수 최적화 및 보안 강화
 
 ### 진행 중
-- 🔄 Supabase Auth로 인증 시스템 마이그레이션
-- 🔄 프롬프트 CRUD API 구현
+- 🔄 프롬프트 CRUD API 구현 (Create, Update, Delete)
 - 🔄 OAuth 로그인 연동 (Google, Kakao)
+- 🔄 좋아요/북마크 테이블 생성 및 API 구현
 
 ### 예정 기능
-- 📋 프롬프트 업로드 기능
+- 📋 프롬프트 업로드 기능 완성
 - 📋 댓글 및 평점 시스템
 - 📋 이미지 업로드 (Supabase Storage)
+- 📋 사용자 프로필 페이지
+- 📋 프롬프트 버전 관리 시스템
+- 📋 관리자 대시보드
+
+---
+
+## 주요 업데이트 내역
+
+### v2.0 (2025.08.28)
+- **Supabase 완전 통합**: Prisma 제거, Supabase 직접 쿼리 사용
+- **Supabase Auth 마이그레이션**: JWT/bcrypt 제거, Supabase Auth 전환
+- **데이터베이스 변경**: SQLite → PostgreSQL (Supabase)
+- **보안 강화**: RLS 활성화, Service Role Key 사용
+- **코드 최적화**: 불필요한 의존성 제거, 환경변수 정리
+- **타입 안정성**: TypeScript 타입 점검 완료
+- **API 안정화**: 모든 API 엔드포인트 검증 완료
