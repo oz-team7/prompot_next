@@ -1,0 +1,8 @@
+.logo {
+  filter: brightness(0) saturate(100%) invert(57%) sepia(97%) saturate(2201%) hue-rotate(360deg) brightness(101%) contrast(106%);
+  transition: transform 0.2s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}

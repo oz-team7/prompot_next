@@ -1,0 +1,447 @@
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import Image from 'next/image';
+import Header from '@/components/Header';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePrompts } from '@/hooks/usePrompts';
+import { Prompt } from '@/types/prompt';
+import Toast from '@/components/Toast';
+
+const MyPage = () => {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings'>('prompts');
+  const { prompts: allPrompts, loading, error, refetch } = usePrompts({ author: true });
+  const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
+  const [bookmarkedPrompts, setBookmarkedPrompts] = useState<Prompt[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    // 사용자의 프롬프트만 필터링
+    if (allPrompts.length > 0) {
+      setMyPrompts(allPrompts.filter(p => p.authorId === user?.id));
+      // 북마크된 프롬프트 필터링 (현재는 임시로 빈 배열)
+      setBookmarkedPrompts(allPrompts.filter(p => p.isBookmarked));
+    }
+  }, [allPrompts, user]);
+
+  const handleDelete = (id: number) => {
+    setDeleteTargetId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTargetId) {
+      try {
+        const res = await fetch(`/api/prompts/${deleteTargetId}`, {
+          method: 'DELETE',
+        });
+
+        if (!res.ok) {
+          throw new Error('프롬프트 삭제에 실패했습니다.');
+        }
+
+        setMyPrompts(prev => prev.filter(p => p.id !== deleteTargetId));
+        setToastMessage('프롬프트가 삭제되었습니다.');
+        setToastType('success');
+        setShowToast(true);
+        setShowDeleteModal(false);
+        setDeleteTargetId(null);
+        refetch();
+      } catch (error) {
+        setToastMessage('프롬프트 삭제 중 오류가 발생했습니다.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    const currentPasswordInput = document.getElementById('currentPassword') as HTMLInputElement;
+    const newPasswordInput = document.getElementById('newPassword') as HTMLInputElement;
+    const confirmPasswordInput = document.getElementById('confirmPassword') as HTMLInputElement;
+
+    const currentPassword = currentPasswordInput.value;
+    const newPassword = newPasswordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+
+    // 유효성 검사
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setToastMessage('모든 비밀번호 필드를 입력해주세요.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setToastMessage('새 비밀번호는 6자 이상이어야 합니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setToastMessage('새 비밀번호가 일치하지 않습니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || '비밀번호 변경에 실패했습니다.');
+      }
+
+      // 성공 처리
+      setToastMessage('비밀번호가 성공적으로 변경되었습니다.');
+      setToastType('success');
+      setShowToast(true);
+
+      // 입력 필드 초기화
+      currentPasswordInput.value = '';
+      newPasswordInput.value = '';
+      confirmPasswordInput.value = '';
+    } catch (error: any) {
+      setToastMessage(error.message || '비밀번호 변경 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
+  const tabs = [
+    { id: 'prompts', label: '내 프롬프트', count: myPrompts.length },
+    { id: 'bookmarks', label: '북마크', count: bookmarkedPrompts.length },
+    { id: 'settings', label: '설정', count: null },
+  ];
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  return (
+    <>
+      <Header />
+      <main className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-6 max-w-6xl">
+          {/* 프로필 헤더 */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+                <span className="text-2xl font-bold text-primary">
+                  {user.name?.[0]?.toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">{user.name}</h1>
+                <p className="text-gray-600">{user.email}</p>
+                <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                  <span>프롬프트 {myPrompts.length}개</span>
+                  <span>•</span>
+                  <span>북마크 {bookmarkedPrompts.length}개</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 탭 메뉴 */}
+          <div className="flex gap-2 mb-6 border-b">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-4 py-2 font-medium transition-colors relative ${
+                  activeTab === tab.id
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {tab.label}
+                {tab.count !== null && (
+                  <span className="ml-2 text-sm text-gray-500">({tab.count})</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* 탭 콘텐츠 */}
+          <div>
+            {/* 내 프롬프트 탭 */}
+            {activeTab === 'prompts' && (
+              <div>
+                {loading ? (
+                  <div className="text-center py-16">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="mt-4 text-gray-600">프롬프트를 불러오는 중...</p>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-16">
+                    <p className="text-red-500">{error}</p>
+                    <button onClick={refetch} className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
+                      다시 시도
+                    </button>
+                  </div>
+                ) : myPrompts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {myPrompts.map(prompt => (
+                      <div key={prompt.id} className="bg-white rounded-lg shadow-sm p-4">
+                        {prompt.previewImage && (
+                          <div className="relative w-full h-40 mb-3">
+                            <Image
+                              src={prompt.previewImage}
+                              alt={prompt.title}
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                          </div>
+                        )}
+                        <h3 className="font-semibold mb-1">{prompt.title}</h3>
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                          {prompt.description}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                          <span>{prompt.date}</span>
+                          <span>좋아요 {prompt.likes}개</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/prompt/${prompt.id}`}
+                            className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-center text-sm"
+                          >
+                            보기
+                          </Link>
+                          <Link
+                            href={`/prompt/edit/${prompt.id}`}
+                            className="flex-1 px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
+                          >
+                            수정
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(prompt.id)}
+                            className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 bg-white rounded-lg">
+                    <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">작성한 프롬프트가 없습니다</h3>
+                    <p className="text-gray-600 mb-4">첫 프롬프트를 작성해보세요!</p>
+                    <Link
+                      href="/prompt/create"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      프롬프트 작성
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 북마크 탭 */}
+            {activeTab === 'bookmarks' && (
+              <div>
+                {bookmarkedPrompts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {bookmarkedPrompts.map(prompt => (
+                      <div key={prompt.id} className="bg-white rounded-lg shadow-sm p-4">
+                        {prompt.previewImage && (
+                          <div className="relative w-full h-40 mb-3">
+                            <Image
+                              src={prompt.previewImage}
+                              alt={prompt.title}
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                          </div>
+                        )}
+                        <h3 className="font-semibold mb-1">{prompt.title}</h3>
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                          {prompt.description}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                          <span>{prompt.author}</span>
+                          <span>{prompt.date}</span>
+                        </div>
+                        <Link
+                          href={`/prompt/${prompt.id}`}
+                          className="block w-full px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
+                        >
+                          자세히 보기
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 bg-white rounded-lg">
+                    <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">북마크한 프롬프트가 없습니다</h3>
+                    <p className="text-gray-600">마음에 드는 프롬프트를 북마크해보세요!</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 설정 탭 */}
+            {activeTab === 'settings' && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-lg font-semibold mb-4">계정 설정</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                    <input
+                      type="text"
+                      value={user.name}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                    <input
+                      type="email"
+                      value={user.email}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                    />
+                  </div>
+                  
+                  {/* 비밀번호 변경 섹션 */}
+                  <div className="pt-4 border-t">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">비밀번호 변경</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
+                        <input
+                          type="password"
+                          id="currentPassword"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="현재 비밀번호를 입력하세요"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+                        <input
+                          type="password"
+                          id="newPassword"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="새 비밀번호를 입력하세요 (6자 이상)"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
+                        <input
+                          type="password"
+                          id="confirmPassword"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="새 비밀번호를 다시 입력하세요"
+                        />
+                      </div>
+                      <button
+                        onClick={handlePasswordChange}
+                        className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                      >
+                        비밀번호 변경
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">알림 설정</h3>
+                    <label className="flex items-center gap-2">
+                      <input type="checkbox" className="rounded" defaultChecked />
+                      <span className="text-sm text-gray-600">내 프롬프트에 좋아요를 받으면 알림</span>
+                    </label>
+                    <label className="flex items-center gap-2 mt-2">
+                      <input type="checkbox" className="rounded" defaultChecked />
+                      <span className="text-sm text-gray-600">내 프롬프트에 댓글이 달리면 알림</span>
+                    </label>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                      알림 설정 저장
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-2">프롬프트 삭제</h3>
+            <p className="text-gray-600 mb-6">
+              이 프롬프트를 삭제하시겠습니까? 삭제된 프롬프트는 복구할 수 없습니다.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast 알림 */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
+    </>
+  );
+};
+
+export default MyPage;

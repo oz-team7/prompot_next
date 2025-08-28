@@ -1,0 +1,115 @@
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create prompts table
+CREATE TABLE IF NOT EXISTS prompts (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category VARCHAR(100) NOT NULL,
+  tags JSONB DEFAULT '[]',
+  ai_model VARCHAR(100) NOT NULL,
+  preview_image TEXT,
+  is_public BOOLEAN DEFAULT true,
+  author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create likes table
+CREATE TABLE IF NOT EXISTS likes (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  prompt_id INTEGER NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, prompt_id)
+);
+
+-- Create bookmarks table
+CREATE TABLE IF NOT EXISTS bookmarks (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  prompt_id INTEGER NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, prompt_id)
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_prompts_author_id ON prompts(author_id);
+CREATE INDEX idx_prompts_category ON prompts(category);
+CREATE INDEX idx_prompts_is_public ON prompts(is_public);
+CREATE INDEX idx_prompts_created_at ON prompts(created_at DESC);
+CREATE INDEX idx_likes_user_id ON likes(user_id);
+CREATE INDEX idx_likes_prompt_id ON likes(prompt_id);
+CREATE INDEX idx_bookmarks_user_id ON bookmarks(user_id);
+CREATE INDEX idx_bookmarks_prompt_id ON bookmarks(prompt_id);
+
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create triggers for updated_at
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_prompts_updated_at BEFORE UPDATE ON prompts
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
+
+-- Users policies
+CREATE POLICY "Users can view their own profile" ON users
+  FOR SELECT USING (auth.uid()::text = id::text);
+
+CREATE POLICY "Users can update their own profile" ON users
+  FOR UPDATE USING (auth.uid()::text = id::text);
+
+-- Prompts policies
+CREATE POLICY "Public prompts are viewable by everyone" ON prompts
+  FOR SELECT USING (is_public = true);
+
+CREATE POLICY "Users can view their own private prompts" ON prompts
+  FOR SELECT USING (auth.uid()::text = author_id::text AND is_public = false);
+
+CREATE POLICY "Users can insert their own prompts" ON prompts
+  FOR INSERT WITH CHECK (auth.uid()::text = author_id::text);
+
+CREATE POLICY "Users can update their own prompts" ON prompts
+  FOR UPDATE USING (auth.uid()::text = author_id::text);
+
+CREATE POLICY "Users can delete their own prompts" ON prompts
+  FOR DELETE USING (auth.uid()::text = author_id::text);
+
+-- Likes policies
+CREATE POLICY "Users can view all likes" ON likes
+  FOR SELECT USING (true);
+
+CREATE POLICY "Users can manage their own likes" ON likes
+  FOR ALL USING (auth.uid()::text = user_id::text);
+
+-- Bookmarks policies
+CREATE POLICY "Users can view their own bookmarks" ON bookmarks
+  FOR SELECT USING (auth.uid()::text = user_id::text);
+
+CREATE POLICY "Users can manage their own bookmarks" ON bookmarks
+  FOR ALL USING (auth.uid()::text = user_id::text);
