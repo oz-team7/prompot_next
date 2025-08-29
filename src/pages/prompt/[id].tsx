@@ -26,16 +26,19 @@ const PromptDetailPage = () => {
 
   const fetchPrompt = async () => {
     try {
+      console.log('Fetching prompt with ID:', id);
       const res = await fetch(`/api/prompts/${id}`, {
         credentials: 'include', // 인증 쿠키 포함
       });
-      if (!res.ok) {
-        if (res.status === 401) {
-          throw new Error('로그인이 필요합니다.');
-        }
-        throw new Error('프롬프트를 찾을 수 없습니다.');
-      }
+      
+      console.log('Response status:', res.status);
       const data = await res.json();
+      console.log('Response data:', data);
+      
+      if (!res.ok) {
+        throw new Error(data.message || '프롬프트를 불러올 수 없습니다.');
+      }
+      
       setPrompt(data.prompt);
     } catch (error: any) {
       console.error('Fetch prompt error:', error);
