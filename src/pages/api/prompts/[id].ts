@@ -27,15 +27,36 @@ function parseTags(input: unknown): string[] {
 }
 
 async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null> {
-  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
-  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) return null
-  const userClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-    auth: { persistSession: false },
-  })
-  const { data, error } = await userClient.auth.getUser()
-  if (error) return null
-  return data.user?.id ?? null
+  console.log('Request headers:', req.headers);
+  
+  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+  if (!token) {
+    console.log('No authorization token provided');
+    return null;
+  }
+
+  try {
+    const supabase = createSupabaseServiceClient();
+    
+    // JWT 토큰으로 사용자 정보 가져오기
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error) {
+      console.error('Auth verification error:', error);
+      return null;
+    }
+
+    if (!user) {
+      console.log('No user found for token');
+      return null;
+    }
+
+    console.log('Successfully verified user:', user.id);
+    return user.id;
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return null;
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -174,10 +195,26 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
 
   if (error) {
     console.error('[PUT prompts] update error:', error)
-    return json(res, 500, { ok: false, error: 'DB_ERROR' })
+    return json(res, 500, { 
+      ok: false, 
+      error: 'DB_ERROR',
+      message: error.message || '데이터베이스 오류가 발생했습니다.'
+    })
   }
 
-  return json(res, 200, { ok: true, prompt: { ...updated, tags: parseTags(updated.tags) } })
+  if (!updated) {
+    return json(res, 400, {
+      ok: false,
+      error: 'UPDATE_FAILED',
+      message: '프롬프트 수정에 실패했습니다.'
+    })
+  }
+
+  return json(res, 200, { 
+    ok: true, 
+    prompt: { ...updated, tags: parseTags(updated.tags) },
+    message: '프롬프트가 성공적으로 수정되었습니다.'
+  })
 }
 
 async function handleDelete(req: NextApiRequest, res: NextApiResponse, id: string) {

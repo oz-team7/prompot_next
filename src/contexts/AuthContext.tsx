@@ -24,8 +24,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 서버에서 현재 사용자 정보 가져오기
     const checkAuth = async () => {
       try {
+        // 토큰이 없으면 인증되지 않은 것으로 간주
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+
         const res = await fetch('/api/auth/me', {
-          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
         
         if (res.ok) {
@@ -35,14 +45,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           // 인증되지 않은 경우 로컬 스토리지도 클리어
           localStorage.removeItem('user');
+          localStorage.removeItem('token');
           setUser(null);
         }
       } catch (error) {
         console.error('Auth check error:', error);
         // 에러 발생 시 로컬 스토리지 확인
         const storedUser = localStorage.getItem('user');
-        if (storedUser) {
+        const token = localStorage.getItem('token');
+        if (storedUser && token) {
           setUser(JSON.parse(storedUser));
+        } else {
+          // 토큰이 없으면 사용자 정보도 제거
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setUser(null);
         }
       } finally {
         setIsLoading(false);
@@ -63,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const data = await res.json();
+    console.log('Login response:', data);  // 디버깅 로그 추가
 
     if (!res.ok) {
       throw new Error(data.message || '로그인에 실패했습니다.');
@@ -70,6 +88,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
+    
+    // 토큰 저장
+    if (data.token) {
+      console.log('Saving token:', data.token);  // 디버깅 로그 추가
+      localStorage.setItem('token', data.token);
+    } else {
+      console.warn('No token received from server');  // 디버깅 로그 추가
+    }
   };
 
   const logout = async () => {
@@ -80,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   const isAuthenticated = !!user;

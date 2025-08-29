@@ -10,8 +10,7 @@ export default async function handler(
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const cookies = cookie.parse(req.headers.cookie || '');
-  const token = cookies['auth-token'];
+  const token = req.headers.authorization?.replace('Bearer ', '');
 
   if (!token) {
     return res.status(401).json({ message: '인증이 필요합니다.' });

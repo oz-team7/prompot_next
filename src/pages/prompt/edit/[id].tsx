@@ -13,6 +13,21 @@ interface AIModel {
   icon: string;
 }
 
+interface Prompt {
+  id: string;
+  title: string;
+  category: CategoryType;
+  ai_model: string;
+  tags: string[] | string;
+  description: string;
+  content: string;
+  is_public: boolean;
+  preview_image: string | null;
+  created_at: string;
+  updated_at: string;
+  author_id: string;
+}
+
 const EditPromptPage = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -78,48 +93,52 @@ const EditPromptPage = () => {
   ];
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
     if (id) {
       fetchPrompt();
     }
-  }, [id, isAuthenticated, router]);
+  }, [id]);
 
   const fetchPrompt = async () => {
+    if (!id) return;
+    
     try {
+      setLoading(true);
       const res = await fetch(`/api/prompts/${id}`, {
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
       });
 
       if (!res.ok) {
-        throw new Error('프롬프트를 불러올 수 없습니다.');
-      }
-
-      const data = await res.json();
-      const prompt = data.prompt;
-
-      // 권한 확인
-      if (prompt.authorId !== user?.id) {
-        setToastMessage('수정 권한이 없습니다.');
+        console.error('Failed to fetch prompt:', res.status);
+        setToastMessage('프롬프트를 불러올 수 없습니다.');
         setToastType('error');
         setShowToast(true);
-        setTimeout(() => router.push('/mypage'), 1500);
+        router.push('/mypage');
         return;
       }
 
+      const data = await res.json();
+      
+      if (!data) {
+        throw new Error('프롬프트 데이터를 가져오는데 실패했습니다.');
+      }
+
+      const prompt: Prompt = data.prompt;
+
       setFormData({
-        title: prompt.title,
-        category: prompt.category,
-        aiModel: prompt.aiModel,
-        tags: prompt.tags.join(', '),
-        description: prompt.description,
-        content: prompt.content,
-        isPublic: prompt.isPublic,
+        title: prompt.title || '',
+        category: prompt.category || 'work',
+        aiModel: prompt.ai_model || 'chatgpt',
+        tags: Array.isArray(prompt.tags) ? prompt.tags.join(', ') : (typeof prompt.tags === 'string' ? prompt.tags : ''),
+        description: prompt.description || '',
+        content: prompt.content || '',
+        isPublic: prompt.is_public ?? true,
       });
-      setPreviewImage(prompt.previewImage);
+      
+      // 미리보기 이미지 설정
+      setPreviewImage(prompt.preview_image || null);
       setLoading(false);
     } catch (error) {
       console.error('Fetch prompt error:', error);
@@ -159,11 +178,6 @@ const EditPromptPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
     // 유효성 검사
     if (!formData.title || !formData.description || !formData.content) {
       setToastMessage('모든 필수 항목을 입력해주세요.');
@@ -172,23 +186,59 @@ const EditPromptPage = () => {
       return;
     }
 
+    console.log('Submitting form data:', formData);
+
     try {
+      console.log('Sending update request for prompt:', id);
+      
+      const updateData = {
+        ...formData,
+        preview_image: previewImage,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+      };
+      
+      const token = localStorage.getItem('token');
+      console.log('Token found in localStorage:', token ? 'yes' : 'no');
+      
+      if (!token) {
+        throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
+      }
+
+      // 토큰 디코딩해서 확인 (JWT)
+      try {
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+          const payload = JSON.parse(atob(tokenParts[1]));
+          console.log('Token payload:', {
+            exp: new Date(payload.exp * 1000).toISOString(),
+            sub: payload.sub,
+            email: payload.email
+          });
+        }
+      } catch (e) {
+        console.warn('Token parsing failed:', e);
+      }
+
       const res = await fetch(`/api/prompts/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...formData,
-          previewImage,
-        }),
+        body: JSON.stringify(updateData),
       });
 
       const data = await res.json();
+      console.log('Update response:', data);
 
       if (!res.ok) {
-        throw new Error(data.message || '프롬프트 수정에 실패했습니다.');
+        console.error('Update failed:', data);
+        const errorMessage = data.error || data.message || '프롬프트 수정에 실패했습니다.';
+        throw new Error(errorMessage);
+      }
+
+      if (!data.ok) {
+        throw new Error('프롬프트 수정에 실패했습니다.');
       }
 
       // 성공 처리
@@ -196,10 +246,8 @@ const EditPromptPage = () => {
       setToastType('success');
       setShowToast(true);
       
-      // 1.5초 후 페이지 이동
-      setTimeout(() => {
-        router.push('/mypage');
-      }, 1500);
+      // 즉시 마이페이지로 이동
+      router.push('/mypage');
     } catch (error: any) {
       console.error('Update prompt error:', error);
       setToastMessage(error.message || '프롬프트 수정 중 오류가 발생했습니다.');
