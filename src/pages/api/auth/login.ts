@@ -60,19 +60,10 @@ export default async function handler(
       return res.status(500).json({ message: '사용자 정보를 가져올 수 없습니다.' });
     }
 
-    // 세션 토큰을 쿠키에 저장
-    res.setHeader(
-      'Set-Cookie',
-      cookie.serialize('auth-token', data.session.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7, // 7일
-        path: '/',
-      })
-    );
-
+    // 클라이언트에 토큰과 사용자 정보 전달
     res.status(200).json({
+      ok: true,
+      token: data.session.access_token,
       user: {
         id: profile.id,
         email: profile.email,
