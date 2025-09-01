@@ -44,12 +44,22 @@ const MyPage = () => {
   const confirmDelete = async () => {
     if (deleteTargetId) {
       try {
+        // localStorage에서 토큰 가져오기
+        const token = localStorage.getItem('token');
+        console.log('Delete - Token from localStorage:', token); // 디버깅 로그
+        
         const res = await fetch(`/api/prompts/${deleteTargetId}`, {
           method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`, // 인증 헤더 추가
+          },
         });
 
+        console.log('Delete - Response status:', res.status); // 디버깅 로그
+        
         if (!res.ok) {
-          throw new Error('프롬프트 삭제에 실패했습니다.');
+          const errorData = await res.json();
+          throw new Error(errorData.message || '프롬프트 삭제에 실패했습니다.');
         }
 
         setMyPrompts(prev => prev.filter(p => p.id !== deleteTargetId));
@@ -60,6 +70,7 @@ const MyPage = () => {
         setDeleteTargetId(null);
         refetch();
       } catch (error) {
+        console.error('Delete error:', error); // 디버깅 로그
         setToastMessage('프롬프트 삭제 중 오류가 발생했습니다.');
         setToastType('error');
         setShowToast(true);
@@ -99,10 +110,15 @@ const MyPage = () => {
     }
 
     try {
+      // localStorage에서 토큰 가져오기
+      const token = localStorage.getItem('token');
+      console.log('Password change - Token from localStorage:', token); // 디버깅 로그
+      
       const res = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // 인증 헤더 추가
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -111,6 +127,8 @@ const MyPage = () => {
         }),
       });
 
+      console.log('Password change - Response status:', res.status); // 디버깅 로그
+      
       const data = await res.json();
 
       if (!res.ok) {

@@ -14,7 +14,17 @@ export const usePrompts = (options?: { author?: boolean }) => {
     try {
       setLoading(true);
       const query = options?.author ? '?author=true' : '';
-      const res = await fetch(`/api/prompts${query}`);
+      
+      // localStorage에서 토큰 가져오기 (선택적)
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const res = await fetch(`/api/prompts${query}`, {
+        headers,
+      });
       
       if (!res.ok) {
         throw new Error('프롬프트를 가져오는데 실패했습니다.');
