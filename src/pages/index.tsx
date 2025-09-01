@@ -17,7 +17,7 @@ export default function Home() {
       <main>
         <Header />
         {/* Hero 섹션을 PromptGrid에 포함 */}
-        <PromptGrid showHero={true} useAPI={true} />
+        <PromptGrid showHero={true} useAPI={true} showCreateButton={true} />
       </main>
     </>
   );
