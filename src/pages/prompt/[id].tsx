@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
+import RatingSystem from '@/components/RatingSystem';
+import CommentSection from '@/components/CommentSection';
 import { Prompt } from '@/types/prompt';
 
 const PromptDetailPage = () => {
@@ -146,6 +148,20 @@ const PromptDetailPage = () => {
 
             {/* 설명 */}
             <p className="text-sm text-gray-700 line-clamp-2">{prompt.description}</p>
+
+            {/* 별점 시스템 */}
+            <div className="mt-4">
+              <RatingSystem promptId={prompt.id.toString()} />
+            </div>
+
+            {/* 구분선 */}
+            <hr className="my-6 border-gray-200" />
+
+            {/* 댓글 섹션 */}
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold mb-4">댓글</h2>
+              <CommentSection promptId={prompt.id.toString()} />
+            </div>
           </div>
 
           {/* 미리보기 이미지 */}

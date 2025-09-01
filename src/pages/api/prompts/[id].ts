@@ -27,34 +27,32 @@ function parseTags(input: unknown): string[] {
 }
 
 async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null> {
-  console.log('Request headers:', req.headers);
-  
-  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
-  if (!token) {
-    console.log('No authorization token provided');
+  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
+  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.log('Missing token or Supabase credentials');
     return null;
   }
 
   try {
-    const supabase = createSupabaseServiceClient();
+    const userClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false },
+    })
     
-    // JWT 토큰으로 사용자 정보 가져오기
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+    const { data, error } = await userClient.auth.getUser()
     if (error) {
-      console.error('Auth verification error:', error);
+      console.error('Auth getUser error:', error);
       return null;
     }
-
-    if (!user) {
-      console.log('No user found for token');
+    
+    if (!data.user?.id) {
+      console.log('No user ID in auth response');
       return null;
     }
-
-    console.log('Successfully verified user:', user.id);
-    return user.id;
+    
+    return data.user.id;
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('getUserIdFromRequest error:', error);
     return null;
   }
 }

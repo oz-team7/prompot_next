@@ -2,6 +2,11 @@ import type { NextApiRequest } from 'next';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import * as cookie from 'cookie';
 
+export async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null> {
+  const user = await getAuthUser(req);
+  return user?.id ?? null;
+}
+
 export async function getAuthUser(req: NextApiRequest) {
   // 먼저 Authorization 헤더에서 Bearer 토큰 확인
   const authHeader = req.headers.authorization;
