@@ -54,7 +54,7 @@ export default async function handler(
     console.log('Processed tags:', processedTags); // 디버깅 로그
     
     // 삽입할 데이터 준비
-    const insertData = {
+    const insertData: any = {
       title,
       description,
       content,
