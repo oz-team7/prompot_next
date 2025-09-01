@@ -133,10 +133,15 @@ const CreatePromptPage = () => {
     }
 
     try {
+      // localStorage에서 토큰 가져오기
+      const token = localStorage.getItem('token');
+      console.log('Token from localStorage:', token); // 디버깅 로그
+      
       const res = await fetch('/api/prompts/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // 인증 헤더 추가
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -145,7 +150,9 @@ const CreatePromptPage = () => {
         }),
       });
 
+      console.log('Response status:', res.status); // 디버깅 로그
       const data = await res.json();
+      console.log('Response data:', data); // 디버깅 로그
 
       if (!res.ok) {
         throw new Error(data.message || '프롬프트 생성에 실패했습니다.');

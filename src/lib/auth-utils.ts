@@ -3,8 +3,17 @@ import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import * as cookie from 'cookie';
 
 export async function getAuthUser(req: NextApiRequest) {
-  const cookies = cookie.parse(req.headers.cookie || '');
-  const token = cookies['auth-token'];
+  // 먼저 Authorization 헤더에서 Bearer 토큰 확인
+  const authHeader = req.headers.authorization;
+  let token = null;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+  } else {
+    // 쿠키에서 토큰 확인 (기존 방식)
+    const cookies = cookie.parse(req.headers.cookie || '');
+    token = cookies['auth-token'];
+  }
 
   if (!token) {
     return null;

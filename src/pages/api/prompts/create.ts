@@ -19,11 +19,15 @@ export default async function handler(
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
+  console.log('Request headers:', req.headers); // 디버깅 로그
+
   // 인증 확인
   let authUser;
   try {
     authUser = await requireAuth(req);
+    console.log('Auth user:', authUser); // 디버깅 로그
   } catch (error) {
+    console.log('Auth error:', error); // 디버깅 로그
     return res.status(401).json({ message: '인증이 필요합니다.' });
   }
   
@@ -37,33 +41,44 @@ export default async function handler(
   try {
     const supabase = createSupabaseServiceClient();
     
+    // tags 처리 개선
+    let processedTags = [];
+    if (tags) {
+      if (Array.isArray(tags)) {
+        processedTags = tags.filter(tag => tag && typeof tag === 'string' && tag.trim());
+      } else if (typeof tags === 'string') {
+        processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      }
+    }
+    
+    console.log('Processed tags:', processedTags); // 디버깅 로그
+    
+    // 삽입할 데이터 준비
+    const insertData = {
+      title,
+      description,
+      content,
+      category,
+      ai_model: aiModel,
+      preview_image: previewImage || null,
+      is_public: isPublic ?? true,
+      author_id: authUser.id,
+    };
+    
+    // tags가 있을 때만 추가
+    if (processedTags.length > 0) {
+      insertData.tags = processedTags;
+    }
+    
     const { data: prompt, error } = await supabase
       .from('prompts')
-      .insert([
-        {
-          title,
-          description,
-          content,
-          category,
-          tags: JSON.stringify(tags ? tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []),
-          ai_model: aiModel,
-          preview_image: previewImage || null,
-          is_public: isPublic ?? true,
-          author_id: authUser.id,
-        }
-      ])
+      .insert([insertData])
       .select(`
         *,
-        author:users!author_id (
+        author:profiles!author_id (
           id,
           name,
           email
-        ),
-        likes!left (
-          user_id
-        ),
-        bookmarks!left (
-          user_id
         )
       `)
       .single();
@@ -75,9 +90,9 @@ export default async function handler(
     res.status(201).json({
       prompt: {
         ...prompt,
-        tags: JSON.parse(prompt.tags),
-        likes: prompt.likes?.length || 0,
-        bookmarks: prompt.bookmarks?.length || 0,
+        tags: prompt.tags || [], // null 체크 추가
+        likes: 0, // likes 테이블이 없으므로 임시로 0
+        bookmarks: 0, // bookmarks 테이블이 없으므로 임시로 0
         author: prompt.author.name,
         date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
         rating: 0,
