@@ -144,17 +144,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           {(pageTitle || showCreateButton) && (
             <div className="flex items-center justify-between mb-6">
               {pageTitle && <h1 className="text-2xl font-bold">{pageTitle}</h1>}
-              {showCreateButton && (
-                <button
-                  onClick={handleCreatePrompt}
-                  className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1.5 text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  New
-                </button>
-              )}
             </div>
           )}
 
@@ -188,16 +177,29 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             <option value="rating">평점순</option>
           </select>
 
+          <div className="ml-auto flex gap-2">
+            {showCreateButton && (
+              <button
+                onClick={handleCreatePrompt}
+                className="px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1 sm:gap-2"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New
+              </button>
+            )}
 
-          <button
-            onClick={() => setShowBookmarks(!showBookmarks)}
-            className="ml-auto px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1 sm:gap-2"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-            북마크
-          </button>
+            <button
+              onClick={() => setShowBookmarks(!showBookmarks)}
+              className="px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1 sm:gap-2"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              북마크
+            </button>
+          </div>
         </div>
 
         {/* Loading State */}
