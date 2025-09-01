@@ -187,23 +187,38 @@ const MyPage = () => {
           </div>
 
           {/* 탭 메뉴 */}
-          <div className="flex gap-2 mb-6 border-b">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-2 font-medium transition-colors relative ${
-                  activeTab === tab.id
-                    ? 'text-primary border-b-2 border-primary'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+          <div className="flex gap-2 mb-6 border-b justify-between items-center">
+            <div className="flex gap-2">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-4 py-2 font-medium transition-colors relative ${
+                    activeTab === tab.id
+                      ? 'text-primary border-b-2 border-primary'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count !== null && (
+                    <span className="ml-2 text-sm text-gray-500">({tab.count})</span>
+                  )}
+                </button>
+              ))}
+            </div>
+            
+            {/* 내 프롬프트 탭에서만 추가 버튼 표시 */}
+            {activeTab === 'prompts' && (
+              <Link
+                href="/prompt/create"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
               >
-                {tab.label}
-                {tab.count !== null && (
-                  <span className="ml-2 text-sm text-gray-500">({tab.count})</span>
-                )}
-              </button>
-            ))}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                New
+              </Link>
+            )}
           </div>
 
           {/* 탭 콘텐츠 */}
