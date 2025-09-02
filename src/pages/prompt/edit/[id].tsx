@@ -198,25 +198,8 @@ const EditPromptPage = () => {
       };
       
       const token = localStorage.getItem('token');
-      console.log('Token found in localStorage:', token ? 'yes' : 'no');
-      
       if (!token) {
         throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
-      }
-
-      // 토큰 디코딩해서 확인 (JWT)
-      try {
-        const tokenParts = token.split('.');
-        if (tokenParts.length === 3) {
-          const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('Token payload:', {
-            exp: new Date(payload.exp * 1000).toISOString(),
-            sub: payload.sub,
-            email: payload.email
-          });
-        }
-      } catch (e) {
-        console.warn('Token parsing failed:', e);
       }
 
       const res = await fetch(`/api/prompts/${id}`, {

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Header from '@/components/Header';
+import ContactForm from '@/components/ContactForm';
+import Modal from '@/components/Modal';
 
 interface FAQItem {
   id: number;
@@ -11,6 +13,7 @@ interface FAQItem {
 const FAQPage = () => {
   const [openItems, setOpenItems] = useState<number[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const faqData: FAQItem[] = [
     // 일반 질문
@@ -226,22 +229,20 @@ const FAQPage = () => {
           </div>
 
           {/* 추가 도움말 섹션 */}
-          <div className="mt-12 bg-primary/5 rounded-lg p-6 text-center">
-            <h2 className="text-xl font-semibold mb-3">더 궁금한 점이 있으신가요?</h2>
-            <p className="text-gray-600 mb-4">
-              FAQ에서 원하는 답변을 찾지 못하셨다면 이메일로 문의해주세요.
-            </p>
-            <a
-              href="mailto:support@prompot.com"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              support@prompot.com
-            </a>
-          </div>
+                <div className="mt-8 text-center">
+        <button
+          onClick={() => setShowContactModal(true)}
+          className="inline-flex items-center px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors"
+        >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          문의하기
+        </button>
+        <Modal isOpen={showContactModal} onClose={() => setShowContactModal(false)}>
+          <ContactForm supportEmail="support@prompot.com" />
+        </Modal>
+      </div>
         </div>
       </main>
     </>

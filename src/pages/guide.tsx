@@ -186,7 +186,7 @@ const GuidePage = () => {
               <iframe
                 width="100%"
                 height="100%"
-                src="https://www.youtube.com/embed/mURYu7ey-9c?start=1"
+                src="https://www.youtube.com/embed/pOTCUP8q_hw"
                 title="PROMPOT 사용 가이드"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

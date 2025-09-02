@@ -89,7 +89,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
         prompt.title.toLowerCase().includes(query) ||
         prompt.description.toLowerCase().includes(query) ||
         prompt.tags.some(tag => tag.toLowerCase().includes(query)) ||
-        prompt.author.toLowerCase().includes(query)
+        (prompt.author?.name || '').toLowerCase().includes(query)
       );
     }
 

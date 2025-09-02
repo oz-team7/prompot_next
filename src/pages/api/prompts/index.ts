@@ -70,7 +70,7 @@ export default async function handler(
     }) || [];
 
     // 정렬 적용
-    let sortedPrompts = [...promptsWithRatings];
+    const sortedPrompts = [...promptsWithRatings];
     switch (sort) {
       case 'popular':
         // 인기순: 평균 별점 높은 순, 평가 수 많은 순, 최신순
@@ -103,8 +103,11 @@ export default async function handler(
       aiModel: prompt.ai_model,
       previewImage: prompt.preview_image,
       isPublic: prompt.is_public,
-      author: prompt.author.name,
-      authorId: prompt.author.id,
+      author: {
+        id: prompt.author.id,
+        name: prompt.author.name,
+        email: prompt.author.email
+      },
       date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
       likes: 0, // likes 테이블이 없으므로 임시로 0
       bookmarks: 0, // bookmarks 테이블이 없으므로 임시로 0
