@@ -26,6 +26,13 @@ export default function ContactForm({ supportEmail }: ContactFormProps) {
     }
 
     try {
+      console.log('문의하기 폼 전송 시작:', {
+        to: supportEmail,
+        from: email,
+        subject: subject,
+        messageLength: message.length
+      });
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
@@ -39,10 +46,19 @@ export default function ContactForm({ supportEmail }: ContactFormProps) {
         }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('메일 전송에 실패했습니다.');
+        console.error('API 응답 에러:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        });
+        throw new Error(data.message || '메일 전송에 실패했습니다.');
       }
 
+      console.log('메일 전송 성공:', data);
+      
       setToastMessage('메일이 성공적으로 전송되었습니다.');
       setToastType('success');
       setShowToast(true);
