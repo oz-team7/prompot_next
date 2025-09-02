@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RatingSystemProps {
@@ -16,11 +16,7 @@ export default function RatingSystem({ promptId, className = '', onRatingChange 
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => {
-    fetchRating();
-  }, [promptId]);
-
-  const fetchRating = async () => {
+  const fetchRating = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`/api/prompts/${promptId}/ratings`, {
@@ -41,7 +37,11 @@ export default function RatingSystem({ promptId, className = '', onRatingChange 
     } finally {
       setLoading(false);
     }
-  };
+  }, [promptId]);
+
+  useEffect(() => {
+    fetchRating();
+  }, [fetchRating]);
 
   const handleRate = async (value: number) => {
     if (!user) {

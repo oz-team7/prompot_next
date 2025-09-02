@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -23,13 +23,7 @@ const PromptDetailPage = () => {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (id) {
-      fetchPrompt();
-    }
-  }, [id]);
-
-  const fetchPrompt = async () => {
+  const fetchPrompt = useCallback(async () => {
     try {
       console.log('Fetching prompt with ID:', id);
       const res = await fetch(`/api/prompts/${id}`, {
@@ -58,7 +52,13 @@ const PromptDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, router]);
+
+  useEffect(() => {
+    if (id) {
+      fetchPrompt();
+    }
+  }, [fetchPrompt, id]);
 
   if (loading) {
     return (

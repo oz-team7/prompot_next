@@ -81,12 +81,12 @@ export default async function handler(
     try {
       await transporter.verify();
       console.log('SMTP 연결 테스트 성공');
-    } catch (verifyError) {
+    } catch (verifyError: unknown) {
       console.error('SMTP 연결 테스트 실패:', {
-        name: verifyError.name,
-        message: verifyError.message,
-        code: verifyError.code,
-        command: verifyError.command
+        name: verifyError instanceof Error ? verifyError.name : 'Unknown',
+        message: verifyError instanceof Error ? verifyError.message : String(verifyError),
+        code: (verifyError as any)?.code,
+        command: (verifyError as any)?.command
       });
       throw verifyError;
     }

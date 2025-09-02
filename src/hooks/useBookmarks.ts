@@ -44,9 +44,9 @@ export const useBookmarks = () => {
         console.warn('[DEBUG] Invalid bookmarks data:', data);
         setBookmarks([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[DEBUG] useBookmarks error:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
       setBookmarks([]); // 에러 시 빈 배열로 설정
     } finally {
       setLoading(false);
@@ -76,9 +76,9 @@ export const useBookmarks = () => {
 
       // 북마크 목록 새로고침
       await fetchBookmarks();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[DEBUG] Add bookmark error:', err);
-      throw err;
+      throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
     }
   };
 
@@ -103,9 +103,9 @@ export const useBookmarks = () => {
 
       // 북마크 목록 새로고침
       await fetchBookmarks();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[DEBUG] Remove bookmark error:', err);
-      throw err;
+      throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
     }
   };
 

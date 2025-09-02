@@ -166,18 +166,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'DELETE':
       try {
-        const { bookmarkId } = req.body;
-        console.log('[DEBUG] Deleting bookmark:', bookmarkId);
+        const { promptId } = req.query; // body 대신 query에서 받기
+        console.log('[DEBUG] Deleting bookmark for prompt:', promptId);
 
-        if (!bookmarkId) {
-          return res.status(400).json({ message: '북마크 ID가 필요합니다.' });
+        if (!promptId) {
+          return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
         }
 
-        // 북마크 삭제
+        // 북마크 삭제 (prompt_id로 찾기)
         const { error } = await supabase
           .from('prompt_bookmarks')
           .delete()
-          .eq('id', bookmarkId)
+          .eq('prompt_id', promptId)
           .eq('user_id', userId);
 
         console.log('[DEBUG] Delete bookmark result:', { error });
