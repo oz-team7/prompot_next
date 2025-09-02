@@ -28,17 +28,17 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const router = useRouter();
   const { searchQuery } = useSearch();
   const { isAuthenticated } = useAuth();
-  const { prompts: apiPrompts, loading, error, refetch } = usePrompts();
-  
-  // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
-  const promptsData = useAPI ? apiPrompts : (initialPrompts || []);
-  
   const [prompts, setPrompts] = useState<Prompt[]>(promptsData);
   const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>(promptsData);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('none');
   const [bookmarkedPrompts, setBookmarkedPrompts] = useState<number[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
+  
+  const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ sort: sortBy === 'popular' ? 'popular' : sortBy === 'recent' ? 'latest' : undefined });
+  
+  // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
+  const promptsData = useAPI ? apiPrompts : (initialPrompts || []);
 
   // API에서 데이터를 가져온 경우 prompts 상태 업데이트
   useEffect(() => {
