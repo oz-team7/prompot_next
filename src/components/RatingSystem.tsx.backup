@@ -2,19 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RatingSystemProps {
+  onRatingChange?: (success: boolean, message: string) => void;
   promptId: string;
   className?: string;
-  onRatingChange?: (success: boolean, message: string) => void;
 }
 
-export default function RatingSystem({ promptId, className = '', onRatingChange }: RatingSystemProps) {
+export default function RatingSystem({ promptId, className = '' }: RatingSystemProps) {
   const { user } = useAuth();
   const [rating, setRating] = useState<number | null>(null);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [average, setAverage] = useState(0);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchRating();
@@ -48,14 +47,7 @@ export default function RatingSystem({ promptId, className = '', onRatingChange 
       onRatingChange?.(false, '별점을 남기려면 로그인이 필요합니다.');
       return;
     }
-
-    // 이미 같은 별점을 클릭한 경우 처리
-    if (rating === value) {
-      onRatingChange?.(false, '이미 같은 별점을 선택하셨습니다.');
-      return;
-    }
-
-    setIsUpdating(true);
+    if (!user) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -69,23 +61,11 @@ export default function RatingSystem({ promptId, className = '', onRatingChange 
         body: JSON.stringify({ rating: value }),
       });
 
-      const data = await res.json();
-
       if (res.ok) {
-        await fetchRating();
-        
-        // 메시지 개선: 등록 vs 변경
-        const ratingText = value === 1 ? '1점' : `${value}점`;
-        const actionText = rating === null ? '등록' : '변경';
-        onRatingChange?.(true, `${ratingText} 별점을 ${actionText}했습니다!`);
-      } else {
-        onRatingChange?.(false, data.message || '별점 등록에 실패했습니다.');
+        fetchRating();
       }
     } catch (error) {
       console.error('Rating update error:', error);
-      onRatingChange?.(false, '별점 등록 중 오류가 발생했습니다.');
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -103,24 +83,15 @@ export default function RatingSystem({ promptId, className = '', onRatingChange 
               onClick={() => handleRate(star)}
               onMouseEnter={() => setHoveredRating(star)}
               onMouseLeave={() => setHoveredRating(null)}
-              disabled={!user || isUpdating}
-              className={`p-1 transition-all duration-200 ${
-                isUpdating ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              title={
-                !user ? '로그인이 필요합니다' : 
-                isUpdating ? '업데이트 중...' :
-                rating === star ? `${star}점 (현재 선택됨)` :
-                rating ? `${star}점으로 변경` :
-                `${star}점 등록`
-              }
+              disabled={!user}
+              className="p-1"
             >
               <svg
                 className={`w-6 h-6 ${
                   (hoveredRating !== null ? star <= hoveredRating : star <= (rating || 0))
                     ? 'text-yellow-400'
                     : 'text-gray-300'
-                } ${user && !isUpdating ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+                } ${user ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -131,21 +102,11 @@ export default function RatingSystem({ promptId, className = '', onRatingChange 
         </div>
         <div className="text-sm text-gray-600">
           평균 {average.toFixed(1)} ({total}개의 평가)
-          {rating && (
-            <span className="ml-2 text-blue-600">
-              내 별점: {rating}점
-            </span>
-          )}
         </div>
       </div>
       {!user && (
         <p className="text-sm text-gray-500 mt-1">
           별점을 남기려면 로그인이 필요합니다.
-        </p>
-      )}
-      {isUpdating && (
-        <p className="text-sm text-blue-600 mt-1">
-          별점을 업데이트하는 중...
         </p>
       )}
     </div>

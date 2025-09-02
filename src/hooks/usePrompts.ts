@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Prompt } from '@/types/prompt';
 
-export const usePrompts = (options?: { author?: boolean }) => {
+export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPrompts();
-  }, []);
-
   const fetchPrompts = async () => {
     try {
       setLoading(true);
-      const query = options?.author ? '?author=true' : '';
+      
+      // 쿼리 파라미터 구성
+      const params = new URLSearchParams();
+      if (options?.author) {
+        params.append('author', 'true');
+      }
+      if (options?.sort) {
+        params.append('sort', options.sort);
+      }
+      
+      const query = params.toString() ? `?${params.toString()}` : '';
       
       // localStorage에서 토큰 가져오기 (선택적)
       const token = localStorage.getItem('token');
@@ -46,6 +52,10 @@ export const usePrompts = (options?: { author?: boolean }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPrompts();
+  }, [options?.sort]);
 
   const refetch = () => {
     fetchPrompts();

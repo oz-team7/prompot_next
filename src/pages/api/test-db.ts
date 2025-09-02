@@ -19,11 +19,17 @@ export default async function handler(
       .select('count')
       .limit(1);
     
+    const { data: ratings, error: ratingsError } = await supabase
+      .from('prompt_ratings')
+      .select('count')
+      .limit(1);
+    
     res.status(200).json({
       status: 'connected',
       tables: {
         profiles: profilesError ? `Error: ${profilesError.message}` : 'OK',
-        prompts: promptsError ? `Error: ${promptsError.message}` : 'OK'
+        prompts: promptsError ? `Error: ${promptsError.message}` : 'OK',
+        prompt_ratings: ratingsError ? `Error: ${ratingsError.message}` : 'OK'
       },
       env: {
         url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',

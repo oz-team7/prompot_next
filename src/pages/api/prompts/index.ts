@@ -16,9 +16,9 @@ export default async function handler(
 
   try {
     const supabase = createSupabaseServiceClient();
-    const { category, author, isPublic } = req.query;
+    const { category, author, isPublic, sort = 'latest' } = req.query;
 
-    // 기본 쿼리 시작
+    // 기본 쿼리 시작 (별점 정보 포함)
     let query = supabase
       .from('prompts')
       .select(`
@@ -27,9 +27,11 @@ export default async function handler(
           id,
           name,
           email
+        ),
+        ratings:prompt_ratings!prompt_id (
+          rating
         )
-      `)
-      .order('created_at', { ascending: false });
+      `);
 
     // 공개 프롬프트만 가져오기 (기본값)
     if (isPublic !== 'false') {
@@ -52,7 +54,46 @@ export default async function handler(
       throw error;
     }
 
-    const formattedPrompts = prompts?.map(prompt => ({
+    // 별점 계산 및 정렬
+    const promptsWithRatings = prompts?.map(prompt => {
+      const ratings = prompt.ratings || [];
+      const totalRatings = ratings.length;
+      const averageRating = totalRatings > 0 
+        ? ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / totalRatings 
+        : 0;
+
+      return {
+        ...prompt,
+        averageRating: Number(averageRating.toFixed(1)),
+        totalRatings
+      };
+    }) || [];
+
+    // 정렬 적용
+    let sortedPrompts = [...promptsWithRatings];
+    switch (sort) {
+      case 'popular':
+        // 인기순: 평균 별점 높은 순, 평가 수 많은 순, 최신순
+        sortedPrompts.sort((a, b) => {
+          if (a.averageRating !== b.averageRating) {
+            return b.averageRating - a.averageRating;
+          }
+          if (a.totalRatings !== b.totalRatings) {
+            return b.totalRatings - a.totalRatings;
+          }
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+        break;
+      case 'latest':
+      default:
+        // 최신순 (기본값)
+        sortedPrompts.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        break;
+    }
+
+    const formattedPrompts = sortedPrompts.map(prompt => ({
       id: prompt.id,
       title: prompt.title,
       description: prompt.description,
@@ -69,8 +110,9 @@ export default async function handler(
       bookmarks: 0, // bookmarks 테이블이 없으므로 임시로 0
       isLiked: false,
       isBookmarked: false,
-      rating: 0, // 평점 기능은 추후 구현
-    })) || [];
+      rating: prompt.averageRating,
+      totalRatings: prompt.totalRatings,
+    }));
 
     res.status(200).json({ prompts: formattedPrompts });
   } catch (error: any) {

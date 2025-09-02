@@ -151,7 +151,7 @@ const PromptDetailPage = () => {
 
             {/* 별점 시스템 */}
             <div className="mt-4">
-              <RatingSystem promptId={prompt.id.toString()} />
+              <RatingSystem promptId={prompt.id.toString()} onRatingChange={(success, message) => { setToastMessage(message); setToastType(success ? "success" : "error"); setShowToast(true); }} />
             </div>
 
             {/* 구분선 */}
