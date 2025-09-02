@@ -1,13 +1,10 @@
 // /src/pages/api/prompts/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
-import { createClient as createBrowserClient } from '@supabase/supabase-js'
+import { verifyToken } from '@/lib/auth-helper'
 
 const isUUID = (s: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
-
-const SUPABASE_URL = process.env.SUPABASE_URL!
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!
 
 function json(res: NextApiResponse, status: number, body: any) {
   return res.status(status).json(body)
@@ -16,7 +13,6 @@ function json(res: NextApiResponse, status: number, body: any) {
 function parseTags(input: unknown): string[] {
   if (Array.isArray(input)) return input.map(String)
   if (typeof input === 'string') {
-    // JSON 문자열일 수도 있고, "a,b,c"일 수도 있음
     try {
       const parsed = JSON.parse(input)
       if (Array.isArray(parsed)) return parsed.map(String)
@@ -27,34 +23,20 @@ function parseTags(input: unknown): string[] {
 }
 
 async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null> {
-  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
-  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.log('Missing token or Supabase credentials');
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('[DEBUG] No Bearer token found');
     return null;
   }
 
-  try {
-    const userClient = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { persistSession: false },
-    })
-    
-    const { data, error } = await userClient.auth.getUser()
-    if (error) {
-      console.error('Auth getUser error:', error);
-      return null;
-    }
-    
-    if (!data.user?.id) {
-      console.log('No user ID in auth response');
-      return null;
-    }
-    
-    return data.user.id;
-  } catch (error) {
-    console.error('getUserIdFromRequest error:', error);
-    return null;
-  }
+  const token = authHeader.substring(7);
+  console.log('[DEBUG] Token extracted:', token.substring(0, 20) + '...');
+  
+  const result = await verifyToken(token);
+  console.log('[DEBUG] Token verification result:', result ? 'success' : 'failed');
+  
+  return result?.userId || null;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -142,8 +124,16 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
 }
 
 async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) {
+  console.log('[DEBUG] PUT request headers:', req.headers);
+  console.log('[DEBUG] PUT request body:', req.body);
+  
   const userId = await getUserIdFromRequest(req)
-  if (!userId) return json(res, 401, { ok: false, error: 'UNAUTHORIZED' })
+  console.log('[DEBUG] Extracted user ID:', userId);
+  
+  if (!userId) {
+    console.log('[DEBUG] No user ID found, returning UNAUTHORIZED');
+    return json(res, 401, { ok: false, error: 'UNAUTHORIZED', message: '인증이 필요합니다.' })
+  }
 
   const svc = createSupabaseServiceClient()
 
