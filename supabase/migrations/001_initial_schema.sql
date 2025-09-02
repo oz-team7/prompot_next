@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS likes (
   UNIQUE(user_id, prompt_id)
 );
 
--- Create bookmarks table
-CREATE TABLE IF NOT EXISTS bookmarks (
+-- Create prompt_bookmarks table
+CREATE TABLE IF NOT EXISTS prompt_bookmarks (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   prompt_id INTEGER NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
@@ -52,8 +52,8 @@ CREATE INDEX idx_prompts_is_public ON prompts(is_public);
 CREATE INDEX idx_prompts_created_at ON prompts(created_at DESC);
 CREATE INDEX idx_likes_user_id ON likes(user_id);
 CREATE INDEX idx_likes_prompt_id ON likes(prompt_id);
-CREATE INDEX idx_bookmarks_user_id ON bookmarks(user_id);
-CREATE INDEX idx_bookmarks_prompt_id ON bookmarks(prompt_id);
+CREATE INDEX idx_prompt_bookmarks_user_id ON prompt_bookmarks(user_id);
+CREATE INDEX idx_prompt_bookmarks_prompt_id ON prompt_bookmarks(prompt_id);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -75,7 +75,7 @@ CREATE TRIGGER update_prompts_updated_at BEFORE UPDATE ON prompts
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bookmarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE prompt_bookmarks ENABLE ROW LEVEL SECURITY;
 
 -- Users policies
 CREATE POLICY "Users can view their own profile" ON users
@@ -107,9 +107,9 @@ CREATE POLICY "Users can view all likes" ON likes
 CREATE POLICY "Users can manage their own likes" ON likes
   FOR ALL USING (auth.uid()::text = user_id::text);
 
--- Bookmarks policies
-CREATE POLICY "Users can view their own bookmarks" ON bookmarks
+-- Prompt_bookmarks policies
+CREATE POLICY "Users can view their own prompt_bookmarks" ON prompt_bookmarks
   FOR SELECT USING (auth.uid()::text = user_id::text);
 
-CREATE POLICY "Users can manage their own bookmarks" ON bookmarks
+CREATE POLICY "Users can manage their own prompt_bookmarks" ON prompt_bookmarks
   FOR ALL USING (auth.uid()::text = user_id::text);

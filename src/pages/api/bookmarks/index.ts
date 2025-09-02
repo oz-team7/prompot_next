@@ -1,0 +1,201 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { getUserIdFromRequest } from '@/lib/auth-utils';
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('[DEBUG] Bookmarks API called:', req.method);
+  
+  const userId = await getUserIdFromRequest(req);
+  console.log('[DEBUG] User ID:', userId);
+  
+  if (!userId) {
+    console.log('[DEBUG] No user ID found');
+    return res.status(401).json({ message: '인증이 필요합니다.' });
+  }
+
+  const supabase = createSupabaseServiceClient();
+
+  switch (req.method) {
+    case 'GET':
+      try {
+        // 사용자의 북마크 목록 가져오기 (단순 쿼리로 시작)
+        console.log('[DEBUG] Fetching bookmarks for user:', userId);
+        const { data: bookmarks, error } = await supabase
+          .from('prompt_bookmarks')
+          .select(`
+            id,
+            created_at,
+            prompt_id
+          `)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        console.log('[DEBUG] Bookmarks query result:', { bookmarks, error });
+
+        if (error) {
+          console.error('Bookmarks fetch error:', error);
+          return res.status(500).json({ message: '북마크 목록을 가져오는데 실패했습니다.' });
+        }
+
+        // 북마크된 프롬프트 ID 목록
+        const promptIds = bookmarks?.map(b => b.prompt_id) || [];
+        console.log('[DEBUG] Prompt IDs:', promptIds);
+
+        // 프롬프트 데이터 가져오기
+        let promptsData: any[] = [];
+        if (promptIds.length > 0) {
+          const { data: prompts, error: promptsError } = await supabase
+            .from('prompts')
+            .select(`
+              id,
+              title,
+              description,
+              content,
+              category,
+              tags,
+              ai_model,
+              preview_image,
+              is_public,
+              created_at,
+              updated_at,
+              author_id
+            `)
+            .in('id', promptIds);
+
+          console.log('[DEBUG] Prompts query result:', { prompts, error: promptsError });
+
+          if (promptsError) {
+            console.error('Prompts fetch error:', promptsError);
+          } else {
+            promptsData = prompts || [];
+          }
+        }
+
+        // 작성자 정보 가져오기
+        const authorIds = [...new Set(promptsData.map(p => p.author_id))];
+        console.log('[DEBUG] Author IDs:', authorIds);
+        let authorsData: any[] = [];
+        if (authorIds.length > 0) {
+          const { data: authors, error: authorsError } = await supabase
+            .from('profiles')
+            .select('id, name, email')
+            .in('id', authorIds);
+
+          console.log('[DEBUG] Authors query result:', { authors, error: authorsError });
+
+          if (authorsError) {
+            console.error('Authors fetch error:', authorsError);
+          } else {
+            authorsData = authors || [];
+          }
+        }
+
+        // 작성자 정보를 Map으로 변환
+        const authorsMap = new Map(authorsData.map(author => [author.id, author]));
+        const promptsMap = new Map(promptsData.map(prompt => [prompt.id, prompt]));
+
+        // 북마크 데이터를 프론트엔드 형식으로 변환
+        const formattedBookmarks = bookmarks?.map(bookmark => {
+          const prompt = promptsMap.get(bookmark.prompt_id);
+          const author = prompt ? authorsMap.get(prompt.author_id) : null;
+
+          return {
+            id: bookmark.id,
+            createdAt: bookmark.created_at,
+            prompt: {
+              id: bookmark.prompt_id,
+              title: prompt?.title || `프롬프트 ${bookmark.prompt_id}`,
+              description: prompt?.description || '프롬프트 설명을 불러오는 중...',
+              content: prompt?.content || '',
+              category: prompt?.category || 'work',
+              tags: prompt?.tags || [],
+              aiModel: prompt?.ai_model || 'unknown',
+              previewImage: prompt?.preview_image,
+              isPublic: prompt?.is_public ?? true,
+              createdAt: prompt?.created_at || bookmark.created_at,
+              updatedAt: prompt?.updated_at || bookmark.created_at,
+              author: author?.name || 'Unknown',
+              authorId: author?.id,
+            }
+          };
+        }) || [];
+
+        console.log('[DEBUG] Formatted bookmarks:', formattedBookmarks);
+        res.status(200).json({ bookmarks: formattedBookmarks });
+      } catch (error) {
+        console.error('Get bookmarks error:', error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+      }
+      break;
+
+    case 'POST':
+      try {
+        const { promptId } = req.body;
+        console.log('[DEBUG] Adding bookmark for prompt:', promptId);
+
+        if (!promptId) {
+          return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
+        }
+
+        // 북마크 추가
+        const { data: bookmark, error } = await supabase
+          .from('prompt_bookmarks')
+          .insert({
+            user_id: userId,
+            prompt_id: promptId,
+          })
+          .select()
+          .single();
+
+        console.log('[DEBUG] Add bookmark result:', { bookmark, error });
+
+        if (error) {
+          if (error.code === '23505') { // Unique constraint violation
+            return res.status(409).json({ message: '이미 북마크된 프롬프트입니다.' });
+          }
+          console.error('Bookmark create error:', error);
+          return res.status(500).json({ message: '북마크 추가에 실패했습니다.' });
+        }
+
+        res.status(201).json({ bookmark });
+      } catch (error) {
+        console.error('Add bookmark error:', error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+      }
+      break;
+
+    case 'DELETE':
+      try {
+        const { bookmarkId } = req.body;
+        console.log('[DEBUG] Deleting bookmark:', bookmarkId);
+
+        if (!bookmarkId) {
+          return res.status(400).json({ message: '북마크 ID가 필요합니다.' });
+        }
+
+        // 북마크 삭제
+        const { error } = await supabase
+          .from('prompt_bookmarks')
+          .delete()
+          .eq('id', bookmarkId)
+          .eq('user_id', userId);
+
+        console.log('[DEBUG] Delete bookmark result:', { error });
+
+        if (error) {
+          console.error('Bookmark delete error:', error);
+          return res.status(500).json({ message: '북마크 삭제에 실패했습니다.' });
+        }
+
+        res.status(200).json({ message: '북마크가 삭제되었습니다.' });
+      } catch (error) {
+        console.error('Delete bookmark error:', error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+      }
+      break;
+
+    default:
+      res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
+      res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  }
+}

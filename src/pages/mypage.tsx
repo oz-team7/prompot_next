@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePrompts } from '@/hooks/usePrompts';
+import { useBookmarks } from '@/hooks/useBookmarks';
 import { Prompt } from '@/types/prompt';
 import Toast from '@/components/Toast';
 import AvatarUpload from '@/components/AvatarUpload';
@@ -14,8 +15,8 @@ const MyPage = () => {
   const { user, isAuthenticated, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings'>('prompts');
   const { prompts: allPrompts, loading, error, refetch } = usePrompts({ author: true });
+  const { bookmarks, loading: bookmarksLoading, error: bookmarksError, removeBookmark, refetch: refetchBookmarks } = useBookmarks();
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
-  const [bookmarkedPrompts, setBookmarkedPrompts] = useState<Prompt[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -57,8 +58,6 @@ const MyPage = () => {
     // 사용자의 프롬프트만 필터링
     if (allPrompts.length > 0) {
       setMyPrompts(allPrompts.filter(p => p.authorId === user?.id));
-      // 북마크된 프롬프트 필터링 (현재는 임시로 빈 배열)
-      setBookmarkedPrompts(allPrompts.filter(p => p.isBookmarked));
     }
   }, [allPrompts, user]);
 
@@ -214,7 +213,7 @@ const MyPage = () => {
 
   const tabs = [
     { id: 'prompts', label: '내 프롬프트', count: myPrompts.length },
-    { id: 'bookmarks', label: '북마크', count: bookmarkedPrompts.length },
+    { id: 'bookmarks', label: '북마크', count: bookmarks.length },
     { id: 'settings', label: '설정', count: null },
   ];
 
@@ -252,7 +251,7 @@ const MyPage = () => {
                 <div className="flex gap-4 mt-2 text-sm text-gray-500">
                   <span>프롬프트 {myPrompts.length}개</span>
                   <span>•</span>
-                  <span>북마크 {bookmarkedPrompts.length}개</span>
+                  <span>북마크 {bookmarks.length}개</span>
                 </div>
               </div>
             </div>
@@ -380,34 +379,65 @@ const MyPage = () => {
             {/* 북마크 탭 */}
             {activeTab === 'bookmarks' && (
               <div>
-                {bookmarkedPrompts.length > 0 ? (
+                {bookmarksLoading ? (
+                  <div className="text-center py-16">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="mt-4 text-gray-600">북마크를 불러오는 중...</p>
+                  </div>
+                ) : bookmarksError ? (
+                  <div className="text-center py-16">
+                    <p className="text-red-500">{bookmarksError}</p>
+                    <button onClick={refetchBookmarks} className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
+                      다시 시도
+                    </button>
+                  </div>
+                ) : bookmarks.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {bookmarkedPrompts.map(prompt => (
-                      <div key={prompt.id} className="bg-white rounded-lg shadow-sm p-4">
-                        {prompt.previewImage && (
+                    {bookmarks.map(bookmark => (
+                      <div key={bookmark.id} className="bg-white rounded-lg shadow-sm p-4">
+                        {bookmark.prompt.previewImage && (
                           <div className="relative w-full h-40 mb-3">
                             <Image
-                              src={prompt.previewImage}
-                              alt={prompt.title}
+                              src={bookmark.prompt.previewImage}
+                              alt={bookmark.prompt.title}
                               fill
                               className="object-cover rounded-lg"
                             />
                           </div>
                         )}
-                        <h3 className="font-semibold mb-1">{prompt.title}</h3>
+                        <h3 className="font-semibold mb-1">{bookmark.prompt.title}</h3>
                         <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {prompt.description}
+                          {bookmark.prompt.description}
                         </p>
                         <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                          <span>{prompt.author}</span>
-                          <span>{prompt.date}</span>
+                          <span>{bookmark.prompt.author}</span>
+                          <span>{new Date(bookmark.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <Link
-                          href={`/prompt/${prompt.id}`}
-                          className="block w-full px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
-                        >
-                          자세히 보기
-                        </Link>
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/prompt/${bookmark.prompt.id}`}
+                            className="flex-1 px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
+                          >
+                            자세히 보기
+                          </Link>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await removeBookmark(bookmark.id);
+                                setToastMessage('북마크가 삭제되었습니다.');
+                                setToastType('success');
+                                setShowToast(true);
+                              } catch (error) {
+                                setToastMessage('북마크 삭제에 실패했습니다.');
+                                setToastType('error');
+                                setShowToast(true);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+                          >
+                            삭제
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -418,7 +448,16 @@ const MyPage = () => {
                         d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">북마크한 프롬프트가 없습니다</h3>
-                    <p className="text-gray-600">마음에 드는 프롬프트를 북마크해보세요!</p>
+                    <p className="text-gray-600 mb-4">마음에 드는 프롬프트를 북마크해보세요!</p>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      프롬프트 탐색하기
+                    </Link>
                   </div>
                 )}
               </div>
