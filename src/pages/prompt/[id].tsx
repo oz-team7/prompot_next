@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import RatingSystem from '@/components/RatingSystem';
 import CommentSection from '@/components/CommentSection';
+import SharePrompt from '@/components/SharePrompt';
 import { Prompt } from '@/types/prompt';
 
 const PromptDetailPage = () => {
@@ -137,7 +138,7 @@ const PromptDetailPage = () => {
               <div className="flex-1">
                 <h1 className="text-xl font-bold mb-1">{prompt.title}</h1>
                 <div className="flex items-center gap-3 text-xs text-gray-600">
-                  <span>{prompt.author}</span>
+                  <span className="font-medium">{prompt.author.name}</span>
                   <span>•</span>
                   <span>{prompt.date}</span>
                   <span>•</span>
@@ -189,6 +190,9 @@ const PromptDetailPage = () => {
             <div className="mt-4">
               <RatingSystem promptId={prompt.id.toString()} onRatingChange={(success, message) => { setToastMessage(message); setToastType(success ? "success" : "error"); setShowToast(true); }} />
             </div>
+
+            {/* 공유하기 */}
+            <SharePrompt promptId={prompt.id.toString()} title={prompt.title} />
 
             {/* 구분선 */}
             <hr className="my-6 border-gray-200" />

@@ -98,18 +98,16 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
     return json(res, 404, { ok: false, error: 'NOT_FOUND' })
   }
 
-  // 3) 작성자 정보(있으면)
-  let authorName = '익명'
-  let authorEmail: string | null = null
-  const { data: authorRow } = await svc
-    .from('users') // 실제 테이블명이 'profiles'라면 여기 변경
-    .select('id,name,email')
+  // 3) 작성자 정보 가져오기
+  const { data: author } = await svc
+    .from('profiles')
+    .select('id, name, email')
     .eq('id', prompt.author_id)
-    .maybeSingle()
+    .single()
 
-  if (authorRow) {
-    authorName = authorRow.name ?? authorName
-    authorEmail = authorRow.email ?? null
+  if (!author) {
+    console.error('작성자 정보를 찾을 수 없음:', prompt.author_id)
+    return json(res, 500, { ok: false, error: 'AUTHOR_NOT_FOUND' })
   }
 
   // 4) 좋아요/북마크 카운트 (조인 대신 count)
@@ -129,8 +127,11 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
     prompt: {
       ...prompt,
       tags: parseTags(prompt.tags),
-      author: authorName,
-      authorEmail: authorEmail,
+      author: {
+        id: author.id,
+        name: author.name,
+        email: author.email
+      },
       likes: likesCount ?? 0,
       bookmarks: bookmarksCount ?? 0,
       rating: 0, // 항상 기본값 0 추가
