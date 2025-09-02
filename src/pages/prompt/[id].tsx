@@ -101,7 +101,7 @@ const PromptDetailPage = () => {
               <div className="flex-1">
                 <h1 className="text-xl font-bold mb-1">{prompt.title}</h1>
                 <div className="flex items-center gap-3 text-xs text-gray-600">
-                  <span>{prompt.author}</span>
+                  <span className="font-medium">{prompt.author.name}</span>
                   <span>•</span>
                   <span>{prompt.date}</span>
                   <span>•</span>
