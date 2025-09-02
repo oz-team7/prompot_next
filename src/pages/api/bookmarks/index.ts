@@ -25,7 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .select(`
             id,
             created_at,
-            prompt_id
+            prompt_id,
+            category_id
           `)
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
@@ -102,6 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return {
             id: bookmark.id,
             createdAt: bookmark.created_at,
+            categoryId: bookmark.category_id,
             prompt: {
               id: bookmark.prompt_id,
               title: prompt?.title || `프롬프트 ${bookmark.prompt_id}`,
@@ -130,8 +132,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'POST':
       try {
-        const { promptId } = req.body;
-        console.log('[DEBUG] Adding bookmark for prompt:', promptId);
+        const { promptId, categoryId } = req.body;
+        console.log('[DEBUG] Adding bookmark for prompt:', promptId, 'with category:', categoryId);
 
         if (!promptId) {
           return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
@@ -143,6 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .insert({
             user_id: userId,
             prompt_id: promptId,
+            category_id: categoryId || null,
           })
           .select()
           .single();
