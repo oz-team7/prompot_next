@@ -7,6 +7,7 @@ export interface Prompt {
   description: string;
   tags: string[];
   rating: number;
+  totalRatings?: number;
   likes: number;
   bookmarks?: number;
   isLiked?: boolean;
