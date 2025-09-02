@@ -89,13 +89,25 @@ export default async function handler(
 
     res.status(201).json({
       prompt: {
-        ...prompt,
-        tags: prompt.tags || [], // null 체크 추가
-        likes: 0, // likes 테이블이 없으므로 임시로 0
-        bookmarks: 0, // bookmarks 테이블이 없으므로 임시로 0
-        author: prompt.author.name,
+        id: prompt.id,
+        title: prompt.title,
+        description: prompt.description,
+        content: prompt.content,
+        category: prompt.category,
+        tags: prompt.tags || [],
+        aiModel: prompt.ai_model,
+        previewImage: prompt.preview_image,
+        isPublic: prompt.is_public,
+        author: {
+          id: prompt.author.id,
+          name: prompt.author.name,
+          email: prompt.author.email
+        },
         date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
+        likes: 0,
+        bookmarks: 0,
         rating: 0,
+        totalRatings: 0,
       },
     });
   } catch (error) {

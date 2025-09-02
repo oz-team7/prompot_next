@@ -163,9 +163,10 @@ const CreatePromptPage = () => {
       setToastType('success');
       setShowToast(true);
       
-      // 1.5초 후 페이지 이동
+      // 1.5초 후 페이지 이동 (새로고침 파라미터 추가)
       setTimeout(() => {
-        router.push('/mypage');
+        console.log('[DEBUG] Redirecting to mypage with refresh parameter');
+        router.push('/mypage?tab=prompts&refresh=true');
       }, 1500);
     } catch (error: any) {
       console.error('Create prompt error:', error);

@@ -53,15 +53,54 @@ const MyPage = () => {
     } else {
       // 인증된 사용자의 경우 프로필 정보 새로고침
       refreshUserProfile();
+      // 프롬프트 목록 강제 새로고침 추가
+      refetch();
     }
   }, [isAuthenticated, router]);
 
+  // URL 파라미터 처리 (프롬프트 생성 후 리다이렉트용)
   useEffect(() => {
-    // 사용자의 프롬프트만 필터링
+    if (isAuthenticated && router.query.tab === 'prompts' && router.query.refresh === 'true') {
+      console.log('[DEBUG] Detected refresh parameter, refetching prompts');
+      setActiveTab('prompts');
+      
+      // 즉시 새로고침 실행
+      refetch();
+      
+      // URL 파라미터 정리 (shallow: true로 변경하여 페이지 새로고침 방지)
+      router.replace('/mypage?tab=prompts', undefined, { shallow: true });
+      
+      // 추가로 1초 후 한 번 더 새로고침 (서버 지연 고려)
+      setTimeout(() => {
+        console.log('[DEBUG] Additional refetch after 1 second');
+        refetch();
+      }, 1000);
+      
+      // 추가로 3초 후 한 번 더 새로고침 (더 확실한 동기화)
+      setTimeout(() => {
+        console.log('[DEBUG] Final refetch after 3 seconds');
+        refetch();
+      }, 3000);
+    }
+  }, [isAuthenticated, router.query.tab, router.query.refresh]);
+
+  useEffect(() => {
+    // 사용자의 프롬프트만 필터링 (author.id와 user.id 비교)
     if (allPrompts.length > 0) {
-      setMyPrompts(allPrompts.filter(p => p.authorId === user?.id));
+      console.log('[DEBUG] Filtering prompts for user:', user?.id);
+      console.log('[DEBUG] All prompts:', allPrompts);
+      const filteredPrompts = allPrompts.filter(p => p.author.id === user?.id);
+      console.log('[DEBUG] Filtered prompts:', filteredPrompts);
+      setMyPrompts(filteredPrompts);
     }
   }, [allPrompts, user]);
+
+  // 페이지 방문 시 자동 새로고침 추가
+  useEffect(() => {
+    if (isAuthenticated && activeTab === 'prompts') {
+      refetch();
+    }
+  }, [isAuthenticated, activeTab]);
 
   const handleDelete = (id: number) => {
     setDeleteTargetId(id);
@@ -253,14 +292,7 @@ const MyPage = () => {
 
   // 북마크 탭 클릭 핸들러
   const handleBookmarkTabClick = () => {
-    console.log('[DEBUG] Bookmark tab clicked');
-    
-    // 토큰 재확인
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setToastMessage('로그인이 필요합니다.');
-      setToastType('error');
-      setShowToast(true);
+    if (!isAuthenticated) {
       router.push('/login');
       return;
     }
@@ -268,14 +300,16 @@ const MyPage = () => {
     setActiveTab('bookmarks');
     
     // 수동으로 북마크 새로고침
-    setTimeout(() => {
-      if (refetchBookmarks) {
-        refetchBookmarks().catch(error => {
+    setTimeout(async () => {
+      if (refetchBookmarks && typeof refetchBookmarks === 'function') {
+        try {
+          await refetchBookmarks();
+        } catch (error) {
           console.error('[DEBUG] Manual refetch error:', error);
           setToastMessage('북마크를 불러오는 중 오류가 발생했습니다.');
           setToastType('error');
           setShowToast(true);
-        });
+        }
       }
     }, 100);
   };
