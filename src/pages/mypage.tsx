@@ -8,11 +8,13 @@ import { usePrompts } from '@/hooks/usePrompts';
 import { Prompt } from '@/types/prompt';
 import Toast from '@/components/Toast';
 import AvatarUpload from '@/components/AvatarUpload';
+import ProfileImageModal from '@/components/ProfileImageModal';
 
 const MyPage = () => {
   const router = useRouter();
   const { user, isAuthenticated, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings'>('prompts');
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { prompts: allPrompts, loading, error, refetch } = usePrompts({ author: true });
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
   const [bookmarkedPrompts, setBookmarkedPrompts] = useState<Prompt[]>([]);
@@ -230,22 +232,42 @@ const MyPage = () => {
           {/* 프로필 헤더 */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex items-center gap-6">
-              {/* 프로필 사진 표시 (업로드 기능 없음) */}
+              {/* 프로필 사진 */}
               <div className="relative">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                <button 
+                  onClick={() => setShowProfileModal(true)}
+                  className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center hover:opacity-90 transition-opacity group relative"
+                >
                   {userProfile?.avatar_url || user?.avatar_url ? (
-                    <img
-                      src={userProfile?.avatar_url || user?.avatar_url}
-                      alt={user?.name || ''}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img
+                        src={userProfile?.avatar_url || user?.avatar_url}
+                        alt={user?.name || ''}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white text-sm">이미지 보기</span>
+                      </div>
+                    </>
                   ) : (
                     <span className="text-3xl font-bold text-gray-400">
                       {user?.name?.[0]?.toUpperCase()}
                     </span>
                   )}
-                </div>
+                </button>
               </div>
+
+              {/* 프로필 이미지 모달 */}
+              <ProfileImageModal 
+                isOpen={showProfileModal}
+                onClose={() => setShowProfileModal(false)}
+                user={user}
+                avatarUrl={userProfile?.avatar_url || user?.avatar_url}
+                onEdit={() => {
+                  setShowProfileModal(false);
+                  setActiveTab('settings');
+                }}
+              />
               <div>
                 <h1 className="text-2xl font-bold">{user?.name}</h1>
                 <p className="text-gray-600">{user?.email}</p>
