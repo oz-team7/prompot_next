@@ -86,7 +86,7 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
                       <h3 className="font-semibold text-sm mb-1 line-clamp-1">{prompt.title}</h3>
                       <p className="text-xs text-gray-600 mb-2 line-clamp-2">{prompt.description}</p>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-500">{prompt.author}</span>
+                        <span className="text-xs text-gray-500">{prompt.author?.name || '익명'}</span>
                         <button
                           onClick={(e) => {
                             e.preventDefault();
