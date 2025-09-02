@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Comment {
@@ -27,11 +27,7 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
-  useEffect(() => {
-    fetchComments();
-  }, [promptId, page]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`/api/prompts/${promptId}/comments?page=${page}`, {
@@ -55,7 +51,11 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
     } finally {
       setLoading(false);
     }
-  };
+  }, [promptId, page]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

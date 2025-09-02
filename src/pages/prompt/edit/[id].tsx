@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Header from '@/components/Header';
@@ -92,62 +92,53 @@ const EditPromptPage = () => {
     { id: 'controlnet', name: 'ControlNet', icon: '/image/icon_controlnet.png' },
   ];
 
+  const fetchPrompt = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/prompts/${id}`, {
+        credentials: 'include',
+      });
+      
+      if (!res.ok) {
+        throw new Error('프롬프트를 불러올 수 없습니다.');
+      }
+      
+      const data = await res.json();
+      const prompt = data.prompt;
+      
+      // 작성자 확인
+      if (prompt.author_id !== user?.id) {
+        router.push('/mypage');
+        return;
+      }
+      
+      setFormData({
+        title: prompt.title,
+        category: prompt.category,
+        aiModel: prompt.ai_model,
+        tags: Array.isArray(prompt.tags) ? prompt.tags.join(', ') : prompt.tags || '',
+        description: prompt.description,
+        content: prompt.content,
+        isPublic: prompt.is_public,
+      });
+      
+      if (prompt.preview_image) {
+        setPreviewImage(prompt.preview_image);
+      }
+    } catch (error: any) {
+      console.error('Fetch prompt error:', error);
+      setToastMessage(error.message || '프롬프트를 불러올 수 없습니다.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, user?.id, router]);
+
   useEffect(() => {
     if (id) {
       fetchPrompt();
     }
-  }, [id]);
-
-  const fetchPrompt = async () => {
-    if (!id) return;
-    
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/prompts/${id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (!res.ok) {
-        console.error('Failed to fetch prompt:', res.status);
-        setToastMessage('프롬프트를 불러올 수 없습니다.');
-        setToastType('error');
-        setShowToast(true);
-        router.push('/mypage');
-        return;
-      }
-
-      const data = await res.json();
-      
-      if (!data) {
-        throw new Error('프롬프트 데이터를 가져오는데 실패했습니다.');
-      }
-
-      const prompt: Prompt = data.prompt;
-
-      setFormData({
-        title: prompt.title || '',
-        category: prompt.category || 'work',
-        aiModel: prompt.ai_model || 'chatgpt',
-        tags: Array.isArray(prompt.tags) ? prompt.tags.join(', ') : (typeof prompt.tags === 'string' ? prompt.tags : ''),
-        description: prompt.description || '',
-        content: prompt.content || '',
-        isPublic: prompt.is_public ?? true,
-      });
-      
-      // 미리보기 이미지 설정
-      setPreviewImage(prompt.preview_image || null);
-      setLoading(false);
-    } catch (error) {
-      console.error('Fetch prompt error:', error);
-      setToastMessage('프롬프트를 불러오는 중 오류가 발생했습니다.');
-      setToastType('error');
-      setShowToast(true);
-      setTimeout(() => router.push('/mypage'), 1500);
-    }
-  };
+  }, [fetchPrompt, id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

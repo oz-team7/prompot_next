@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Prompt } from '@/types/prompt';
 
 export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
@@ -6,7 +6,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPrompts = async () => {
+  const fetchPrompts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -53,19 +53,20 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       
       console.log('[DEBUG] Formatted prompts:', formattedPrompts); // 디버깅 로그 추가
       setPrompts(formattedPrompts);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[DEBUG] usePrompts error:', err); // 디버깅 로그 추가
-      setError(err.message);
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [options?.sort, options?.author]);
 
   useEffect(() => {
     fetchPrompts();
-  }, [options?.sort, options?.author]); // author 옵션도 의존성에 추가
+  }, [fetchPrompts]);
 
   const refetch = () => {
+    console.log('[DEBUG] usePrompts refetch called with options:', options);
     fetchPrompts();
   };
 

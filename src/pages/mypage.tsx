@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -56,10 +56,16 @@ const MyPage = () => {
       // 프롬프트 목록 강제 새로고침 추가
       refetch();
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, refetch]);
 
   // URL 파라미터 처리 (프롬프트 생성 후 리다이렉트용)
   useEffect(() => {
+    console.log('[DEBUG] URL params check:', { 
+      isAuthenticated, 
+      tab: router.query.tab, 
+      refresh: router.query.refresh 
+    });
+    
     if (isAuthenticated && router.query.tab === 'prompts' && router.query.refresh === 'true') {
       console.log('[DEBUG] Detected refresh parameter, refetching prompts');
       setActiveTab('prompts');
@@ -82,16 +88,22 @@ const MyPage = () => {
         refetch();
       }, 3000);
     }
-  }, [isAuthenticated, router.query.tab, router.query.refresh]);
+  }, [isAuthenticated, router.query.tab, router.query.refresh, refetch, router]);
 
   useEffect(() => {
     // 사용자의 프롬프트만 필터링 (author.id와 user.id 비교)
     if (allPrompts.length > 0) {
       console.log('[DEBUG] Filtering prompts for user:', user?.id);
       console.log('[DEBUG] All prompts:', allPrompts);
-      const filteredPrompts = allPrompts.filter(p => p.author.id === user?.id);
+      const filteredPrompts = allPrompts.filter(p => {
+        console.log('[DEBUG] Comparing prompt author.id:', p.author?.id, 'with user.id:', user?.id);
+        return p.author?.id === user?.id;
+      });
       console.log('[DEBUG] Filtered prompts:', filteredPrompts);
       setMyPrompts(filteredPrompts);
+    } else {
+      console.log('[DEBUG] No prompts to filter');
+      setMyPrompts([]);
     }
   }, [allPrompts, user]);
 
@@ -100,7 +112,7 @@ const MyPage = () => {
     if (isAuthenticated && activeTab === 'prompts') {
       refetch();
     }
-  }, [isAuthenticated, activeTab]);
+  }, [isAuthenticated, activeTab, refetch]);
 
   const handleDelete = (id: number) => {
     setDeleteTargetId(id);
@@ -253,7 +265,7 @@ const MyPage = () => {
   };
 
   // 인증 상태 확인 및 재로그인 함수
-  const checkAuthAndRedirect = async () => {
+  const checkAuthAndRedirect = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       console.log('[DEBUG] No token found, redirecting to login');
@@ -281,14 +293,14 @@ const MyPage = () => {
       console.error('[DEBUG] Auth check error:', error);
       router.push('/login');
     }
-  };
+  }, [router]);
 
   // 인증 상태 확인 useEffect
   useEffect(() => {
     if (isAuthenticated) {
       checkAuthAndRedirect();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, checkAuthAndRedirect]);
 
   // 북마크 탭 클릭 핸들러
   const handleBookmarkTabClick = () => {
@@ -557,7 +569,7 @@ const MyPage = () => {
                           {bookmark.prompt.description}
                         </p>
                         <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                          <span>{bookmark.prompt.author}</span>
+                          <span>{typeof bookmark.prompt.author === 'string' ? bookmark.prompt.author : bookmark.prompt.author?.name || 'Unknown'}</span>
                           <span>{new Date(bookmark.createdAt).toLocaleDateString()}</span>
                         </div>
                         <div className="flex gap-2">

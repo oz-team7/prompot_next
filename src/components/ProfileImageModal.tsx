@@ -1,6 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
-import { User } from '@supabase/supabase-js';
+
+interface User {
+  id: string;
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+}
 
 interface ProfileImageModalProps {
   isOpen: boolean;
