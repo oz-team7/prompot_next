@@ -213,6 +213,73 @@ const MyPage = () => {
     }
   };
 
+  // 인증 상태 확인 및 재로그인 함수
+  const checkAuthAndRedirect = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('[DEBUG] No token found, redirecting to login');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        console.log('[DEBUG] Token invalid, redirecting to login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        router.push('/login');
+        return;
+      }
+
+      console.log('[DEBUG] Auth check successful');
+    } catch (error) {
+      console.error('[DEBUG] Auth check error:', error);
+      router.push('/login');
+    }
+  };
+
+  // 인증 상태 확인 useEffect
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkAuthAndRedirect();
+    }
+  }, [isAuthenticated]);
+
+  // 북마크 탭 클릭 핸들러
+  const handleBookmarkTabClick = () => {
+    console.log('[DEBUG] Bookmark tab clicked');
+    
+    // 토큰 재확인
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setToastMessage('로그인이 필요합니다.');
+      setToastType('error');
+      setShowToast(true);
+      router.push('/login');
+      return;
+    }
+    
+    setActiveTab('bookmarks');
+    
+    // 수동으로 북마크 새로고침
+    setTimeout(() => {
+      if (refetchBookmarks) {
+        refetchBookmarks().catch(error => {
+          console.error('[DEBUG] Manual refetch error:', error);
+          setToastMessage('북마크를 불러오는 중 오류가 발생했습니다.');
+          setToastType('error');
+          setShowToast(true);
+        });
+      }
+    }, 100);
+  };
+
   const tabs = [
     { id: 'prompts', label: '내 프롬프트', count: myPrompts.length },
     { id: 'bookmarks', label: '북마크', count: bookmarks.length },
@@ -285,16 +352,40 @@ const MyPage = () => {
               {tabs.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-4 py-2 font-medium transition-colors relative ${
+                  onClick={() => {
+                    if (tab.id === 'bookmarks') {
+                      handleBookmarkTabClick();
+                    } else {
+                      setActiveTab(tab.id as any);
+                    }
+                  }}
+                  className={`px-4 py-2 font-medium transition-colors relative flex items-center gap-1 ${
                     activeTab === tab.id
-                      ? 'text-primary border-b-2 border-primary'
-                      : 'text-gray-600 hover:text-gray-900'
+                      ? tab.id === 'bookmarks'
+                        ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50'
+                        : 'text-primary border-b-2 border-primary'
+                      : tab.id === 'bookmarks'
+                        ? 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
+                        : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
+                  {tab.id === 'bookmarks' && (
+                    <svg className="w-4 h-4" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  )}
                   {tab.label}
                   {tab.count !== null && (
-                    <span className="ml-2 text-sm text-gray-500">({tab.count})</span>
+                    <span className={`ml-1 text-sm ${
+                      activeTab === tab.id
+                        ? tab.id === 'bookmarks'
+                          ? 'text-orange-500'
+                          : 'text-gray-500'
+                        : 'text-gray-500'
+                    }`}>
+                      ({tab.count})
+                    </span>
                   )}
                 </button>
               ))}

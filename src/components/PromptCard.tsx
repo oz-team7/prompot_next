@@ -4,9 +4,11 @@ import { Prompt } from '@/types/prompt';
 interface PromptCardProps {
   prompt: Prompt;
   onLike: (id: number) => void;
+  onBookmark?: (id: number) => void;
+  isBookmarked?: boolean;
 }
 
-const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike }) => {
+const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isBookmarked = false }) => {
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-1 line-clamp-1" title={prompt.title}>
@@ -58,6 +60,33 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike }) => {
             </svg>
             <span className="ml-1">{prompt.likes}</span>
           </button>
+          {/* 북마크 버튼 추가 */}
+          {onBookmark && (
+            <>
+              <span className="text-gray-500">·</span>
+              <button
+                onClick={() => onBookmark(prompt.id)}
+                className="flex items-center hover:scale-110 transition-transform"
+                title={isBookmarked ? '북마크 제거' : '북마크 추가'}
+              >
+                <svg
+                  className={`w-4 h-4 ${
+                    isBookmarked ? 'text-primary fill-current' : 'text-gray-500'
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill={isBookmarked ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                  />
+                </svg>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
