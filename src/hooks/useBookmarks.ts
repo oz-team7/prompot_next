@@ -21,13 +21,27 @@ export const useBookmarks = (): UseBookmarksReturn => {
       setError(null);
 
       const token = localStorage.getItem('token');
+      console.log('[DEBUG] Token from localStorage:', token ? token.substring(0, 20) + '...' : 'null');
+      
       if (!token) {
         console.log('[DEBUG] No token found in localStorage');
         setError('인증이 필요합니다.');
         return;
       }
 
-      console.log('[DEBUG] Token found:', token.substring(0, 20) + '...');
+      // 인증 디버깅 API 호출
+      try {
+        const debugRes = await fetch('/api/test-token', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        const debugData = await debugRes.json();
+        console.log('[DEBUG] Auth debug result:', debugData);
+      } catch (debugError) {
+        console.error('[DEBUG] Auth debug error:', debugError);
+      }
+
       const res = await fetch('/api/bookmarks', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -60,6 +74,7 @@ export const useBookmarks = (): UseBookmarksReturn => {
         throw new Error('인증이 필요합니다.');
       }
 
+      console.log('[DEBUG] Adding bookmark for prompt:', promptId);
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -74,6 +89,7 @@ export const useBookmarks = (): UseBookmarksReturn => {
         throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
       }
 
+      console.log('[DEBUG] Bookmark added successfully');
       // 북마크 목록 새로고침
       await fetchBookmarks();
     } catch (err) {
@@ -89,6 +105,7 @@ export const useBookmarks = (): UseBookmarksReturn => {
         throw new Error('인증이 필요합니다.');
       }
 
+      console.log('[DEBUG] Removing bookmark:', bookmarkId);
       const res = await fetch('/api/bookmarks', {
         method: 'DELETE',
         headers: {
@@ -103,8 +120,9 @@ export const useBookmarks = (): UseBookmarksReturn => {
         throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
       }
 
-      // 북마크 목록에서 제거
-      setBookmarks(prev => prev.filter(bookmark => bookmark.id !== bookmarkId));
+      console.log('[DEBUG] Bookmark removed successfully');
+      // 북마크 목록 새로고침 (로컬 상태 업데이트 대신)
+      await fetchBookmarks();
     } catch (err) {
       console.error('Remove bookmark error:', err);
       throw err;
