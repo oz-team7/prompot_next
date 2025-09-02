@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Bookmark } from '@/types/prompt';
+import { Prompt } from '@/types/prompt';
 
-interface UseBookmarksReturn {
-  bookmarks: Bookmark[];
-  loading: boolean;
-  error: string | null;
-  addBookmark: (promptId: number) => Promise<void>;
-  removeBookmark: (bookmarkId: string) => Promise<void>;
-  refetch: () => Promise<void>;
+interface Bookmark {
+  id: number;
+  prompt: Prompt;
+  createdAt: string;
 }
 
-export const useBookmarks = (): UseBookmarksReturn => {
+export const useBookmarks = () => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBookmarks = async () => {
@@ -21,25 +18,10 @@ export const useBookmarks = (): UseBookmarksReturn => {
       setError(null);
 
       const token = localStorage.getItem('token');
-      console.log('[DEBUG] Token from localStorage:', token ? token.substring(0, 20) + '...' : 'null');
-      
       if (!token) {
-        console.log('[DEBUG] No token found in localStorage');
-        setError('인증이 필요합니다.');
+        // 토큰이 없으면 빈 배열로 설정하고 조용히 리턴
+        setBookmarks([]);
         return;
-      }
-
-      // 인증 디버깅 API 호출
-      try {
-        const debugRes = await fetch('/api/test-token', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        const debugData = await debugRes.json();
-        console.log('[DEBUG] Auth debug result:', debugData);
-      } catch (debugError) {
-        console.error('[DEBUG] Auth debug error:', debugError);
       }
 
       const res = await fetch('/api/bookmarks', {
@@ -48,20 +30,24 @@ export const useBookmarks = (): UseBookmarksReturn => {
         },
       });
 
-      console.log('[DEBUG] Bookmarks response status:', res.status);
-      
       if (!res.ok) {
         const errorData = await res.json();
-        console.error('[DEBUG] Bookmarks error response:', errorData);
-        throw new Error(errorData.message || '북마크 목록을 가져오는데 실패했습니다.');
+        throw new Error(errorData.message || '북마크를 가져오는데 실패했습니다.');
       }
 
       const data = await res.json();
-      console.log('[DEBUG] Bookmarks data:', data);
-      setBookmarks(data.bookmarks);
-    } catch (err) {
-      console.error('Fetch bookmarks error:', err);
-      setError(err instanceof Error ? err.message : '북마크 목록을 가져오는데 실패했습니다.');
+      
+      // 안전한 데이터 설정
+      if (data && Array.isArray(data.bookmarks)) {
+        setBookmarks(data.bookmarks);
+      } else {
+        console.warn('[DEBUG] Invalid bookmarks data:', data);
+        setBookmarks([]);
+      }
+    } catch (err: any) {
+      console.error('[DEBUG] useBookmarks error:', err);
+      setError(err.message);
+      setBookmarks([]); // 에러 시 빈 배열로 설정
     } finally {
       setLoading(false);
     }
@@ -74,7 +60,6 @@ export const useBookmarks = (): UseBookmarksReturn => {
         throw new Error('인증이 필요합니다.');
       }
 
-      console.log('[DEBUG] Adding bookmark for prompt:', promptId);
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -89,30 +74,26 @@ export const useBookmarks = (): UseBookmarksReturn => {
         throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
       }
 
-      console.log('[DEBUG] Bookmark added successfully');
       // 북마크 목록 새로고침
       await fetchBookmarks();
-    } catch (err) {
-      console.error('Add bookmark error:', err);
+    } catch (err: any) {
+      console.error('[DEBUG] Add bookmark error:', err);
       throw err;
     }
   };
 
-  const removeBookmark = async (bookmarkId: string) => {
+  const removeBookmark = async (promptId: number) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('인증이 필요합니다.');
       }
 
-      console.log('[DEBUG] Removing bookmark:', bookmarkId);
-      const res = await fetch('/api/bookmarks', {
+      const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ bookmarkId }),
       });
 
       if (!res.ok) {
@@ -120,13 +101,16 @@ export const useBookmarks = (): UseBookmarksReturn => {
         throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
       }
 
-      console.log('[DEBUG] Bookmark removed successfully');
-      // 북마크 목록 새로고침 (로컬 상태 업데이트 대신)
+      // 북마크 목록 새로고침
       await fetchBookmarks();
-    } catch (err) {
-      console.error('Remove bookmark error:', err);
+    } catch (err: any) {
+      console.error('[DEBUG] Remove bookmark error:', err);
       throw err;
     }
+  };
+
+  const refetch = async () => {
+    return fetchBookmarks();
   };
 
   useEffect(() => {
@@ -139,6 +123,6 @@ export const useBookmarks = (): UseBookmarksReturn => {
     error,
     addBookmark,
     removeBookmark,
-    refetch: fetchBookmarks,
+    refetch,
   };
 };

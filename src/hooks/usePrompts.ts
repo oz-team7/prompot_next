@@ -9,6 +9,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
   const fetchPrompts = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // 쿼리 파라미터 구성
       const params = new URLSearchParams();
@@ -20,23 +21,28 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       }
       
       const query = params.toString() ? `?${params.toString()}` : '';
+      console.log('[DEBUG] usePrompts fetching with query:', query); // 디버깅 로그 추가
       
-      // localStorage에서 토큰 가져오기 (선택적)
+      // localStorage에서 토큰 가져오기 (필수)
       const token = localStorage.getItem('token');
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      if (!token) {
+        throw new Error('인증이 필요합니다.');
       }
       
       const res = await fetch(`/api/prompts${query}`, {
-        headers,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
       
       if (!res.ok) {
-        throw new Error('프롬프트를 가져오는데 실패했습니다.');
+        const errorData = await res.json();
+        throw new Error(errorData.message || '프롬프트를 가져오는데 실패했습니다.');
       }
 
       const data = await res.json();
+      console.log('[DEBUG] usePrompts response:', data); // 디버깅 로그 추가
+      
       const formattedPrompts = data.prompts.map((prompt: any) => ({
         ...prompt,
         aiModel: prompt.aiModel ? {
@@ -45,8 +51,10 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
         } : undefined,
       }));
       
+      console.log('[DEBUG] Formatted prompts:', formattedPrompts); // 디버깅 로그 추가
       setPrompts(formattedPrompts);
     } catch (err: any) {
+      console.error('[DEBUG] usePrompts error:', err); // 디버깅 로그 추가
       setError(err.message);
     } finally {
       setLoading(false);
@@ -55,7 +63,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
 
   useEffect(() => {
     fetchPrompts();
-  }, [options?.sort]);
+  }, [options?.sort, options?.author]); // author 옵션도 의존성에 추가
 
   const refetch = () => {
     fetchPrompts();

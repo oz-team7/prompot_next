@@ -30,8 +30,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const { searchQuery } = useSearch();
   const { isAuthenticated } = useAuth();
   
-  // 로그인한 사용자만 북마크 기능 사용
-  const { bookmarks, addBookmark, removeBookmark } = isAuthenticated ? useBookmarks() : { bookmarks: [], addBookmark: async () => {}, removeBookmark: async () => {} };
+  // Hook을 항상 호출 (조건부 호출 제거)
+  const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('none');
   const [showBookmarks, setShowBookmarks] = useState(false);
@@ -99,8 +99,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
   };
 
-  // 북마크된 프롬프트 ID 목록 (로그인한 사용자만)
-  const bookmarkedPromptIds = isAuthenticated ? bookmarks.map(bookmark => bookmark.prompt.id) : [];
+  // 북마크된 프롬프트 ID 목록 (안전하게 처리)
+  const bookmarkedPromptIds = bookmarks ? bookmarks.map(bookmark => bookmark.prompt.id) : [];
 
   useEffect(() => {
     let filtered = [...prompts];
