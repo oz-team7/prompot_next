@@ -92,26 +92,6 @@ const EditPromptPage = () => {
     { id: 'controlnet', name: 'ControlNet', icon: '/image/icon_controlnet.png' },
   ];
 
-  // 토큰 디버깅 함수
-  const debugToken = async (token: string) => {
-    try {
-      const res = await fetch('/api/auth/debug-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await res.json();
-      console.log('[DEBUG] Token debug result:', data);
-      return data.ok === true;
-    } catch (error) {
-      console.error('[DEBUG] Token debug error:', error);
-      return false;
-    }
-  };
-
   // 세션 체크 함수
   const checkSession = async (token: string): Promise<boolean> => {
     try {

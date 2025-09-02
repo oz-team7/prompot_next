@@ -14,7 +14,7 @@ import { Prompt } from '@/types/prompt';
 const PromptDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -22,6 +22,7 @@ const PromptDetailPage = () => {
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -76,6 +77,60 @@ const PromptDetailPage = () => {
 
   // 북마크 상태 확인
   const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt?.id);
+
+  // 현재 사용자가 프롬프트 작성자인지 확인
+  const isAuthor = user?.id === prompt?.author?.id;
+
+  // 수정 페이지로 이동
+  const handleEdit = () => {
+    if (prompt) {
+      router.push(`/prompt/edit/${prompt.id}`);
+    }
+  };
+
+  // 삭제 확인 모달 표시
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  // 프롬프트 삭제 실행
+  const confirmDelete = async () => {
+    if (!prompt) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('인증이 필요합니다.');
+      }
+
+      const res = await fetch(`/api/prompts/${prompt.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || '프롬프트 삭제에 실패했습니다.');
+      }
+
+      setToastMessage('프롬프트가 삭제되었습니다.');
+      setToastType('success');
+      setShowToast(true);
+      setShowDeleteModal(false);
+
+      // 마이페이지로 리다이렉트
+      setTimeout(() => {
+        router.push('/mypage?tab=prompts&refresh=true');
+      }, 1500);
+    } catch (error: any) {
+      console.error('Delete prompt error:', error);
+      setToastMessage(error.message || '프롬프트 삭제에 실패했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
 
   // 북마크 토글 함수
   const handleBookmarkToggle = async () => {
@@ -150,6 +205,30 @@ const PromptDetailPage = () => {
                   </div>
                 </div>
               </div>
+              
+              {/* 작성자인 경우 수정/삭제 버튼 표시 */}
+              {isAuthor && (
+                <div className="flex gap-2 ml-4">
+                  <button
+                    onClick={handleEdit}
+                    className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    수정
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    삭제
+                  </button>
+                </div>
+              )}
             </div>
             
             {/* 태그 및 AI 모델 */}
@@ -348,6 +427,53 @@ const PromptDetailPage = () => {
               <Link href="/signup" className="text-primary hover:underline">
                 회원가입
               </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-red-600">프롬프트 삭제</h2>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-700 mb-4">
+                정말로 이 프롬프트를 삭제하시겠습니까?
+              </p>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <h3 className="font-semibold text-gray-900">{prompt?.title}</h3>
+                <p className="text-sm text-gray-600 mt-1">{prompt?.description}</p>
+              </div>
+              <p className="text-sm text-red-600 mt-3">
+                ⚠️ 이 작업은 되돌릴 수 없습니다.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                삭제
+              </button>
             </div>
           </div>
         </div>
