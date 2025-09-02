@@ -23,6 +23,7 @@ const PromptDetailPage = () => {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [localBookmarkState, setLocalBookmarkState] = useState(false);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -40,6 +41,8 @@ const PromptDetailPage = () => {
       }
       
       setPrompt(data.prompt);
+      // 초기 북마크 상태 설정
+      setLocalBookmarkState(bookmarks.some(bookmark => bookmark.prompt.id === data.prompt.id));
     } catch (error: any) {
       console.error('Fetch prompt error:', error);
       setToastMessage(error.message || '프롬프트를 불러올 수 없습니다.');
@@ -75,8 +78,14 @@ const PromptDetailPage = () => {
     );
   }
 
-  // 북마크 상태 확인
-  const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt?.id);
+  // 북마크 상태 확인 (실시간 업데이트)
+  const isBookmarked = localBookmarkState || bookmarks.some(bookmark => bookmark.prompt.id === prompt?.id);
+
+  // 북마크 상태를 강제로 업데이트하는 함수
+  const refreshBookmarkState = () => {
+    // 강제로 컴포넌트 리렌더링
+    setPrompt(prev => prev ? { ...prev } : null);
+  };
 
   // 현재 사용자가 프롬프트 작성자인지 확인
   const isAuthor = user?.id === prompt?.author?.id;
@@ -148,11 +157,15 @@ const PromptDetailPage = () => {
           await removeBookmark(bookmark.id);
           setToastMessage('북마크가 제거되었습니다.');
           setToastType('success');
+          // 북마크 상태 즉시 업데이트
+          setLocalBookmarkState(false);
         }
       } else {
         await addBookmark(prompt.id);
         setToastMessage('북마크에 추가되었습니다!');
         setToastType('success');
+        // 북마크 상태 즉시 업데이트
+        setLocalBookmarkState(true);
       }
       setShowToast(true);
     } catch (error) {
@@ -220,6 +233,22 @@ const PromptDetailPage = () => {
                     className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-1"
                   >
                     삭제
+                  </button>
+                </div>
+              )}
+              
+              {/* 북마크 버튼 (작성자 여부와 관계없이 표시) */}
+              {isAuthenticated && (
+                <div className="flex gap-2 ml-4">
+                  <button
+                    onClick={handleBookmarkToggle}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      isBookmarked 
+                        ? 'bg-orange-100 text-primary border border-orange-200 hover:bg-orange-200' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {isBookmarked ? '북마크됨' : '북마크'}
                   </button>
                 </div>
               )}
@@ -312,20 +341,6 @@ const PromptDetailPage = () => {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                           d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={handleBookmarkToggle}
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        isBookmarked 
-                          ? 'text-primary bg-orange-50 hover:bg-orange-100' 
-                          : 'text-gray-600 hover:text-primary hover:bg-gray-100'
-                      }`}
-                      title={isBookmarked ? '북마크 제거' : '북마크 추가'}
-                    >
-                      <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                       </svg>
                     </button>
                   </div>
