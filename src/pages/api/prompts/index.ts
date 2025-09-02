@@ -70,7 +70,7 @@ export default async function handler(
     }) || [];
 
     // 정렬 적용
-    let sortedPrompts = [...promptsWithRatings];
+    const sortedPrompts = [...promptsWithRatings];
     switch (sort) {
       case 'popular':
         // 인기순: 평균 별점 높은 순, 평가 수 많은 순, 최신순

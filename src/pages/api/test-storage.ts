@@ -48,8 +48,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       bucket: {
         name: avatarsBucket.name,
         public: avatarsBucket.public,
-        fileSizeLimit: avatarsBucket.fileSizeLimit,
-        allowedMimeTypes: avatarsBucket.allowedMimeTypes
+        file_size_limit: avatarsBucket.file_size_limit,
+        allowed_mime_types: avatarsBucket.allowed_mime_types
       },
       files: files || []
     });
