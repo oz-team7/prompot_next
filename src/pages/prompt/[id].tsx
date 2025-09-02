@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import RatingSystem from '@/components/RatingSystem';
 import CommentSection from '@/components/CommentSection';
+import SharePrompt from '@/components/SharePrompt';
 import { Prompt } from '@/types/prompt';
 
 const PromptDetailPage = () => {
@@ -153,6 +154,9 @@ const PromptDetailPage = () => {
             <div className="mt-4">
               <RatingSystem promptId={prompt.id.toString()} onRatingChange={(success, message) => { setToastMessage(message); setToastType(success ? "success" : "error"); setShowToast(true); }} />
             </div>
+
+            {/* 공유하기 */}
+            <SharePrompt promptId={prompt.id.toString()} title={prompt.title} />
 
             {/* 구분선 */}
             <hr className="my-6 border-gray-200" />
