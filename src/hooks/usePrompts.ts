@@ -63,7 +63,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
 
   useEffect(() => {
     fetchPrompts();
-  }, [fetchPrompts]);
+  }, [options?.sort, options?.author]);
 
   const refetch = () => {
     console.log('[DEBUG] usePrompts refetch called with options:', options);

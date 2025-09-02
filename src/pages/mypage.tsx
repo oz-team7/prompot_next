@@ -58,10 +58,8 @@ const MyPage = () => {
     } else {
       // 인증된 사용자의 경우 프로필 정보 새로고침
       refreshUserProfile();
-      // 프롬프트 목록 강제 새로고침 추가
-      refetch();
     }
-  }, [isAuthenticated, router, refetch]);
+  }, [isAuthenticated, router]);
 
   // URL 파라미터 처리 (프롬프트 생성 후 리다이렉트용)
   useEffect(() => {
@@ -80,20 +78,8 @@ const MyPage = () => {
       
       // URL 파라미터 정리 (shallow: true로 변경하여 페이지 새로고침 방지)
       router.replace('/mypage?tab=prompts', undefined, { shallow: true });
-      
-      // 추가로 1초 후 한 번 더 새로고침 (서버 지연 고려)
-      setTimeout(() => {
-        console.log('[DEBUG] Additional refetch after 1 second');
-        refetch();
-      }, 1000);
-      
-      // 추가로 3초 후 한 번 더 새로고침 (더 확실한 동기화)
-      setTimeout(() => {
-        console.log('[DEBUG] Final refetch after 3 seconds');
-        refetch();
-      }, 3000);
     }
-  }, [isAuthenticated, router.query.tab, router.query.refresh, refetch, router]);
+  }, [isAuthenticated, router.query.tab, router.query.refresh, router]);
 
   useEffect(() => {
     // 사용자의 프롬프트만 필터링 (author.id와 user.id 비교)
@@ -117,7 +103,7 @@ const MyPage = () => {
     if (isAuthenticated && activeTab === 'prompts') {
       refetch();
     }
-  }, [isAuthenticated, activeTab, refetch]);
+  }, [isAuthenticated, activeTab]);
 
   const handleDelete = (id: number) => {
     setDeleteTargetId(id);
