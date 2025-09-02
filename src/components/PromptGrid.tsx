@@ -28,8 +28,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const router = useRouter();
   const { searchQuery } = useSearch();
   const { isAuthenticated } = useAuth();
-  const [prompts, setPrompts] = useState<Prompt[]>(promptsData);
-  const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>(promptsData);
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('none');
   const [bookmarkedPrompts, setBookmarkedPrompts] = useState<number[]>([]);
@@ -39,6 +37,9 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
   const promptsData = useAPI ? apiPrompts : (initialPrompts || []);
+  
+  const [prompts, setPrompts] = useState<Prompt[]>(promptsData);
+  const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>(promptsData);
 
   // API에서 데이터를 가져온 경우 prompts 상태 업데이트
   useEffect(() => {
@@ -166,16 +167,19 @@ const PromptGrid: React.FC<PromptGridProps> = ({
 
         {/* Filters and Sort */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortType)}
-            className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="none">정렬 없음</option>
-            <option value="popular">인기순</option>
-            <option value="recent">최근순</option>
-            <option value="rating">평점순</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">정렬:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortType)}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="none">최신순</option>
+              <option value="popular">인기순 (별점)</option>
+              <option value="recent">최근순</option>
+              <option value="rating">평점순</option>
+            </select>
+          </div>
 
           <div className="ml-auto flex gap-2">
             {showCreateButton && (
