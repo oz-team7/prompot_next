@@ -13,7 +13,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike }) => {
         {prompt.title}
       </h3>
       <div className="text-sm text-gray-500 mb-2">
-        {prompt.author} · {prompt.date}
+        {prompt.author?.name || '익명'} · {prompt.date}
       </div>
       <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
         {prompt.description}

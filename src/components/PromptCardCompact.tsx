@@ -121,7 +121,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
               <span>{prompt.likes}</span>
             </button>
           </div>
-          <span className="text-xs text-gray-500">{prompt.author}</span>
+          <span className="text-xs text-gray-500">{prompt.author?.name || '익명'}</span>
         </div>
       </div>
     </Link>

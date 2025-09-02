@@ -1,7 +1,11 @@
 export interface Prompt {
   id: number;
   title: string;
-  author: string;
+  author: {
+    id: string;
+    name: string;
+    email?: string;
+  };
   authorId?: string;
   date: string;
   description: string;

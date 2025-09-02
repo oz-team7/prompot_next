@@ -103,8 +103,11 @@ export default async function handler(
       aiModel: prompt.ai_model,
       previewImage: prompt.preview_image,
       isPublic: prompt.is_public,
-      author: prompt.author.name,
-      authorId: prompt.author.id,
+      author: {
+        id: prompt.author.id,
+        name: prompt.author.name,
+        email: prompt.author.email
+      },
       date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
       likes: 0, // likes 테이블이 없으므로 임시로 0
       bookmarks: 0, // bookmarks 테이블이 없으므로 임시로 0
