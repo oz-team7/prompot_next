@@ -539,8 +539,20 @@ const MyPage = () => {
                 )}
               </div>
             )}
+
             {/* 북마크 탭 */}
-            {activeTab === "bookmarks" && (
+            {activeTab === 'bookmarks' && (
+                {/* 카테고리 관리 모달 */}
+                <BookmarkCategoryManager
+                  isOpen={showCategoryManager}
+                  onClose={() => setShowCategoryManager(false)}
+                  onCategoryChange={() => {
+                    // 북마크 목록 새로고침
+                    if (refetchBookmarks && typeof refetchBookmarks === 'function') {
+                      refetchBookmarks();
+                    }
+                  }}
+                />
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-lg font-semibold">북마크</h2>
@@ -558,10 +570,10 @@ const MyPage = () => {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setSelectedCategory(null)}
-                        className={`px-3 py-1 text-sm rounded transition-colors ${
+                        className={`px-3 py-1 text-sm rounded transition-colors $
                           selectedCategory === null
-                            ? "bg-primary text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
                         전체
@@ -570,10 +582,10 @@ const MyPage = () => {
                         <button
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
-                          className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
+                          className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 $
                             selectedCategory === category.id
-                              ? "bg-primary text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              ? 'bg-primary text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                         >
                           <div
@@ -589,106 +601,94 @@ const MyPage = () => {
                 )}
 
                 {/* 북마크 목록 */}
-                <div>
-                  {bookmarksLoading ? (
-                    <div className="text-center py-16">
-                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                      <p className="mt-4 text-gray-600">북마크를 불러오는 중...</p>
-                    </div>
-                  ) : bookmarksError ? (
-                    <div className="text-center py-16">
-                      <p className="text-red-500">{bookmarksError}</p>
-                      <button onClick={refetchBookmarks} className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
-                        다시 시도
-                      </button>
-                    </div>
-                  ) : bookmarks.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {bookmarks
-                        .filter(bookmark => 
-                          selectedCategory === null || 
-                          bookmark.categoryId === selectedCategory
-                        )
-                        .map(bookmark => (
-                        <div key={bookmark.id} className="bg-white rounded-lg shadow-sm p-4">
-                          {bookmark.prompt.previewImage && (
-                            <div className="relative w-full h-40 mb-3">
-                              <Image
-                                src={bookmark.prompt.previewImage}
-                                alt={bookmark.prompt.title}
-                                fill
-                                className="object-cover rounded-lg"
-                              />
-                            </div>
-                          )}
-                          <h3 className="font-semibold mb-1">{bookmark.prompt.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                            {bookmark.prompt.description}
-                          </p>
-                          <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span>{typeof bookmark.prompt.author === "string" ? bookmark.prompt.author : bookmark.prompt.author?.name || "Unknown"}</span>
-                            <span>{new Date(bookmark.createdAt).toLocaleDateString()}</span>
+              <div>
+                {bookmarksLoading ? (
+                  <div className="text-center py-16">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="mt-4 text-gray-600">북마크를 불러오는 중...</p>
+                  </div>
+                ) : bookmarksError ? (
+                  <div className="text-center py-16">
+                    <p className="text-red-500">{bookmarksError}</p>
+                    <button onClick={refetchBookmarks} className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
+                      다시 시도
+                    </button>
+                  </div>
+                ) : bookmarks.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {
+                    bookmarks
+                      .filter(bookmark => 
+                        selectedCategory === null || 
+                        bookmark.categoryId === selectedCategory
+                      )
+                      .map(bookmark => (
+                      <div key={bookmark.id} className="bg-white rounded-lg shadow-sm p-4">
+                        {bookmark.prompt.previewImage && (
+                          <div className="relative w-full h-40 mb-3">
+                            <Image
+                              src={bookmark.prompt.previewImage}
+                              alt={bookmark.prompt.title}
+                              fill
+                              className="object-cover rounded-lg"
+                            />
                           </div>
-                          <div className="flex gap-2">
-                            <Link
-                              href={`/prompt/${bookmark.prompt.id}`}
-                              className="flex-1 px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
-                            >
-                              자세히 보기
-                            </Link>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await removeBookmark(bookmark.id);
-                                  setToastMessage("북마크가 삭제되었습니다.");
-                                  setToastType("success");
-                                  setShowToast(true);
-                                } catch (error) {
-                                  setToastMessage("북마크 삭제에 실패했습니다.");
-                                  setToastType("error");
-                                  setShowToast(true);
-                                }
-                              }}
-                              className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
-                            >
-                              삭제
-                            </button>
-                          </div>
+                        )}
+                        <h3 className="font-semibold mb-1">{bookmark.prompt.title}</h3>
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                          {bookmark.prompt.description}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                          <span>{typeof bookmark.prompt.author === 'string' ? bookmark.prompt.author : bookmark.prompt.author?.name || 'Unknown'}</span>
+                          <span>{new Date(bookmark.createdAt).toLocaleDateString()}</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-16 bg-white rounded-lg">
-                      <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/prompt/${bookmark.prompt.id}`}
+                            className="flex-1 px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
+                          >
+                            자세히 보기
+                          </Link>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await removeBookmark(bookmark.id);
+                                setToastMessage('북마크가 삭제되었습니다.');
+                                setToastType('success');
+                                setShowToast(true);
+                              } catch (error) {
+                                setToastMessage('북마크 삭제에 실패했습니다.');
+                                setToastType('error');
+                                setShowToast(true);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 bg-white rounded-lg">
+                    <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">북마크한 프롬프트가 없습니다</h3>
+                    <p className="text-gray-600 mb-4">마음에 드는 프롬프트를 북마크해보세요!</p>
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">북마크한 프롬프트가 없습니다</h3>
-                      <p className="text-gray-600 mb-4">마음에 드는 프롬프트를 북마크해보세요!</p>
-                      <Link
-                        href="/"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        프롬프트 탐색하기
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* 카테고리 관리 모달 */}
-                <BookmarkCategoryManager
-                  isOpen={showCategoryManager}
-                  onClose={() => setShowCategoryManager(false)}
-                  onCategoryChange={() => {
-                    // 북마크 목록 새로고침
-                    if (refetchBookmarks && typeof refetchBookmarks === "function") {
-                      refetchBookmarks();
-                    }
-                  }}
-                />
+                      프롬프트 탐색하기
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
