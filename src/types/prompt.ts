@@ -16,7 +16,7 @@ export interface Prompt {
   bookmarks?: number;
   isLiked?: boolean;
   isBookmarked?: boolean;
-  category?: 'work' | 'dev' | 'design' | 'edu' | 'image';
+  category?: "work" | "dev" | "design" | "edu" | "image";
   previewImage?: string;
   aiModel?: {
     name: string;
@@ -29,6 +29,7 @@ export interface Prompt {
 export interface Bookmark {
   id: string;
   createdAt: string;
+  categoryId?: string;
   prompt: {
     id: number;
     title: string;
@@ -44,4 +45,13 @@ export interface Bookmark {
     author: string;
     authorId?: string;
   };
+}
+
+export interface BookmarkCategory {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  bookmarkCount?: number;
 }
