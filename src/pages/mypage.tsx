@@ -23,9 +23,33 @@ const MyPage = () => {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [userProfile, setUserProfile] = useState<any>(null);
 
+  // 사용자 프로필 정보 새로고침 함수
+  const refreshUserProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const res = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile(data.user);
+      }
+    } catch (error) {
+      console.error('Profile refresh error:', error);
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
+    } else {
+      // 인증된 사용자의 경우 프로필 정보 새로고침
+      refreshUserProfile();
     }
   }, [isAuthenticated, router]);
 
@@ -171,7 +195,8 @@ const MyPage = () => {
       const data = await res.json();
       
       if (data.ok) {
-        setUserProfile(data.profile);
+        // 프로필 사진 업로드 후 사용자 정보 새로고침
+        await refreshUserProfile();
         setToastMessage('프로필 사진이 업데이트되었습니다.');
         setToastType('success');
         setShowToast(true);
@@ -204,11 +229,22 @@ const MyPage = () => {
           {/* 프로필 헤더 */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex items-center gap-6">
-              <AvatarUpload
-                currentAvatarUrl={userProfile?.avatar_url || user?.avatar_url}
-                userName={user?.name || ''}
-                onAvatarChange={handleAvatarChange}
-              />
+              {/* 프로필 사진 표시 (업로드 기능 없음) */}
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                  {userProfile?.avatar_url || user?.avatar_url ? (
+                    <img
+                      src={userProfile?.avatar_url || user?.avatar_url}
+                      alt={user?.name || ''}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-3xl font-bold text-gray-400">
+                      {user?.name?.[0]?.toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              </div>
               <div>
                 <h1 className="text-2xl font-bold">{user?.name}</h1>
                 <p className="text-gray-600">{user?.email}</p>
@@ -391,29 +427,58 @@ const MyPage = () => {
             {activeTab === 'settings' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-lg font-semibold mb-4">계정 설정</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
-                    <input
-                      type="text"
-                      value={user.name}
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                    />
+                <div className="space-y-6">
+                  {/* 프로필 사진 업로드 섹션 */}
+                  <div className="border-b pb-6">
+                    <h3 className="text-sm font-medium text-gray-700 mb-4">프로필 사진</h3>
+                    <div className="flex items-start gap-6">
+                      <AvatarUpload
+                        currentAvatarUrl={userProfile?.avatar_url || user?.avatar_url}
+                        userName={user?.name || ''}
+                        onAvatarChange={handleAvatarChange}
+                        className="flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-600 mb-2">
+                          프로필 사진을 업로드하여 개인화된 경험을 제공받으세요.
+                        </p>
+                        <div className="text-xs text-gray-500">
+                          <p>• JPG, PNG 파일만 지원됩니다</p>
+                          <p>• 최대 5MB까지 업로드 가능합니다</p>
+                          <p>• 권장 크기: 200x200 픽셀 이상</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                    <input
-                      type="email"
-                      value={user.email}
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                    />
+
+                  {/* 기본 정보 섹션 */}
+                  <div className="border-b pb-6">
+                    <h3 className="text-sm font-medium text-gray-700 mb-4">기본 정보</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                        <input
+                          type="text"
+                          value={user.name}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                        <input
+                          type="email"
+                          value={user.email}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                        />
+                      </div>
+                    </div>
                   </div>
                   
                   {/* 비밀번호 변경 섹션 */}
-                  <div className="pt-4 border-t">
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">비밀번호 변경</h3>
+                  <div className="border-b pb-6">
+                    <h3 className="text-sm font-medium text-gray-700 mb-4">비밀번호 변경</h3>
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
@@ -451,21 +516,32 @@ const MyPage = () => {
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">알림 설정</h3>
-                    <label className="flex items-center gap-2">
-                      <input type="checkbox" className="rounded" defaultChecked />
-                      <span className="text-sm text-gray-600">내 프롬프트에 좋아요를 받으면 알림</span>
-                    </label>
-                    <label className="flex items-center gap-2 mt-2">
-                      <input type="checkbox" className="rounded" defaultChecked />
-                      <span className="text-sm text-gray-600">내 프롬프트에 댓글이 달리면 알림</span>
-                    </label>
+                  {/* 알림 설정 섹션 */}
+                  <div className="border-b pb-6">
+                    <h3 className="text-sm font-medium text-gray-700 mb-4">알림 설정</h3>
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" className="rounded" defaultChecked />
+                        <span className="text-sm text-gray-600">내 프롬프트에 좋아요를 받으면 알림</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" className="rounded" defaultChecked />
+                        <span className="text-sm text-gray-600">내 프롬프트에 댓글이 달리면 알림</span>
+                      </label>
+                      <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
+                        알림 설정 저장
+                      </button>
+                    </div>
                   </div>
-                  <div className="pt-4 border-t">
-                    <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                      알림 설정 저장
-                    </button>
+
+                  {/* 계정 관리 섹션 */}
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-4">계정 관리</h3>
+                    <div className="space-y-3">
+                      <button className="w-full px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                        계정 삭제
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
