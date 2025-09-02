@@ -29,7 +29,7 @@ export default async function handler(
     // 프로필 정보 가져오기
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, email, name')
+      .select('id, email, name, avatar_url')
       .eq('id', authUser.id)
       .single();
 
