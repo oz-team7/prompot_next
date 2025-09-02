@@ -46,6 +46,23 @@ const Header: React.FC = () => {
             {/* Login/Logout Button (Desktop only) */}
             {isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-3">
+                {/* 프로필 사진 */}
+                <div className="relative">
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200">
+                    {user?.avatar_url ? (
+                      <img
+                        src={user.avatar_url}
+                        alt={user?.name || ''}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-sm font-bold text-gray-400">
+                        {user?.name?.[0]?.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
                 <span className="text-sm text-gray-600">{user?.name}님</span>
                 <button 
                   onClick={handleLogout}
