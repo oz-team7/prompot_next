@@ -11,7 +11,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 
 const MyPage = () => {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings'>('prompts');
   const { prompts: allPrompts, loading, error, refetch } = usePrompts({ author: true });
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
@@ -197,6 +197,7 @@ const MyPage = () => {
       if (data.ok) {
         // 프로필 사진 업로드 후 사용자 정보 새로고침
         await refreshUserProfile();
+        await refreshUser(); // AuthContext의 사용자 정보도 새로고침
         setToastMessage('프로필 사진이 업데이트되었습니다.');
         setToastType('success');
         setShowToast(true);

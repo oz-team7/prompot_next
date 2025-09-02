@@ -52,7 +52,7 @@ export default async function handler(
     // 프로필 정보 가져오기
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, email, name')
+      .select('id, email, name, avatar_url')
       .eq('id', data.user.id)
       .single();
 
@@ -68,6 +68,7 @@ export default async function handler(
         id: profile.id,
         email: profile.email,
         name: profile.name,
+        avatar_url: profile.avatar_url,
       },
     });
   } catch (error) {
