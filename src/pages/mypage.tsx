@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePrompts } from '@/hooks/usePrompts';
 import { Prompt } from '@/types/prompt';
 import Toast from '@/components/Toast';
+import AvatarUpload from '@/components/AvatarUpload';
 
 const MyPage = () => {
   const router = useRouter();
@@ -20,6 +21,7 @@ const MyPage = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -151,6 +153,39 @@ const MyPage = () => {
     }
   };
 
+  const handleAvatarChange = async (avatarUrl: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/profile/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: user?.name,
+          avatar_url: avatarUrl,
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (data.ok) {
+        setUserProfile(data.profile);
+        setToastMessage('프로필 사진이 업데이트되었습니다.');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        throw new Error(data.error || '프로필 업데이트에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setToastMessage('프로필 업데이트에 실패했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
   const tabs = [
     { id: 'prompts', label: '내 프롬프트', count: myPrompts.length },
     { id: 'bookmarks', label: '북마크', count: bookmarkedPrompts.length },
@@ -168,15 +203,15 @@ const MyPage = () => {
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           {/* 프로필 헤더 */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">
-                  {user.name?.[0]?.toUpperCase()}
-                </span>
-              </div>
+            <div className="flex items-center gap-6">
+              <AvatarUpload
+                currentAvatarUrl={userProfile?.avatar_url || user?.avatar_url}
+                userName={user?.name || ''}
+                onAvatarChange={handleAvatarChange}
+              />
               <div>
-                <h1 className="text-2xl font-bold">{user.name}</h1>
-                <p className="text-gray-600">{user.email}</p>
+                <h1 className="text-2xl font-bold">{user?.name}</h1>
+                <p className="text-gray-600">{user?.email}</p>
                 <div className="flex gap-4 mt-2 text-sm text-gray-500">
                   <span>프롬프트 {myPrompts.length}개</span>
                   <span>•</span>
