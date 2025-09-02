@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // 토큰 저장
     if (data.token) {
-      console.log('Saving token:', data.token);  // 디버깅 로그 추가
+      console.log('Saving token:', data.token.substring(0, 20) + '...');  // 디버깅 로그 추가
       localStorage.setItem('token', data.token);
     } else {
       console.warn('No token received from server');  // 디버깅 로그 추가

@@ -21,3 +21,23 @@ export interface Prompt {
   content?: string;
   isPublic?: boolean;
 }
+
+export interface Bookmark {
+  id: string;
+  createdAt: string;
+  prompt: {
+    id: number;
+    title: string;
+    description: string;
+    content: string;
+    category: string;
+    tags: string[];
+    aiModel: string;
+    previewImage?: string;
+    isPublic: boolean;
+    createdAt: string;
+    updatedAt: string;
+    author: string;
+    authorId?: string;
+  };
+}

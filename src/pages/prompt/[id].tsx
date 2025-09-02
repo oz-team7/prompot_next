@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBookmarks } from '@/hooks/useBookmarks';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import RatingSystem from '@/components/RatingSystem';
@@ -13,6 +14,7 @@ const PromptDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { isAuthenticated } = useAuth();
+  const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -70,6 +72,40 @@ const PromptDetailPage = () => {
       </>
     );
   }
+
+  // 북마크 상태 확인
+  const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt?.id);
+
+  // 북마크 토글 함수
+  const handleBookmarkToggle = async () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (!prompt) return;
+
+    try {
+      if (isBookmarked) {
+        const bookmark = bookmarks.find(b => b.prompt.id === prompt.id);
+        if (bookmark) {
+          await removeBookmark(bookmark.id);
+          setToastMessage('북마크가 제거되었습니다.');
+          setToastType('success');
+        }
+      } else {
+        await addBookmark(prompt.id);
+        setToastMessage('북마크에 추가되었습니다!');
+        setToastType('success');
+      }
+      setShowToast(true);
+    } catch (error) {
+      console.error('Bookmark toggle error:', error);
+      setToastMessage('북마크 처리 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
 
   if (!prompt) {
     return (
@@ -202,16 +238,15 @@ const PromptDetailPage = () => {
                       </svg>
                     </button>
                     <button
-                      onClick={() => {
-                        // TODO: 북마크 API 구현 후 연결
-                        setToastMessage('북마크에 추가되었습니다!');
-                        setToastType('info');
-                        setShowToast(true);
-                      }}
-                      className="p-1.5 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors"
-                      title="북마크"
+                      onClick={handleBookmarkToggle}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isBookmarked 
+                          ? 'text-primary bg-orange-50 hover:bg-orange-100' 
+                          : 'text-gray-600 hover:text-primary hover:bg-gray-100'
+                      }`}
+                      title={isBookmarked ? '북마크 제거' : '북마크 추가'}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                           d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                       </svg>
