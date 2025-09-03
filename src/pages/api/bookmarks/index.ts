@@ -41,10 +41,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // 북마크된 프롬프트 ID 목록
         const promptIds = bookmarks?.map(b => b.prompt_id) || [];
         console.log('[DEBUG] Prompt IDs:', promptIds);
+        console.log('[DEBUG] Sample bookmark:', bookmarks?.[0]);
 
-        // 프롬프트 데이터 가져오기
+        // 프롬프트 데이터 가져오기 - 직접 조인으로 변경
         let promptsData: any[] = [];
         if (promptIds.length > 0) {
+          console.log('[DEBUG] Fetching prompts for IDs:', promptIds);
+          
           const { data: prompts, error: promptsError } = await supabase
             .from('prompts')
             .select(`
@@ -63,7 +66,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             `)
             .in('id', promptIds);
 
-          console.log('[DEBUG] Prompts query result:', { prompts, error: promptsError });
+          console.log('[DEBUG] Prompts query result:', { 
+            promptsCount: prompts?.length || 0,
+            error: promptsError,
+            samplePrompt: prompts?.[0]
+          });
 
           if (promptsError) {
             console.error('Prompts fetch error:', promptsError);
@@ -95,10 +102,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const authorsMap = new Map(authorsData.map(author => [author.id, author]));
         const promptsMap = new Map(promptsData.map(prompt => [prompt.id, prompt]));
 
+        console.log('[DEBUG] PromptsMap keys:', Array.from(promptsMap.keys()));
+        console.log('[DEBUG] Bookmark prompt_ids:', bookmarks?.map(b => b.prompt_id));
+        console.log('[DEBUG] Sample prompt from map:', promptsMap.get('da96f318-6245-458c-8b17-0edb9d55b6cf'));
+
         // 북마크 데이터를 프론트엔드 형식으로 변환
         const formattedBookmarks = bookmarks?.map(bookmark => {
           const prompt = promptsMap.get(bookmark.prompt_id);
           const author = prompt ? authorsMap.get(prompt.author_id) : null;
+
+          console.log('[DEBUG] Processing bookmark:', {
+            bookmarkId: bookmark.id,
+            promptId: bookmark.prompt_id,
+            foundPrompt: !!prompt,
+            promptTitle: prompt?.title,
+            promptIdType: typeof bookmark.prompt_id,
+            promptIdValue: bookmark.prompt_id,
+            promptsMapSize: promptsMap.size,
+            promptsMapKeys: Array.from(promptsMap.keys())
+          });
+
+          // 프롬프트를 찾지 못한 경우 직접 조회
+          let finalPrompt = prompt;
+          if (!prompt) {
+            console.log('[DEBUG] Prompt not found in map, trying direct query for:', bookmark.prompt_id);
+            // 직접 조회로 프롬프트 정보 가져오기
+            const directPrompt = promptsData.find(p => p.id === bookmark.prompt_id);
+            if (directPrompt) {
+              finalPrompt = directPrompt;
+              console.log('[DEBUG] Found prompt via direct search:', directPrompt.title);
+            }
+          }
 
           return {
             id: bookmark.id,
@@ -106,18 +140,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             categoryId: bookmark.category_id,
             prompt: {
               id: bookmark.prompt_id,
-              title: prompt?.title || `프롬프트 ${bookmark.prompt_id}`,
-              description: prompt?.description || '프롬프트 설명을 불러오는 중...',
-              content: prompt?.content || '',
-              category: prompt?.category || 'work',
-              tags: prompt?.tags || [],
-              aiModel: prompt?.ai_model || 'unknown',
-              previewImage: prompt?.preview_image,
-              isPublic: prompt?.is_public ?? true,
-              createdAt: prompt?.created_at || bookmark.created_at,
-              updatedAt: prompt?.updated_at || bookmark.created_at,
-              author: author?.name || 'Unknown',
-              authorId: author?.id,
+              title: finalPrompt?.title || `프롬프트 ${bookmark.prompt_id}`,
+              description: finalPrompt?.description || '프롬프트 설명을 불러오는 중...',
+              content: finalPrompt?.content || '',
+              category: finalPrompt?.category || 'work',
+              tags: finalPrompt?.tags || [],
+              aiModel: finalPrompt?.ai_model || 'unknown',
+              previewImage: finalPrompt?.preview_image,
+              isPublic: finalPrompt?.is_public ?? true,
+              createdAt: finalPrompt?.created_at || bookmark.created_at,
+              updatedAt: finalPrompt?.updated_at || bookmark.created_at,
+              author: finalPrompt ? authorsMap.get(finalPrompt.author_id)?.name || 'Unknown' : 'Unknown',
+              authorId: finalPrompt ? authorsMap.get(finalPrompt.author_id)?.id : null,
             }
           };
         }) || [];

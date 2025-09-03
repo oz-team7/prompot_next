@@ -80,7 +80,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   };
 
   // 북마크 처리 함수 수정
-  const handleBookmark = async (id: string | number) => {
+  const handleBookmark = async (id: string | number, categoryId?: number | null) => {
     if (!isAuthenticated) {
       router.push('/login');
       return;
@@ -92,7 +92,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       if (isBookmarked) {
         await removeBookmark(id);
       } else {
-        await addBookmark(id);
+        await addBookmark(id, categoryId);
       }
     } catch (error) {
       console.error('Bookmark error:', error);

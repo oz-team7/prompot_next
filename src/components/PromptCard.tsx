@@ -1,5 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Prompt } from '@/types/prompt';
+import BookmarkCategorySelector from './BookmarkCategorySelector';
+
+interface PromptCardProps {
+  prompt: Prompt;
+  onLike: (id: number) => void;
+  onBookmark?: (id: number, categoryId?: number | null) => void;
+  isBookmarked?: boolean;
+}
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -9,6 +17,25 @@ interface PromptCardProps {
 }
 
 const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isBookmarked = false }) => {
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+
+  const handleBookmarkClick = () => {
+    if (!onBookmark) return;
+    
+    if (isBookmarked) {
+      // 이미 북마크된 경우 제거
+      onBookmark(prompt.id);
+    } else {
+      // 북마크 추가 시 카테고리 선택 모달 표시
+      setShowCategorySelector(true);
+    }
+  };
+
+  const handleCategorySelect = (categoryId: number | null) => {
+    if (onBookmark) {
+      onBookmark(prompt.id, categoryId);
+    }
+  };
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-1 line-clamp-1" title={prompt.title}>
@@ -65,7 +92,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
             <>
               <span className="text-gray-500">·</span>
               <button
-                onClick={() => onBookmark(prompt.id)}
+                onClick={handleBookmarkClick}
                 className="flex items-center hover:scale-110 transition-transform"
                 title={isBookmarked ? '북마크 제거' : '북마크 추가'}
               >
@@ -89,6 +116,13 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
           )}
         </div>
       </div>
+
+      {/* Bookmark Category Selector */}
+      <BookmarkCategorySelector
+        isOpen={showCategorySelector}
+        onClose={() => setShowCategorySelector(false)}
+        onSelect={handleCategorySelect}
+      />
     </div>
   );
 };

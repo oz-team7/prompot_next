@@ -64,9 +64,9 @@ export const useBookmarks = () => {
     }
   };
 
-  const addBookmark = async (promptId: string | number) => {
+  const addBookmark = async (promptId: string | number, categoryId?: number | null) => {
     try {
-      console.log('[DEBUG] Adding bookmark for promptId:', promptId, 'type:', typeof promptId);
+      console.log('[DEBUG] Adding bookmark for promptId:', promptId, 'type:', typeof promptId, 'categoryId:', categoryId);
       
       // ID 유효성 검증
       if (!promptId || (typeof promptId === 'number' && (isNaN(promptId) || promptId <= 0)) || 
@@ -79,7 +79,7 @@ export const useBookmarks = () => {
         throw new Error('인증이 필요합니다.');
       }
 
-      console.log('[DEBUG] Sending request with data:', { promptId, token: token.substring(0, 20) + '...' });
+      console.log('[DEBUG] Sending request with data:', { promptId, categoryId, token: token.substring(0, 20) + '...' });
 
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
@@ -87,7 +87,7 @@ export const useBookmarks = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ promptId }),
+        body: JSON.stringify({ promptId, categoryId }),
       });
 
       console.log('[DEBUG] Add bookmark response status:', res.status);

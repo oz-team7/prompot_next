@@ -9,6 +9,7 @@ import Toast from '@/components/Toast';
 import RatingSystem from '@/components/RatingSystem';
 import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
+import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 
 interface AIModel {
   id: string;
@@ -52,6 +53,7 @@ const PromptDetailPage = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
   const [imageError, setImageError] = useState(false);
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -136,21 +138,9 @@ const PromptDetailPage = () => {
         console.log('[DEBUG] Prompt ID type:', typeof prompt.id);
         console.log('[DEBUG] Prompt ID value:', prompt.id);
         
-        // UUID 형식의 ID를 그대로 사용 (숫자 변환 제거)
-        const promptId = prompt.id;
-        console.log('[DEBUG] Using promptId as-is:', promptId, 'type:', typeof promptId);
-        
-        if (!promptId || typeof promptId !== 'string' || promptId.trim() === '') {
-          console.error('[DEBUG] Invalid promptId:', {
-            original: prompt.id,
-            type: typeof promptId,
-            isEmpty: promptId === '',
-            isWhitespace: promptId.trim() === ''
-          });
-          throw new Error(`유효하지 않은 프롬프트 ID입니다. (받은 값: ${prompt.id})`);
-        }
-        await addBookmark(promptId);
-        setToastMessage('북마크에 추가되었습니다!');
+        // 북마크 추가 시 카테고리 선택 모달 표시
+        setShowCategorySelector(true);
+        return;
       }
       setToastType('success');
       setShowToast(true);
@@ -158,6 +148,22 @@ const PromptDetailPage = () => {
     } catch (error: any) {
       console.error('[DEBUG] Bookmark toggle error:', error);
       setToastMessage(error.message || '북마크 처리 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
+  const handleCategorySelect = async (categoryId: number | null) => {
+    try {
+      console.log('[DEBUG] Adding bookmark with category ID:', categoryId);
+      await addBookmark(prompt.id, categoryId);
+      setToastMessage('북마크에 추가되었습니다!');
+      setToastType('success');
+      setShowToast(true);
+      setLocalBookmarkState(true);
+    } catch (error: any) {
+      console.error('[DEBUG] Add bookmark with category error:', error);
+      setToastMessage(error.message || '북마크 추가 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
     }
@@ -496,6 +502,13 @@ const PromptDetailPage = () => {
           </div>
         </div>
       )}
+
+      {/* Bookmark Category Selector */}
+      <BookmarkCategorySelector
+        isOpen={showCategorySelector}
+        onClose={() => setShowCategorySelector(false)}
+        onSelect={handleCategorySelect}
+      />
     </div>
   );
 };
