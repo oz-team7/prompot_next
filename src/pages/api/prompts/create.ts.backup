@@ -1,11 +1,12 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { createSupabaseServiceClient } from "@/lib/supabase-server";
-import { requireAuth } from "@/lib/auth-utils";
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { requireAuth } from '@/lib/auth-utils';
 
+// API body size 제한 설정 (4MB)
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "4mb",
+      sizeLimit: '4mb',
     },
   },
 };
@@ -14,53 +15,45 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  console.log("Request headers:", req.headers);
-  console.log("NODE_ENV:", process.env.NODE_ENV);
+  console.log('Request headers:', req.headers); // 디버깅 로그
 
+  // 인증 확인
   let authUser;
   try {
     authUser = await requireAuth(req);
-    console.log("Auth user:", authUser);
+    console.log('Auth user:', authUser); // 디버깅 로그
   } catch (error) {
-    console.log("Auth error:", error);
-    
-    if (process.env.NODE_ENV === "development") {
-      console.log("Development mode: Using current user");
-      // 현재 사용자 ID 사용 (브라우저에서 확인된 사용자)
-      authUser = {
-        id: "7b03565d-b472-477c-9321-75bb442ae60e",
-        email: "prompot7@gmail.com",
-        user_metadata: { name: "prompot" }
-      };
-    } else {
-      return res.status(401).json({ message: "인증이 필요합니다." });
-    }
+    console.log('Auth error:', error); // 디버깅 로그
+    return res.status(401).json({ message: '인증이 필요합니다.' });
   }
   
   const { title, description, content, category, tags, aiModel, previewImage, isPublic } = req.body;
 
+  // 유효성 검사
   if (!title || !content || !category || !aiModel) {
-    return res.status(400).json({ message: "제목, 프롬프트 내용, 카테고리, AI 모델은 필수입니다." });
+    return res.status(400).json({ message: '제목, 프롬프트 내용, 카테고리, AI 모델은 필수입니다.' });
   }
 
   try {
     const supabase = createSupabaseServiceClient();
     
+    // tags 처리 개선
     let processedTags = [];
     if (tags) {
       if (Array.isArray(tags)) {
-        processedTags = tags.filter(tag => tag && typeof tag === "string" && tag.trim());
-      } else if (typeof tags === "string") {
-        processedTags = tags.split(",").map(tag => tag.trim()).filter(tag => tag);
+        processedTags = tags.filter(tag => tag && typeof tag === 'string' && tag.trim());
+      } else if (typeof tags === 'string') {
+        processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
       }
     }
     
-    console.log("Processed tags:", processedTags);
+    console.log('Processed tags:', processedTags); // 디버깅 로그
     
+    // 삽입할 데이터 준비
     const insertData: any = {
       title,
       description,
@@ -72,12 +65,13 @@ export default async function handler(
       author_id: authUser.id,
     };
     
+    // tags가 있을 때만 추가
     if (processedTags.length > 0) {
       insertData.tags = processedTags;
     }
     
     const { data: prompt, error } = await supabase
-      .from("prompts")
+      .from('prompts')
       .insert([insertData])
       .select(`
         *,
@@ -90,7 +84,7 @@ export default async function handler(
       .single();
 
     if (error || !prompt) {
-      throw error || new Error("프롬프트 생성 실패");
+      throw error || new Error('프롬프트 생성 실패');
     }
 
     res.status(201).json({
@@ -109,7 +103,7 @@ export default async function handler(
           name: prompt.author.name,
           email: prompt.author.email
         },
-        date: new Date(prompt.created_at).toISOString().split("T")[0].replace(/-/g, "."),
+        date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
         likes: 0,
         bookmarks: 0,
         rating: 0,
@@ -117,7 +111,7 @@ export default async function handler(
       },
     });
   } catch (error) {
-    console.error("Create prompt error:", error);
-    res.status(500).json({ message: "프롬프트 생성 중 오류가 발생했습니다." });
+    console.error('Create prompt error:', error);
+    res.status(500).json({ message: '프롬프트 생성 중 오류가 발생했습니다.' });
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -18,7 +18,10 @@ const MyPage = () => {
   const { user, isAuthenticated, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings'>('prompts');
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const { prompts: allPrompts, loading, error, refetch } = usePrompts({ author: true });
+  
+  // useMemo를 사용하여 options 객체를 안정화
+  const promptsOptions = useMemo(() => ({ author: true }), []);
+  const { prompts: allPrompts, loading, error, refetch } = usePrompts(promptsOptions);
   const { bookmarks, loading: bookmarksLoading, error: bookmarksError, removeBookmark, refetch: refetchBookmarks } = useBookmarks();
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -76,34 +79,39 @@ const MyPage = () => {
       // 즉시 새로고침 실행
       refetch();
       
+      // 캐시 무효화를 위한 추가 새로고침
+      setTimeout(() => {
+        console.log('[DEBUG] Cache invalidation refetch');
+        refetch();
+      }, 500);
+      
       // URL 파라미터 정리 (shallow: true로 변경하여 페이지 새로고침 방지)
       router.replace('/mypage?tab=prompts', undefined, { shallow: true });
     }
   }, [isAuthenticated, router.query.tab, router.query.refresh, router]);
 
   useEffect(() => {
-    // 사용자의 프롬프트만 필터링 (author.id와 user.id 비교)
+    // author=true로 호출했으므로 이미 현재 사용자의 프롬프트만 받아옴
+    console.log('[DEBUG] MyPage useEffect - allPrompts:', allPrompts);
+    console.log('[DEBUG] MyPage useEffect - user:', user);
+    console.log('[DEBUG] MyPage useEffect - isAuthenticated:', isAuthenticated);
+    
     if (allPrompts.length > 0) {
-      console.log('[DEBUG] Filtering prompts for user:', user?.id);
-      console.log('[DEBUG] All prompts:', allPrompts);
-      const filteredPrompts = allPrompts.filter(p => {
-        console.log('[DEBUG] Comparing prompt author.id:', p.author?.id, 'with user.id:', user?.id);
-        return p.author?.id === user?.id;
-      });
-      console.log('[DEBUG] Filtered prompts:', filteredPrompts);
-      setMyPrompts(filteredPrompts);
+      console.log('[DEBUG] Setting prompts directly (already filtered by author=true):', allPrompts);
+      setMyPrompts(allPrompts);
     } else {
-      console.log('[DEBUG] No prompts to filter');
+      console.log('[DEBUG] No prompts available');
       setMyPrompts([]);
     }
-  }, [allPrompts, user]);
+  }, [allPrompts, user, isAuthenticated]);
 
-  // 페이지 방문 시 자동 새로고침 추가
+  // 페이지 방문 시 자동 새로고침 추가 (한 번만 실행)
   useEffect(() => {
     if (isAuthenticated && activeTab === 'prompts') {
+      console.log('[DEBUG] Initial load - fetching prompts');
       refetch();
     }
-  }, [isAuthenticated, activeTab]);
+  }, [isAuthenticated, activeTab]); // refetch 의존성 제거
 
   const handleDelete = (id: number) => {
     setDeleteTargetId(id);

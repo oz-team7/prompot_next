@@ -25,23 +25,29 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       
       // localStorage에서 토큰 가져오기 (선택)
       const token = localStorage.getItem('token');
+      console.log('[DEBUG] usePrompts token from localStorage:', token ? 'exists' : 'not found');
       
       const headers: Record<string, string> = {};
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
+      console.log('[DEBUG] usePrompts request headers:', headers);
+      
       const res = await fetch(`/api/prompts${query}`, {
         headers,
       });
       
+      console.log('[DEBUG] usePrompts response status:', res.status);
+      
       if (!res.ok) {
         const errorData = await res.json();
+        console.error('[DEBUG] usePrompts API error:', errorData);
         throw new Error(errorData.message || '프롬프트를 가져오는데 실패했습니다.');
       }
 
       const data = await res.json();
-      console.log('[DEBUG] usePrompts response:', data); // 디버깅 로그 추가
+      console.log('[DEBUG] usePrompts response data:', data); // 디버깅 로그 추가
       
       const formattedPrompts = data.prompts.map((prompt: any) => ({
         ...prompt,
@@ -63,12 +69,12 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
 
   useEffect(() => {
     fetchPrompts();
-  }, [options?.sort, options?.author]);
+  }, [fetchPrompts]);
 
-  const refetch = () => {
+  const refetch = useCallback(() => {
     console.log('[DEBUG] usePrompts refetch called with options:', options);
     fetchPrompts();
-  };
+  }, [fetchPrompts]);
 
   return { prompts, loading, error, refetch };
 };
