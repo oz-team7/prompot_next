@@ -23,16 +23,16 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       const query = params.toString() ? `?${params.toString()}` : '';
       console.log('[DEBUG] usePrompts fetching with query:', query); // 디버깅 로그 추가
       
-      // localStorage에서 토큰 가져오기 (필수)
+      // localStorage에서 토큰 가져오기 (선택)
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('인증이 필요합니다.');
+      
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
       
       const res = await fetch(`/api/prompts${query}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
       });
       
       if (!res.ok) {
