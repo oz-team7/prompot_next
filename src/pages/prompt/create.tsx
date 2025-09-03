@@ -83,6 +83,8 @@ const CreatePromptPage = () => {
   
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [additionalImages, setAdditionalImages] = useState<File[]>([]);
+  const [additionalPreviewUrls, setAdditionalPreviewUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -127,6 +129,54 @@ const CreatePromptPage = () => {
     }
   };
 
+  const handleAdditionalImagesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const maxImages = 5; // 최대 5개 추가 이미지
+    
+    if (additionalImages.length + files.length > maxImages) {
+      setToastMessage(`최대 ${maxImages}개의 추가 이미지만 업로드할 수 있습니다.`);
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    const validFiles = files.filter(file => {
+      // 파일 크기 검증 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setToastMessage(`${file.name}의 크기가 5MB를 초과합니다.`);
+        setToastType('error');
+        setShowToast(true);
+        return false;
+      }
+
+      // 파일 타입 검증
+      if (!file.type.startsWith('image/')) {
+        setToastMessage(`${file.name}은 이미지 파일이 아닙니다.`);
+        setToastType('error');
+        setShowToast(true);
+        return false;
+      }
+
+      return true;
+    });
+
+    if (validFiles.length > 0) {
+      setAdditionalImages(prev => [...prev, ...validFiles]);
+      const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+      setAdditionalPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    }
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    setAdditionalPreviewUrls(prev => {
+      const newUrls = prev.filter((_, i) => i !== index);
+      // URL 해제
+      URL.revokeObjectURL(prev[index]);
+      return newUrls;
+    });
+  };
+
   const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
@@ -164,8 +214,9 @@ const CreatePromptPage = () => {
 
     try {
       let imageUrl = null;
+      let additionalImageUrls: string[] = [];
       
-      // 이미지 업로드
+      // 메인 이미지 업로드
       if (image) {
         const formDataImage = new FormData();
         formDataImage.append('image', image);
@@ -193,6 +244,35 @@ const CreatePromptPage = () => {
         imageUrl = uploadData.imageUrl;
       }
 
+      // 추가 이미지들 업로드
+      if (additionalImages.length > 0) {
+        const token = localStorage.getItem('token');
+        const headers: Record<string, string> = {};
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        for (const additionalImage of additionalImages) {
+          const formDataImage = new FormData();
+          formDataImage.append('image', additionalImage);
+          
+          const uploadRes = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers,
+            body: formDataImage,
+          });
+          
+          if (!uploadRes.ok) {
+            const errorData = await uploadRes.json();
+            throw new Error(errorData.message || '추가 이미지 업로드에 실패했습니다.');
+          }
+          
+          const uploadData = await uploadRes.json();
+          additionalImageUrls.push(uploadData.imageUrl);
+        }
+      }
+
       // 프롬프트 생성
       const res = await fetch('/api/prompts/create', {
         method: 'POST',
@@ -202,6 +282,7 @@ const CreatePromptPage = () => {
         body: JSON.stringify({
           ...formData,
           previewImage: imageUrl,
+          additionalImages: additionalImageUrls,
         }),
       });
 
@@ -430,6 +511,60 @@ const CreatePromptPage = () => {
                     )}
                   </label>
                 </div>
+              </div>
+
+              {/* 추가 이미지 업로드 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  추가 이미지 (최대 5개)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleAdditionalImagesChange}
+                    className="hidden"
+                    id="additional-images-upload"
+                  />
+                  <label htmlFor="additional-images-upload" className="cursor-pointer">
+                    <div className="space-y-2">
+                      <div className="text-4xl text-gray-400">🖼️</div>
+                      <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하세요</p>
+                      <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB, 최대 5개)</p>
+                    </div>
+                  </label>
+                </div>
+                
+                {/* 추가 이미지 미리보기 */}
+                {additionalPreviewUrls.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">업로드된 추가 이미지 ({additionalPreviewUrls.length}/5)</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {additionalPreviewUrls.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <div className="relative w-full h-24">
+                            <Image
+                              src={url}
+                              alt={`추가 이미지 ${index + 1}`}
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeAdditionalImage(index)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 공개 설정 */}

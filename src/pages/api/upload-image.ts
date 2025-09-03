@@ -20,8 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     if (!userId) {
       if (process.env.NODE_ENV === 'development') {
-        console.log('Development mode: Using test user for image upload');
-        userId = 'c3def3ef-88d2-44b8-9293-03156407e4af'; // 기존 사용자 ID 사용
+        console.log('Development mode: Using current user for image upload');
+        userId = '7b03565d-b472-477c-9321-75bb442ae60e'; // 현재 사용자 ID 사용
       } else {
         return res.status(401).json({ message: '인증이 필요합니다.' });
       }
