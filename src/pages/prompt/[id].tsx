@@ -246,6 +246,98 @@ const PromptDetailPage = () => {
 
             {/* Prompt content */}
             <div className={`mt-6 ${!isAuthenticated ? 'blur-md pointer-events-none' : ''}`}>
+              {/* 프롬프트 정보 섹션 */}
+              <div className="mb-6 space-y-4">
+                {/* 설명 */}
+                {prompt.description && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">설명</h3>
+                    <p className="text-gray-700 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      {prompt.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* 카테고리와 AI 모델 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">카테고리</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">
+                        {prompt.category === 'work' && '💼'}
+                        {prompt.category === 'dev' && '💻'}
+                        {prompt.category === 'design' && '🎨'}
+                        {prompt.category === 'edu' && '📚'}
+                        {prompt.category === 'image' && '🖼️'}
+                      </span>
+                      <span className="text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm">
+                        {prompt.category === 'work' && '업무/마케팅'}
+                        {prompt.category === 'dev' && '개발/코드'}
+                        {prompt.category === 'design' && '디자인/브랜드'}
+                        {prompt.category === 'edu' && '교육/학습'}
+                        {prompt.category === 'image' && '이미지/아트'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">AI 모델</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">
+                        {prompt.aiModel === 'chatgpt' && '🤖'}
+                        {prompt.aiModel === 'claude' && '🧠'}
+                        {prompt.aiModel === 'gemini' && '💎'}
+                        {prompt.aiModel === 'dalle' && '🖼️'}
+                        {prompt.aiModel === 'midjourney' && '🎨'}
+                        {prompt.aiModel === 'copilot' && '👨‍💻'}
+                        {prompt.aiModel === 'other' && '🔧'}
+                      </span>
+                      <span className="text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm">
+                        {prompt.aiModel === 'chatgpt' && 'ChatGPT'}
+                        {prompt.aiModel === 'claude' && 'Claude'}
+                        {prompt.aiModel === 'gemini' && 'Gemini'}
+                        {prompt.aiModel === 'dalle' && 'DALL-E'}
+                        {prompt.aiModel === 'midjourney' && 'Midjourney'}
+                        {prompt.aiModel === 'copilot' && 'GitHub Copilot'}
+                        {prompt.aiModel === 'other' && '기타'}
+                        {prompt.aiModel}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 태그 */}
+                {prompt.tags && prompt.tags.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">태그</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {prompt.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 공개 설정 */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">공개 설정</h3>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      prompt.isPublic 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {prompt.isPublic ? '🌐 공개' : '🔒 비공개'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Preview Image */}
               {prompt.previewImage && !imageError && (
                 <div className="mb-6">
