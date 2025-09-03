@@ -50,7 +50,7 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
 
         <div className="p-4 sm:p-6 overflow-y-auto h-[calc(100%-80px)]">
           {bookmarkedItems.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">북마크한 프롬프트가 없습니다.</p>
+            <p className="text-gray-500 text-center py-8">아직 북마크한 프롬프트가 없습니다.</p>
           ) : (
             <div className="space-y-4">
               {bookmarkedItems.map(prompt => (

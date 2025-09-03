@@ -30,8 +30,11 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const { searchQuery } = useSearch();
   const { isAuthenticated } = useAuth();
   
-  // Hook을 항상 호출 (조건부 호출 제거)
+  // Hook을 항상 호출하되, 인증되지 않은 경우 빈 배열 사용
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+  
+  // 북마크된 프롬프트 ID 목록 (안전하게 접근)
+  const bookmarkedPromptIds = bookmarks ? bookmarks.map(bookmark => bookmark.prompt.id) : [];
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('none');
   const [showBookmarks, setShowBookmarks] = useState(false);
@@ -87,10 +90,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === id);
       
       if (isBookmarked) {
-        const bookmark = bookmarks.find(b => b.prompt.id === id);
-        if (bookmark) {
-          await removeBookmark(bookmark.id);
-        }
+        await removeBookmark(id);
       } else {
         await addBookmark(id);
       }
@@ -98,9 +98,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       console.error('Bookmark error:', error);
     }
   };
-
-  // 북마크된 프롬프트 ID 목록 (안전하게 처리)
-  const bookmarkedPromptIds = bookmarks ? bookmarks.map(bookmark => bookmark.prompt.id) : [];
 
   useEffect(() => {
     let filtered = [...prompts];
@@ -257,7 +254,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                   prompt={prompt}
                   onLike={handleLike}
                   onBookmark={isAuthenticated ? handleBookmark : undefined}
-                  isBookmarked={bookmarkedPromptIds.includes(prompt.id)}
+                  isBookmarked={bookmarkedPromptIds ? bookmarkedPromptIds.includes(prompt.id) : false}
                 />
               ))}
             </div>
@@ -266,13 +263,24 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               <div className="text-gray-400 mb-4">
                 <svg className="w-24 h-24 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-600 mb-2">검색 결과가 없습니다</h3>
-              <p className="text-gray-500">
-                {searchQuery ? `"${searchQuery}"에 대한 프롬프트를 찾을 수 없습니다.` : '조건에 맞는 프롬프트가 없습니다.'}
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">아직 프롬프트가 추가되지 않았습니다</h3>
+              <p className="text-gray-500 mb-4">
+                {searchQuery ? `"${searchQuery}"에 대한 프롬프트를 찾을 수 없습니다.` : '프롬프트를 추가해주세요.'}
               </p>
+              {showCreateButton && (
+                <button
+                  onClick={handleCreatePrompt}
+                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  첫 번째 프롬프트 추가하기
+                </button>
+              )}
             </div>
           )}
 
@@ -281,7 +289,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             <BookmarkPanel
               isOpen={showBookmarks}
               onClose={() => setShowBookmarks(false)}
-              bookmarkedPrompts={bookmarkedPromptIds}
+              bookmarkedPrompts={bookmarkedPromptIds || []}
               prompts={prompts}
               onRemoveBookmark={handleBookmark}
             />
