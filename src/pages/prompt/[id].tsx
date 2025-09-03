@@ -111,14 +111,17 @@ const PromptDetailPage = () => {
       return;
     }
 
+    console.log('[DEBUG] Bookmark toggle - prompt ID:', prompt.id, 'type:', typeof prompt.id);
+    console.log('[DEBUG] Bookmark toggle - isBookmarked:', isBookmarked);
+    console.log('[DEBUG] Bookmark toggle - current bookmarks:', bookmarks);
+
     try {
       if (isBookmarked) {
-        const bookmark = bookmarks.find(b => b.prompt.id === prompt.id);
-        if (bookmark) {
-          await removeBookmark(bookmark.id);
-          setToastMessage('북마크가 제거되었습니다.');
-        }
+        console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
+        await removeBookmark(Number(prompt.id));
+        setToastMessage('북마크가 제거되었습니다.');
       } else {
+        console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
         await addBookmark(Number(prompt.id));
         setToastMessage('북마크에 추가되었습니다!');
       }
@@ -126,6 +129,7 @@ const PromptDetailPage = () => {
       setShowToast(true);
       setLocalBookmarkState(!isBookmarked);
     } catch (error: any) {
+      console.error('[DEBUG] Bookmark toggle error:', error);
       setToastMessage(error.message || '북마크 처리 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);

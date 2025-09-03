@@ -32,6 +32,12 @@ export const useBookmarks = () => {
 
       if (!res.ok) {
         const errorData = await res.json();
+        // 인증 오류인 경우 조용히 처리
+        if (res.status === 401 || res.status === 403) {
+          console.log('[DEBUG] Authentication required for bookmarks');
+          setBookmarks([]);
+          return;
+        }
         throw new Error(errorData.message || '북마크를 가져오는데 실패했습니다.');
       }
 
@@ -46,6 +52,11 @@ export const useBookmarks = () => {
       }
     } catch (err: unknown) {
       console.error('[DEBUG] useBookmarks error:', err);
+      // 인증 관련 오류는 조용히 처리
+      if (err instanceof Error && err.message.includes('인증')) {
+        setBookmarks([]);
+        return;
+      }
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
       setBookmarks([]); // 에러 시 빈 배열로 설정
     } finally {
@@ -55,6 +66,7 @@ export const useBookmarks = () => {
 
   const addBookmark = async (promptId: number) => {
     try {
+      console.log('[DEBUG] Adding bookmark for promptId:', promptId);
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('인증이 필요합니다.');
@@ -69,8 +81,11 @@ export const useBookmarks = () => {
         body: JSON.stringify({ promptId }),
       });
 
+      console.log('[DEBUG] Add bookmark response status:', res.status);
+      
       if (!res.ok) {
         const errorData = await res.json();
+        console.error('[DEBUG] Add bookmark error data:', errorData);
         throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
       }
 

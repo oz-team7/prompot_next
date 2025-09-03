@@ -132,19 +132,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'POST':
       try {
+        console.log('[DEBUG] POST request body:', req.body);
+        console.log('[DEBUG] POST request headers:', req.headers);
+        
         const { promptId, categoryId } = req.body;
-        console.log('[DEBUG] Adding bookmark for prompt:', promptId, 'with category:', categoryId);
+        console.log('[DEBUG] Extracted promptId:', promptId, 'type:', typeof promptId);
+        console.log('[DEBUG] Extracted categoryId:', categoryId, 'type:', typeof categoryId);
 
-        if (!promptId) {
+        // promptId를 숫자로 변환
+        const numericPromptId = typeof promptId === 'string' ? parseInt(promptId, 10) : promptId;
+        console.log('[DEBUG] Converted promptId:', numericPromptId, 'type:', typeof numericPromptId);
+
+        if (!numericPromptId || isNaN(numericPromptId)) {
+          console.log('[DEBUG] promptId is missing, falsy, or not a valid number');
           return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
         }
 
+        // 프롬프트가 실제로 존재하는지 확인
+        console.log('[DEBUG] Checking if prompt exists:', numericPromptId);
+        const { data: promptExists, error: promptCheckError } = await supabase
+          .from('prompts')
+          .select('id')
+          .eq('id', numericPromptId)
+          .single();
+
+        console.log('[DEBUG] Prompt existence check:', { promptExists, promptCheckError });
+
+        if (promptCheckError || !promptExists) {
+          console.log('[DEBUG] Prompt does not exist');
+          return res.status(404).json({ message: '프롬프트를 찾을 수 없습니다.' });
+        }
+
         // 북마크 추가
+        console.log('[DEBUG] Inserting bookmark with data:', {
+          user_id: userId,
+          prompt_id: numericPromptId,
+          category_id: categoryId || null,
+        });
+
         const { data: bookmark, error } = await supabase
           .from('prompt_bookmarks')
           .insert({
             user_id: userId,
-            prompt_id: promptId,
+            prompt_id: numericPromptId,
             category_id: categoryId || null,
           })
           .select()
@@ -170,9 +200,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     case 'DELETE':
       try {
         const { promptId } = req.query; // body 대신 query에서 받기
-        console.log('[DEBUG] Deleting bookmark for prompt:', promptId);
+        console.log('[DEBUG] Deleting bookmark for prompt:', promptId, 'type:', typeof promptId);
 
-        if (!promptId) {
+        // promptId를 숫자로 변환 (배열인 경우 첫 번째 요소 사용)
+        const promptIdValue = Array.isArray(promptId) ? promptId[0] : promptId;
+        const numericPromptId = typeof promptIdValue === 'string' ? parseInt(promptIdValue, 10) : promptIdValue;
+        console.log('[DEBUG] Converted promptId for delete:', numericPromptId, 'type:', typeof numericPromptId);
+
+        if (!numericPromptId || isNaN(numericPromptId)) {
+          console.log('[DEBUG] promptId is missing, falsy, or not a valid number for delete');
           return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
         }
 
@@ -180,7 +216,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { error } = await supabase
           .from('prompt_bookmarks')
           .delete()
-          .eq('prompt_id', promptId)
+          .eq('prompt_id', numericPromptId)
           .eq('user_id', userId);
 
         console.log('[DEBUG] Delete bookmark result:', { error });

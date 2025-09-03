@@ -508,9 +508,9 @@ const MyPage = () => {
                   <div className="text-center py-16 bg-white rounded-lg">
                     <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">작성한 프롬프트가 없습니다</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">아직 작성한 프롬프트가 없습니다</h3>
                     <p className="text-gray-600 mb-4">첫 프롬프트를 작성해보세요!</p>
                     <Link
                       href="/prompt/create"
@@ -647,9 +647,9 @@ const MyPage = () => {
                     <div className="text-center py-16 bg-white rounded-lg">
                       <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">북마크한 프롬프트가 없습니다</h3>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">아직 북마크한 프롬프트가 없습니다</h3>
                       <p className="text-gray-600 mb-4">마음에 드는 프롬프트를 북마크해보세요!</p>
                       <Link
                         href="/"
