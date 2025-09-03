@@ -139,28 +139,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log('[DEBUG] Extracted promptId:', promptId, 'type:', typeof promptId);
         console.log('[DEBUG] Extracted categoryId:', categoryId, 'type:', typeof categoryId);
 
-        // promptId를 숫자로 변환
-        const numericPromptId = typeof promptId === 'string' ? parseInt(promptId, 10) : promptId;
-        console.log('[DEBUG] Converted promptId:', numericPromptId, 'type:', typeof numericPromptId);
+        // promptId를 숫자로 변환 및 유효성 검증
+        let numericPromptId: string | number = promptId;
+        
+        // UUID 형식인지 확인 (하이픈이 포함된 문자열)
+        const isUUID = typeof promptId === 'string' && promptId.includes('-');
+        
+        if (!isUUID && typeof promptId === 'string') {
+          // UUID가 아닌 문자열인 경우 숫자로 변환 시도
+          numericPromptId = parseInt(promptId, 10);
+        }
+        
+        console.log('[DEBUG] Converted promptId:', numericPromptId, 'type:', typeof numericPromptId, 'isUUID:', isUUID);
 
-        if (!numericPromptId || isNaN(numericPromptId)) {
-          console.log('[DEBUG] promptId is missing, falsy, or not a valid number');
-          return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
+        if (!numericPromptId || 
+            (typeof numericPromptId === 'number' && (isNaN(numericPromptId) || numericPromptId <= 0)) ||
+            (typeof numericPromptId === 'string' && numericPromptId.trim() === '')) {
+          console.log('[DEBUG] promptId validation failed:', { promptId, numericPromptId });
+          return res.status(400).json({ 
+            message: '유효한 프롬프트 ID가 필요합니다.',
+            received: promptId,
+            converted: numericPromptId
+          });
         }
 
         // 프롬프트가 실제로 존재하는지 확인
         console.log('[DEBUG] Checking if prompt exists:', numericPromptId);
         const { data: promptExists, error: promptCheckError } = await supabase
           .from('prompts')
-          .select('id')
+          .select('id, title')
           .eq('id', numericPromptId)
           .single();
 
         console.log('[DEBUG] Prompt existence check:', { promptExists, promptCheckError });
 
         if (promptCheckError || !promptExists) {
-          console.log('[DEBUG] Prompt does not exist');
-          return res.status(404).json({ message: '프롬프트를 찾을 수 없습니다.' });
+          console.log('[DEBUG] Prompt does not exist, error:', promptCheckError);
+          return res.status(404).json({ 
+            message: '프롬프트를 찾을 수 없습니다.',
+            promptId: numericPromptId,
+            error: promptCheckError?.message
+          });
+        }
+
+        // 이미 북마크되어 있는지 확인
+        console.log('[DEBUG] Checking if already bookmarked');
+        const { data: existingBookmark, error: existingError } = await supabase
+          .from('prompt_bookmarks')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('prompt_id', numericPromptId)
+          .single();
+
+        if (existingBookmark) {
+          console.log('[DEBUG] Already bookmarked');
+          return res.status(409).json({ message: '이미 북마크된 프롬프트입니다.' });
         }
 
         // 북마크 추가
@@ -183,17 +216,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log('[DEBUG] Add bookmark result:', { bookmark, error });
 
         if (error) {
-          if (error.code === '23505') { // Unique constraint violation
-            return res.status(409).json({ message: '이미 북마크된 프롬프트입니다.' });
-          }
           console.error('Bookmark create error:', error);
-          return res.status(500).json({ message: '북마크 추가에 실패했습니다.' });
+          return res.status(500).json({ 
+            message: '북마크 추가에 실패했습니다.',
+            error: error.message,
+            code: error.code
+          });
         }
 
-        res.status(201).json({ bookmark });
+        res.status(201).json({ 
+          bookmark,
+          message: '북마크가 추가되었습니다.',
+          promptTitle: promptExists.title
+        });
       } catch (error) {
         console.error('Add bookmark error:', error);
-        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+        res.status(500).json({ 
+          message: '서버 오류가 발생했습니다.',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
       break;
 
@@ -204,10 +245,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // promptId를 숫자로 변환 (배열인 경우 첫 번째 요소 사용)
         const promptIdValue = Array.isArray(promptId) ? promptId[0] : promptId;
-        const numericPromptId = typeof promptIdValue === 'string' ? parseInt(promptIdValue, 10) : promptIdValue;
-        console.log('[DEBUG] Converted promptId for delete:', numericPromptId, 'type:', typeof numericPromptId);
+        
+        if (!promptIdValue) {
+          console.log('[DEBUG] promptId is missing or undefined');
+          return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
+        }
+        
+        // UUID 형식인지 확인
+        const isUUID = typeof promptIdValue === 'string' && promptIdValue.includes('-');
+        let numericPromptId: string | number = promptIdValue;
+        
+        if (!isUUID && typeof promptIdValue === 'string') {
+          // UUID가 아닌 문자열인 경우 숫자로 변환 시도
+          numericPromptId = parseInt(promptIdValue, 10);
+        }
+        
+        console.log('[DEBUG] Converted promptId for delete:', numericPromptId, 'type:', typeof numericPromptId, 'isUUID:', isUUID);
 
-        if (!numericPromptId || isNaN(numericPromptId)) {
+        if (!numericPromptId || 
+            (typeof numericPromptId === 'number' && (isNaN(numericPromptId) || numericPromptId <= 0)) ||
+            (typeof numericPromptId === 'string' && numericPromptId.trim() === '')) {
           console.log('[DEBUG] promptId is missing, falsy, or not a valid number for delete');
           return res.status(400).json({ message: '프롬프트 ID가 필요합니다.' });
         }
