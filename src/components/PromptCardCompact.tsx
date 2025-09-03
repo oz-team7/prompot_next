@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
+import BookmarkCategorySelector from './BookmarkCategorySelector';
+
+interface PromptCardCompactProps {
+  prompt: Prompt;
+  onLike: (id: number) => void;
+  onBookmark?: (id: number, categoryId?: number | null) => void;
+  isBookmarked?: boolean;
+}
 
 interface PromptCardCompactProps {
   prompt: Prompt;
@@ -11,6 +19,28 @@ interface PromptCardCompactProps {
 }
 
 const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, onBookmark, isBookmarked = false }) => {
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+
+  const handleBookmarkClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!onBookmark) return;
+    
+    if (isBookmarked) {
+      // 이미 북마크된 경우 제거
+      onBookmark(prompt.id);
+    } else {
+      // 북마크 추가 시 카테고리 선택 모달 표시
+      setShowCategorySelector(true);
+    }
+  };
+
+  const handleCategorySelect = (categoryId: number | null) => {
+    if (onBookmark) {
+      onBookmark(prompt.id, categoryId);
+    }
+  };
   return (
     <Link href={`/prompt/${prompt.id}`} className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden cursor-pointer">
       {/* Preview Image */}
@@ -35,11 +65,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
         {/* Bookmark Button */}
         {onBookmark && (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onBookmark(prompt.id);
-            }}
+            onClick={handleBookmarkClick}
             className="absolute top-2 right-2 p-1.5 sm:p-2 bg-white/90 hover:bg-white rounded-full shadow-sm hover:shadow-md transition-all"
             aria-label="북마크"
           >
@@ -124,6 +150,13 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
           <span className="text-xs text-gray-500">{prompt.author?.name}</span>
         </div>
       </div>
+
+      {/* Bookmark Category Selector */}
+      <BookmarkCategorySelector
+        isOpen={showCategorySelector}
+        onClose={() => setShowCategorySelector(false)}
+        onSelect={handleCategorySelect}
+      />
     </Link>
   );
 };
