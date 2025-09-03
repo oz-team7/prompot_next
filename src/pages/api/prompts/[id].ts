@@ -62,7 +62,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
   // 1) 프롬프트 본문(조인 없이 단건)
   const { data: prompt, error } = await svc
     .from('prompts')
-    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image')
+    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image,additional_images')
     .eq('id', id)
     .single()
 
@@ -119,7 +119,8 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
       rating: 0, // 항상 기본값 0 추가
       date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
       isOwner,
-      previewImage: prompt.preview_image // preview_image를 previewImage로 변환
+      previewImage: prompt.preview_image, // preview_image를 previewImage로 변환
+      additionalImages: prompt.additional_images || [] // additional_images를 additionalImages로 변환
     }
   })
 }
@@ -157,6 +158,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
     tags,
     aiModel,
     preview_image,
+    additional_images,
     is_public,
   } = req.body ?? {}
 
@@ -170,6 +172,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
   if (aiModel) payload.ai_model = aiModel
   if (typeof is_public === 'boolean') payload.is_public = is_public
   if (preview_image === null || typeof preview_image === 'string') payload.preview_image = preview_image
+  if (Array.isArray(additional_images)) payload.additional_images = additional_images
 
   // tags 허용: 배열 또는 문자열("a,b")
   const tagsArr = parseTags(tags)
@@ -180,7 +183,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
     .from('prompts')
     .update(payload)
     .eq('id', id)
-    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image')
+    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image,additional_images')
     .single()
 
   if (error) {

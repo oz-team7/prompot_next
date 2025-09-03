@@ -34,6 +34,7 @@ interface PromptDetail {
   userRating?: number;
   isPublic?: boolean;
   previewImage?: string;
+  additionalImages?: string[];
 }
 
 const PromptDetailPage = () => {
@@ -66,7 +67,9 @@ const PromptDetailPage = () => {
         id: data.prompt.id,
         title: data.prompt.title,
         previewImage: data.prompt.previewImage,
-        hasPreviewImage: !!data.prompt.previewImage
+        hasPreviewImage: !!data.prompt.previewImage,
+        additionalImages: data.prompt.additionalImages,
+        hasAdditionalImages: !!(data.prompt.additionalImages && data.prompt.additionalImages.length > 0)
       });
       setLocalBookmarkState(bookmarks.some(bookmark => bookmark.prompt.id === data.prompt.id));
       setImageError(false); // 이미지 에러 상태 초기화
@@ -260,6 +263,29 @@ const PromptDetailPage = () => {
                         setImageError(true);
                       }}
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Images */}
+              {prompt.additionalImages && prompt.additionalImages.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">추가 이미지</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {prompt.additionalImages.map((imageUrl, index) => (
+                      <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                        <Image
+                          src={imageUrl}
+                          alt={`추가 이미지 ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                          onError={() => {
+                            console.error('[DEBUG] Additional image load error for:', imageUrl);
+                          }}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
