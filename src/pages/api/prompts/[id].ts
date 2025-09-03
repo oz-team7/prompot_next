@@ -118,7 +118,8 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
       bookmarks: bookmarksCount ?? 0,
       rating: 0, // 항상 기본값 0 추가
       date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
-      isOwner
+      isOwner,
+      previewImage: prompt.preview_image // preview_image를 previewImage로 변환
     }
   })
 }

@@ -50,6 +50,7 @@ const PromptDetailPage = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  const [imageError, setImageError] = useState(false);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -61,7 +62,14 @@ const PromptDetailPage = () => {
       }
       
       setPrompt(data.prompt);
+      console.log('[DEBUG] Fetched prompt data:', {
+        id: data.prompt.id,
+        title: data.prompt.title,
+        previewImage: data.prompt.previewImage,
+        hasPreviewImage: !!data.prompt.previewImage
+      });
       setLocalBookmarkState(bookmarks.some(bookmark => bookmark.prompt.id === data.prompt.id));
+      setImageError(false); // 이미지 에러 상태 초기화
     } catch (error: any) {
       setToastMessage(error.message);
       setToastType('error');
@@ -235,6 +243,27 @@ const PromptDetailPage = () => {
 
             {/* Prompt content */}
             <div className={`mt-6 ${!isAuthenticated ? 'blur-md pointer-events-none' : ''}`}>
+              {/* Preview Image */}
+              {prompt.previewImage && !imageError && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">미리보기</h3>
+                  <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    <Image
+                      src={prompt.previewImage}
+                      alt={prompt.title}
+                      fill
+                      className="object-contain"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
+                      priority
+                      onError={() => {
+                        console.error('[DEBUG] Image load error for:', prompt.previewImage);
+                        setImageError(true);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200">
                 {prompt.content}
               </div>
