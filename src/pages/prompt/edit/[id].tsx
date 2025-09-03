@@ -48,48 +48,60 @@ const EditPromptPage = () => {
     isPublic: true,
   });
 
-  const categories: { value: CategoryType; label: string }[] = [
-    { value: 'work', label: '업무/마케팅' },
-    { value: 'dev', label: '개발/코드' },
-    { value: 'design', label: '디자인/브랜드' },
-    { value: 'edu', label: '교육/학습' },
-    { value: 'image', label: '이미지/아트' },
+  const categories: { value: CategoryType; label: string; icon: string }[] = [
+    { value: 'work', label: '업무/마케팅', icon: '💼' },
+    { value: 'dev', label: '개발/코드', icon: '💻' },
+    { value: 'design', label: '디자인/브랜드', icon: '🎨' },
+    { value: 'edu', label: '교육/학습', icon: '📚' },
+    { value: 'image', label: '이미지/아트', icon: '🖼️' },
   ];
 
   const aiModels: AIModel[] = [
-    { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
-    { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
-    { id: 'claude_artifacts', name: 'Claude Artifacts', icon: '/image/icon_claude_artifacts.png' },
-    { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
-    { id: 'gpt4_code', name: 'GPT-4 Code', icon: '/image/icon_gpt-4_code.png' },
-    { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
-    { id: 'dalle3', name: 'DALL·E 3', icon: '/image/icon_dall_e_3.png' },
-    { id: 'stable_diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
-    { id: 'leonardo_ai', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
-    { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
-    { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
-    { id: 'bolt', name: 'Bolt', icon: '/image/icon_bolt-new.png' },
-    { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
-    { id: 'lovable', name: 'Lovable', icon: '/image/icon_lovable.png' },
-    { id: 'copy_ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
-    { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
-    { id: 'wrtn', name: 'WRTN', icon: '/image/icon_wrtn.png' },
-    { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
-    { id: 'mistral', name: 'Mistral Large', icon: '/image/icon_mistrallarge.png' },
-    { id: 'clovax', name: 'Clova X', icon: '/image/icon_clovax.png' },
-    { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
-    { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
-    { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
-    { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
-    { id: 'heygen', name: 'HeyGen', icon: '/image/icon_heygen.png' },
-    { id: 'synthesia', name: 'Synthesia', icon: '/image/icon_synthesia.png' },
-    { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
-    { id: 'pictory', name: 'Pictory', icon: '/image/icon_pictory_logo.png' },
-    { id: 'flexclip', name: 'FlexClip', icon: '/image/icon_flexclip.png' },
-    { id: 'pollo', name: 'Pollo AI', icon: '/image/icon_pollo-ai.png' },
-    { id: 'imagefx', name: 'ImageFX', icon: '/image/icon_imageFX.png' },
-    { id: 'whisk', name: 'Whisk', icon: '/image/icon_whisk.png' },
-    { id: 'controlnet', name: 'ControlNet', icon: '/image/icon_controlnet.png' },
+    // 텍스트 생성 AI
+    { id: 'chatgpt', name: 'ChatGPT', icon: '🤖' },
+    { id: 'chatgpt-plus', name: 'ChatGPT Plus', icon: '🚀' },
+    { id: 'claude', name: 'Claude', icon: '🧠' },
+    { id: 'claude-pro', name: 'Claude Pro', icon: '💎' },
+    { id: 'gemini', name: 'Gemini', icon: '💎' },
+    { id: 'gemini-pro', name: 'Gemini Pro', icon: '⚡' },
+    { id: 'bard', name: 'Bard', icon: '🎭' },
+    { id: 'bing-chat', name: 'Bing Chat', icon: '🔍' },
+    { id: 'perplexity', name: 'Perplexity', icon: '🤔' },
+    { id: 'poe', name: 'Poe', icon: '📝' },
+    
+    // 코딩 AI
+    { id: 'copilot', name: 'GitHub Copilot', icon: '👨‍💻' },
+    { id: 'copilot-x', name: 'Copilot X', icon: '⚡' },
+    { id: 'claude-coder', name: 'Claude Coder', icon: '💻' },
+    { id: 'cursor', name: 'Cursor', icon: '🎯' },
+    { id: 'tabnine', name: 'Tabnine', icon: '⚡' },
+    { id: 'kite', name: 'Kite', icon: '🪁' },
+    
+    // 이미지 생성 AI
+    { id: 'dalle', name: 'DALL-E', icon: '🖼️' },
+    { id: 'dalle-3', name: 'DALL-E 3', icon: '🎨' },
+    { id: 'midjourney', name: 'Midjourney', icon: '🖼️' },
+    { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '🎭' },
+    { id: 'firefly', name: 'Adobe Firefly', icon: '🔥' },
+    { id: 'canva-ai', name: 'Canva AI', icon: '🎨' },
+    
+    // 비디오 생성 AI
+    { id: 'runway', name: 'Runway', icon: '🎬' },
+    { id: 'pika', name: 'Pika Labs', icon: '🎥' },
+    { id: 'synthesia', name: 'Synthesia', icon: '🎭' },
+    { id: 'descript', name: 'Descript', icon: '📝' },
+    
+    // 오디오 생성 AI
+    { id: 'elevenlabs', name: 'ElevenLabs', icon: '🎙️' },
+    { id: 'murph', name: 'Murph', icon: '🎤' },
+    { id: 'play-ht', name: 'Play.HT', icon: '🎵' },
+    
+    // 기타 AI 도구
+    { id: 'notion-ai', name: 'Notion AI', icon: '📝' },
+    { id: 'jasper', name: 'Jasper', icon: '✍️' },
+    { id: 'copy-ai', name: 'Copy.ai', icon: '📄' },
+    { id: 'writesonic', name: 'Writesonic', icon: '✍️' },
+    { id: 'other', name: '기타', icon: '🔧' },
   ];
 
   // 토큰 디버깅 함수
@@ -381,16 +393,23 @@ const EditPromptPage = () => {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-6 max-w-4xl">
+      
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* 헤더 */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">프롬프트 수정</h1>
+            <p className="text-gray-600">프롬프트를 수정하고 개선해보세요!</p>
+          </div>
+
+          {/* 폼 */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h1 className="text-2xl font-bold mb-6">프롬프트 수정</h1>
-            
             <form onSubmit={handleSubmit} className="space-y-6">
+              
               {/* 제목 */}
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  제목 <span className="text-red-500">*</span>
+                  제목 *
                 </label>
                 <input
                   type="text"
@@ -398,72 +417,73 @@ const EditPromptPage = () => {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="프롬프트 제목을 입력하세요"
+                  placeholder="프롬프트의 제목을 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                 />
               </div>
 
-              {/* 카테고리 및 AI 모델 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                    카테고리 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  >
-                    {categories.map(cat => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* 설명 */}
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  설명
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="프롬프트에 대한 간단한 설명을 입력하세요"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
 
-                <div>
-                  <label htmlFor="aiModel" className="block text-sm font-medium text-gray-700 mb-2">
-                    AI 모델 <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="aiModel"
-                      name="aiModel"
-                      value={formData.aiModel}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+              {/* 카테고리 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  카테고리 *
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, category: cat.value }))}
+                      className={`p-3 rounded-lg border-2 transition-colors ${
+                        formData.category === cat.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
                     >
-                      {aiModels.map(model => (
-                        <option key={model.id} value={model.id}>
-                          {model.name}
-                        </option>
-                      ))}
-                    </select>
-                    {/* 선택된 AI 모델 아이콘 표시 */}
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                      <Image
-                        src={aiModels.find(m => m.id === formData.aiModel)?.icon || '/image/icon_chatgpt.png'}
-                        alt={aiModels.find(m => m.id === formData.aiModel)?.name || 'AI Model'}
-                        width={20}
-                        height={20}
-                        className="rounded"
-                      />
-                    </div>
-                    {/* 드롭다운 화살표 */}
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-                  {/* 선택된 AI 모델 정보 */}
-                  <p className="mt-1 text-xs text-gray-500">
-                    {aiModels.find(m => m.id === formData.aiModel)?.name}를 사용하는 프롬프트
-                  </p>
+                      <div className="text-2xl mb-1">{cat.icon}</div>
+                      <div className="text-xs font-medium">{cat.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI 모델 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  AI 모델 *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-96 overflow-y-auto">
+                  {aiModels.map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, aiModel: model.id }))}
+                      className={`p-3 rounded-lg border-2 transition-colors ${
+                        formData.aiModel === model.id
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{model.icon}</div>
+                      <div className="text-sm font-medium">{model.name}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -478,141 +498,118 @@ const EditPromptPage = () => {
                   name="tags"
                   value={formData.tags}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="예: 마케팅, 이메일, 고객응대"
+                  placeholder="태그를 쉼표로 구분하여 입력하세요 (예: AI, 생산성, 팁)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
-              </div>
-
-              {/* 설명 */}
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                  설명 <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                  placeholder="프롬프트에 대한 간단한 설명을 입력하세요"
-                  required
-                />
-              </div>
-
-              {/* 미리보기 이미지 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  미리보기 이미지
-                  <span className="text-xs text-gray-500 ml-2">(최대 2MB)</span>
-                </label>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>이미지 업로드</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  {previewImage && (
-                    <div className="relative w-32 h-24">
-                      <Image
-                        src={previewImage}
-                        alt="Preview"
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setPreviewImage(null)}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* 프롬프트 내용 */}
               <div>
                 <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                  프롬프트 내용 <span className="text-red-500">*</span>
+                  프롬프트 내용 *
                 </label>
                 <textarea
                   id="content"
                   name="content"
                   value={formData.content}
                   onChange={handleChange}
-                  rows={10}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none font-mono text-sm"
-                  placeholder="프롬프트 내용을 입력하세요"
+                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요..."
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
                   required
                 />
               </div>
 
-              {/* 공개/비공개 설정 */}
-              <div className="border-t pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  공개 설정 <span className="text-red-500">*</span>
+              {/* 이미지 업로드 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  미리보기 이미지
                 </label>
-                <div className="space-y-2">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isPublic"
-                      value="true"
-                      checked={formData.isPublic === true}
-                      onChange={() => setFormData(prev => ({ ...prev, isPublic: true }))}
-                      className="mt-1"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900">공개</p>
-                      <p className="text-sm text-gray-600">
-                        모든 사용자가 이 프롬프트를 검색하고 사용할 수 있습니다.
-                      </p>
-                    </div>
-                  </label>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="isPublic"
-                      value="false"
-                      checked={formData.isPublic === false}
-                      onChange={() => setFormData(prev => ({ ...prev, isPublic: false }))}
-                      className="mt-1"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900">비공개</p>
-                      <p className="text-sm text-gray-600">
-                        본인만 이 프롬프트를 볼 수 있습니다.
-                      </p>
-                    </div>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label htmlFor="image-upload" className="cursor-pointer">
+                    {previewImage ? (
+                      <div className="space-y-2">
+                        <div className="relative w-32 h-32 mx-auto">
+                          <Image
+                            src={previewImage}
+                            alt="미리보기"
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage(null)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <p className="text-sm text-gray-600">이미지를 변경하려면 클릭하세요</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="text-4xl text-gray-400">📷</div>
+                        <p className="text-sm text-gray-600">이미지를 업로드하려면 클릭하세요</p>
+                        <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 2MB)</p>
+                      </div>
+                    )}
                   </label>
                 </div>
               </div>
 
-              {/* 버튼 */}
-              <div className="flex gap-3 justify-end">
+              {/* 공개 설정 */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <h3 className="font-medium text-gray-900">공개 설정</h3>
+                  <p className="text-sm text-gray-600">
+                    {formData.isPublic 
+                      ? '다른 사용자들이 이 프롬프트를 볼 수 있습니다.' 
+                      : '나만 이 프롬프트를 볼 수 있습니다.'
+                    }
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPublic}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              {/* 제출 버튼 */}
+              <div className="flex gap-4 pt-6">
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                  disabled={loading}
+                  className="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  프롬프트 수정
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      수정 중...
+                    </div>
+                  ) : (
+                    '프롬프트 수정하기'
+                  )}
                 </button>
               </div>
             </form>
@@ -620,7 +617,7 @@ const EditPromptPage = () => {
         </div>
       </main>
 
-      {/* Toast 알림 */}
+      {/* Toast */}
       {showToast && (
         <Toast
           message={toastMessage}
