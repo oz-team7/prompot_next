@@ -9,146 +9,107 @@ import Toast from '@/components/Toast';
 import RatingSystem from '@/components/RatingSystem';
 import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
-import { Prompt } from '@/types/prompt';
+
+interface AIModel {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+interface PromptDetail {
+  id: string;
+  title: string;
+  content: string;
+  description?: string;
+  category: string;
+  aiModel: AIModel | string;
+  tags?: string[];
+  author: {
+    id: string;
+    name: string;
+  };
+  createdAt: string;
+  date: string;
+  rating?: number;
+  userRating?: number;
+  isPublic?: boolean;
+  previewImage?: string;
+}
 
 const PromptDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { isAuthenticated, user } = useAuth();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+
+  const [prompt, setPrompt] = useState<PromptDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [localBookmarkState, setLocalBookmarkState] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
-  const [prompt, setPrompt] = useState<Prompt | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [localBookmarkState, setLocalBookmarkState] = useState(false);
 
   const fetchPrompt = useCallback(async () => {
     try {
-      console.log('Fetching prompt with ID:', id);
-      const res = await fetch(`/api/prompts/${id}`, {
-        credentials: 'include', // 인증 쿠키 포함
-      });
-      
-      console.log('Response status:', res.status);
+      const res = await fetch(`/api/prompts/${id}`);
       const data = await res.json();
-      console.log('Response data:', data);
       
       if (!res.ok) {
         throw new Error(data.message || '프롬프트를 불러올 수 없습니다.');
       }
       
       setPrompt(data.prompt);
-      // 초기 북마크 상태 설정
       setLocalBookmarkState(bookmarks.some(bookmark => bookmark.prompt.id === data.prompt.id));
     } catch (error: any) {
-      console.error('Fetch prompt error:', error);
-      setToastMessage(error.message || '프롬프트를 불러올 수 없습니다.');
+      setToastMessage(error.message);
       setToastType('error');
       setShowToast(true);
-      if (error.message === '로그인이 필요합니다.') {
-        setTimeout(() => {
-          router.push('/login');
-        }, 1500);
-      }
     } finally {
       setLoading(false);
     }
-  }, [id, router]);
+  }, [id, bookmarks]);
 
   useEffect(() => {
     if (id) {
       fetchPrompt();
     }
-  }, [fetchPrompt, id]);
+  }, [id, fetchPrompt]);
 
   if (loading) {
     return (
-      <>
+      <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p className="text-gray-600">프롬프트를 불러오는 중...</p>
-          </div>
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
         </div>
-      </>
+      </div>
     );
   }
 
-  // 북마크 상태 확인 (실시간 업데이트)
-  const isBookmarked = localBookmarkState || bookmarks.some(bookmark => bookmark.prompt.id === prompt?.id);
+  if (!prompt) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">프롬프트를 찾을 수 없습니다</h2>
+            <Link href="/" className="text-primary hover:underline">홈으로 돌아가기</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // 북마크 상태를 강제로 업데이트하는 함수
-  const refreshBookmarkState = () => {
-    // 강제로 컴포넌트 리렌더링
-    setPrompt(prev => prev ? { ...prev } : null);
-  };
+  const isBookmarked = localBookmarkState;
+  const isAuthor = user?.id === prompt.author?.id;
 
-  // 현재 사용자가 프롬프트 작성자인지 확인
-  const isAuthor = user?.id === prompt?.author?.id;
-
-  // 수정 페이지로 이동
-  const handleEdit = () => {
-    if (prompt) {
-      router.push(`/prompt/edit/${prompt.id}`);
-    }
-  };
-
-  // 삭제 확인 모달 표시
-  const handleDelete = () => {
-    setShowDeleteModal(true);
-  };
-
-  // 프롬프트 삭제 실행
-  const confirmDelete = async () => {
-    if (!prompt) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('인증이 필요합니다.');
-      }
-
-      const res = await fetch(`/api/prompts/${prompt.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || '프롬프트 삭제에 실패했습니다.');
-      }
-
-      setToastMessage('프롬프트가 삭제되었습니다.');
-      setToastType('success');
-      setShowToast(true);
-      setShowDeleteModal(false);
-
-      // 마이페이지로 리다이렉트
-      setTimeout(() => {
-        router.push('/mypage?tab=prompts&refresh=true');
-      }, 1500);
-    } catch (error: any) {
-      console.error('Delete prompt error:', error);
-      setToastMessage(error.message || '프롬프트 삭제에 실패했습니다.');
-      setToastType('error');
-      setShowToast(true);
-    }
-  };
-
-  // 북마크 토글 함수
   const handleBookmarkToggle = async () => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
       return;
     }
-
-    if (!prompt) return;
 
     try {
       if (isBookmarked) {
@@ -156,232 +117,151 @@ const PromptDetailPage = () => {
         if (bookmark) {
           await removeBookmark(bookmark.id);
           setToastMessage('북마크가 제거되었습니다.');
-          setToastType('success');
-          // 북마크 상태 즉시 업데이트
-          setLocalBookmarkState(false);
         }
       } else {
-        await addBookmark(prompt.id);
+        await addBookmark(Number(prompt.id));
         setToastMessage('북마크에 추가되었습니다!');
-        setToastType('success');
-        // 북마크 상태 즉시 업데이트
-        setLocalBookmarkState(true);
       }
+      setToastType('success');
       setShowToast(true);
-    } catch (error) {
-      console.error('Bookmark toggle error:', error);
-      setToastMessage('북마크 처리 중 오류가 발생했습니다.');
+      setLocalBookmarkState(!isBookmarked);
+    } catch (error: any) {
+      setToastMessage(error.message || '북마크 처리 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
     }
   };
 
-  if (!prompt) {
-    return (
-      <>
-        <Header />
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-gray-500 mb-4">프롬프트를 찾을 수 없습니다.</p>
-            <button
-              onClick={() => router.back()}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              돌아가기
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const res = await fetch(`/api/prompts/${prompt.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        throw new Error('프롬프트 삭제에 실패했습니다.');
+      }
+
+      setToastMessage('프롬프트가 삭제되었습니다.');
+      setToastType('success');
+      setShowToast(true);
+      
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
+    } catch (error: any) {
+      setToastMessage(error.message);
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 pt-2 pb-2 max-w-4xl">
-          {/* 프롬프트 헤더 */}
-          <div className="bg-white rounded-lg shadow-sm p-3 mb-3">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <h1 className="text-xl font-bold mb-1">{prompt.title}</h1>
-                <div className="flex items-center gap-3 text-xs text-gray-600">
-                  <span className="font-medium">{prompt.author.name}</span>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm p-6 relative">
+            {/* Content header */}
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h1 className="text-2xl font-bold mb-2">{prompt.title}</h1>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>{prompt.author.name}</span>
                   <span>•</span>
-                  <span>{prompt.date}</span>
-                  <span>•</span>
-                  <div className="flex items-center gap-1">
-                    <svg className="w-4 h-4 text-yellow-500 fill-current" viewBox="0 0 20 20">
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                    </svg>
-                    <span className="font-semibold">{prompt.rating.toFixed(1)}</span>
-                  </div>
+                  <time dateTime={prompt.createdAt}>{prompt.date}</time>
                 </div>
               </div>
               
-              {/* 작성자인 경우 수정/삭제 버튼 표시 */}
-              {isAuthor && (
-                <div className="flex gap-2 ml-4">
-                  <button
-                    onClick={handleEdit}
-                    className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-1"
-                  >
-                    삭제
-                  </button>
-                </div>
-              )}
-              
-              {/* 북마크 버튼 (작성자 여부와 관계없이 표시) */}
-              {isAuthenticated && (
-                <div className="flex gap-2 ml-4">
+              <div className="flex items-center gap-2">
+                {isAuthor && (
+                  <>
+                    <button
+                      onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
+                      className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      삭제
+                    </button>
+                  </>
+                )}
+                
+                {isAuthenticated && (
                   <button
                     onClick={handleBookmarkToggle}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                      isBookmarked 
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1
+                      ${isBookmarked 
                         ? 'bg-orange-100 text-primary border border-orange-200 hover:bg-orange-200' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
+                    <svg className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
                     {isBookmarked ? '북마크됨' : '북마크'}
                   </button>
-                </div>
-              )}
-            </div>
-            
-            {/* 태그 및 AI 모델 */}
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              {/* AI 모델 태그 */}
-              {prompt.aiModel && (
-                <div className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-                  {typeof prompt.aiModel === 'object' && prompt.aiModel.icon && (
-                    <Image
-                      src={prompt.aiModel.icon}
-                      alt={typeof prompt.aiModel === 'object' ? prompt.aiModel.name : prompt.aiModel}
-                      width={16}
-                      height={16}
-                      className="rounded"
-                    />
-                  )}
-                  <span className="font-medium">
-                    {typeof prompt.aiModel === 'object' ? prompt.aiModel.name : prompt.aiModel}
-                  </span>
-                </div>
-              )}
-              
-              {/* 일반 태그 */}
-              {prompt.tags && prompt.tags.length > 0 && prompt.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            {/* 설명 */}
-            <p className="text-sm text-gray-700 line-clamp-2">{prompt.description}</p>
-
-            {/* 별점 시스템 */}
-            <div className="mt-4">
-              <RatingSystem promptId={prompt.id.toString()} onRatingChange={(success, message) => { setToastMessage(message); setToastType(success ? "success" : "error"); setShowToast(true); }} />
-            </div>
-
-            {/* 공유하기 */}
-            <SharePrompt promptId={prompt.id.toString()} title={prompt.title} />
-
-            {/* 구분선 */}
-            <hr className="my-6 border-gray-200" />
-
-            {/* 댓글 섹션 */}
-            <div className="mt-6">
-              <h2 className="text-lg font-semibold mb-4">댓글</h2>
-              <CommentSection promptId={prompt.id.toString()} />
-            </div>
-          </div>
-
-          {/* 미리보기 이미지 */}
-          {prompt.previewImage && (
-            <div className="bg-white rounded-lg shadow-sm p-3 mb-3">
-              <h2 className="text-base font-semibold mb-2">미리보기</h2>
-              <div className="relative w-full aspect-video">
-                <Image
-                  src={prompt.previewImage}
-                  alt={prompt.title}
-                  fill
-                  className="object-contain rounded-lg"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* 프롬프트 내용 - 블러 처리 */}
-          <div className="relative">
-            <div className={`bg-white rounded-lg shadow-sm p-3 ${!isAuthenticated ? 'select-none' : ''}`}>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-base font-semibold">프롬프트 내용</h2>
-                {isAuthenticated && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(prompt.content || '프롬프트 내용');
-                        setToastMessage('프롬프트가 클립보드에 복사되었습니다!');
-                        setToastType('success');
-                        setShowToast(true);
-                      }}
-                      className="p-1.5 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors"
-                      title="복사하기"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
-                  </div>
                 )}
               </div>
-              <div className={`${!isAuthenticated ? 'blur-md pointer-events-none' : ''}`}>
-                <div className="bg-gray-50 rounded-lg p-3 font-mono text-sm whitespace-pre-wrap">
-                  {prompt.content || `이 프롬프트는 ${prompt.category === 'work' ? '업무/마케팅' : prompt.category === 'dev' ? '개발/코드' : prompt.category === 'design' ? '디자인/브랜드' : prompt.category === 'edu' ? '교육/학습' : '이미지/아트'} 분야의 프롬프트입니다.
-
-[프롬프트 내용이 여기에 표시됩니다]
-
-이 프롬프트를 사용하여 더 나은 결과를 얻어보세요!`}
-                </div>
-              </div>
             </div>
 
-            {/* 로그인 오버레이 */}
-            {!isAuthenticated && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-lg">
-                <div className="text-center">
-                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <h3 className="text-xl font-semibold mb-2">로그인이 필요합니다</h3>
-                  <p className="text-gray-600 mb-4">프롬프트 내용을 보려면 로그인하세요</p>
-                  <button
-                    onClick={() => setShowLoginModal(true)}
-                    className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-                  >
-                    로그인하기
-                  </button>
-                </div>
+            {/* Prompt content */}
+            <div className={`mt-6 ${!isAuthenticated ? 'blur-md pointer-events-none' : ''}`}>
+              <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200">
+                {prompt.content}
               </div>
-            )}
-          </div>
 
+              <div className="mt-4">
+                <SharePrompt promptId={prompt.id} title={prompt.title} />
+              </div>
+              
+              {!isAuthenticated && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-lg">
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold mb-2">로그인이 필요합니다</h3>
+                    <p className="text-gray-600 mb-4">프롬프트 내용을 보려면 로그인하세요</p>
+                    <button
+                      onClick={() => setShowLoginModal(true)}
+                      className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                    >
+                      로그인하기
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Rating */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-2">평가하기</h3>
+              <RatingSystem 
+                promptId={prompt.id}
+                onRatingChange={(success, message) => {
+                  setToastMessage(message);
+                  setToastType(success ? 'success' : 'error');
+                  setShowToast(true);
+                }}
+              />
+            </div>
+
+            {/* Comments */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-2">댓글</h3>
+              <CommentSection promptId={prompt.id} />
+            </div>
+          </div>
         </div>
       </main>
 
-      {/* Toast 알림 */}
+      {/* Toast */}
       {showToast && (
         <Toast
           message={toastMessage}
@@ -390,96 +270,58 @@ const PromptDetailPage = () => {
         />
       )}
 
-      {/* 로그인 모달 */}
+      {/* Login modal */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">로그인</h2>
               <button
                 onClick={() => setShowLoginModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-
-            <form className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                <input
-                  type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="이메일을 입력하세요"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
-                <input
-                  type="password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="비밀번호를 입력하세요"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                로그인
-              </button>
-            </form>
-
-            <div className="mt-4 text-center text-sm">
-              <span className="text-gray-600">계정이 없으신가요? </span>
-              <Link href="/signup" className="text-primary hover:underline">
-                회원가입
-              </Link>
-            </div>
+            <Link
+              href="/login"
+              className="block w-full py-2 px-4 bg-primary text-white text-center rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              로그인 페이지로 이동
+            </Link>
           </div>
         </div>
       )}
 
-      {/* 삭제 확인 모달 */}
+      {/* Delete confirmation modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-red-600">프롬프트 삭제</h2>
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-full"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-
-            <div className="mb-6">
-              <p className="text-gray-700 mb-4">
-                정말로 이 프롬프트를 삭제하시겠습니까?
-              </p>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <h3 className="font-semibold text-gray-900">{prompt?.title}</h3>
-                <p className="text-sm text-gray-600 mt-1">{prompt?.description}</p>
-              </div>
-              <p className="text-sm text-red-600 mt-3">
-                ⚠️ 이 작업은 되돌릴 수 없습니다.
-              </p>
-            </div>
-
+            <p className="text-gray-700 mb-4">이 프롬프트를 삭제하시겠습니까?</p>
+            <p className="text-sm text-red-600 mb-6">⚠️ 이 작업은 되돌릴 수 없습니다.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 취소
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600"
               >
                 삭제
               </button>
@@ -487,7 +329,7 @@ const PromptDetailPage = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
