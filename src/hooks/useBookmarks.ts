@@ -64,13 +64,22 @@ export const useBookmarks = () => {
     }
   };
 
-  const addBookmark = async (promptId: number) => {
+  const addBookmark = async (promptId: string | number) => {
     try {
-      console.log('[DEBUG] Adding bookmark for promptId:', promptId);
+      console.log('[DEBUG] Adding bookmark for promptId:', promptId, 'type:', typeof promptId);
+      
+      // ID 유효성 검증
+      if (!promptId || (typeof promptId === 'number' && (isNaN(promptId) || promptId <= 0)) || 
+          (typeof promptId === 'string' && promptId.trim() === '')) {
+        throw new Error('유효하지 않은 프롬프트 ID입니다.');
+      }
+
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('인증이 필요합니다.');
       }
+
+      console.log('[DEBUG] Sending request with data:', { promptId, token: token.substring(0, 20) + '...' });
 
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
@@ -97,7 +106,7 @@ export const useBookmarks = () => {
     }
   };
 
-  const removeBookmark = async (promptId: number) => {
+  const removeBookmark = async (promptId: string | number) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {

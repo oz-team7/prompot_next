@@ -118,11 +118,27 @@ const PromptDetailPage = () => {
     try {
       if (isBookmarked) {
         console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
-        await removeBookmark(Number(prompt.id));
+        await removeBookmark(prompt.id);
         setToastMessage('북마크가 제거되었습니다.');
       } else {
         console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
-        await addBookmark(Number(prompt.id));
+        console.log('[DEBUG] Prompt ID type:', typeof prompt.id);
+        console.log('[DEBUG] Prompt ID value:', prompt.id);
+        
+        // UUID 형식의 ID를 그대로 사용 (숫자 변환 제거)
+        const promptId = prompt.id;
+        console.log('[DEBUG] Using promptId as-is:', promptId, 'type:', typeof promptId);
+        
+        if (!promptId || typeof promptId !== 'string' || promptId.trim() === '') {
+          console.error('[DEBUG] Invalid promptId:', {
+            original: prompt.id,
+            type: typeof promptId,
+            isEmpty: promptId === '',
+            isWhitespace: promptId.trim() === ''
+          });
+          throw new Error(`유효하지 않은 프롬프트 ID입니다. (받은 값: ${prompt.id})`);
+        }
+        await addBookmark(promptId);
         setToastMessage('북마크에 추가되었습니다!');
       }
       setToastType('success');
