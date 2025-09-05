@@ -39,6 +39,10 @@ const EditPromptPage = () => {
   const [additionalImages, setAdditionalImages] = useState<File[]>([]);
   const [additionalPreviewUrls, setAdditionalPreviewUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // 드롭다운 상태 추가
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showAIModelDropdown, setShowAIModelDropdown] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -60,49 +64,33 @@ const EditPromptPage = () => {
 
   const aiModels: AIModel[] = [
     // 텍스트 생성 AI
-    { id: 'chatgpt', name: 'ChatGPT', icon: '🤖' },
-    { id: 'chatgpt-plus', name: 'ChatGPT Plus', icon: '🚀' },
-    { id: 'claude', name: 'Claude', icon: '🧠' },
-    { id: 'claude-pro', name: 'Claude Pro', icon: '💎' },
-    { id: 'gemini', name: 'Gemini', icon: '💎' },
-    { id: 'gemini-pro', name: 'Gemini Pro', icon: '⚡' },
-    { id: 'bard', name: 'Bard', icon: '🎭' },
-    { id: 'bing-chat', name: 'Bing Chat', icon: '🔍' },
-    { id: 'perplexity', name: 'Perplexity', icon: '🤔' },
-    { id: 'poe', name: 'Poe', icon: '📝' },
+    { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
+    { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
+    { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
+    { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
     
     // 코딩 AI
-    { id: 'copilot', name: 'GitHub Copilot', icon: '👨‍💻' },
-    { id: 'copilot-x', name: 'Copilot X', icon: '⚡' },
-    { id: 'claude-coder', name: 'Claude Coder', icon: '💻' },
-    { id: 'cursor', name: 'Cursor', icon: '🎯' },
-    { id: 'tabnine', name: 'Tabnine', icon: '⚡' },
-    { id: 'kite', name: 'Kite', icon: '🪁' },
+    { id: 'copilot', name: 'GitHub Copilot', icon: '/image/icon_gpt-4_code.png' },
+    { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
+    { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
+    { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
     
     // 이미지 생성 AI
-    { id: 'dalle', name: 'DALL-E', icon: '🖼️' },
-    { id: 'dalle-3', name: 'DALL-E 3', icon: '🎨' },
-    { id: 'midjourney', name: 'Midjourney', icon: '🖼️' },
-    { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '🎭' },
-    { id: 'firefly', name: 'Adobe Firefly', icon: '🔥' },
-    { id: 'canva-ai', name: 'Canva AI', icon: '🎨' },
+    { id: 'dalle', name: 'DALL-E', icon: '/image/icon_dall_e_3.png' },
+    { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
+    { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
+    { id: 'leonardo', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
     
     // 비디오 생성 AI
-    { id: 'runway', name: 'Runway', icon: '🎬' },
-    { id: 'pika', name: 'Pika Labs', icon: '🎥' },
-    { id: 'synthesia', name: 'Synthesia', icon: '🎭' },
-    { id: 'descript', name: 'Descript', icon: '📝' },
-    
-    // 오디오 생성 AI
-    { id: 'elevenlabs', name: 'ElevenLabs', icon: '🎙️' },
-    { id: 'murph', name: 'Murph', icon: '🎤' },
-    { id: 'play-ht', name: 'Play.HT', icon: '🎵' },
+    { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
+    { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
+    { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
+    { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
     
     // 기타 AI 도구
-    { id: 'notion-ai', name: 'Notion AI', icon: '📝' },
-    { id: 'jasper', name: 'Jasper', icon: '✍️' },
-    { id: 'copy-ai', name: 'Copy.ai', icon: '📄' },
-    { id: 'writesonic', name: 'Writesonic', icon: '✍️' },
+    { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
+    { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
+    { id: 'copy-ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
     { id: 'other', name: '기타', icon: '🔧' },
   ];
 
@@ -244,6 +232,20 @@ const EditPromptPage = () => {
       fetchPrompt();
     }
   }, [fetchPrompt, id, isAuthenticated, router]);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.dropdown-container')) {
+        setShowCategoryDropdown(false);
+        setShowAIModelDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -546,51 +548,119 @@ const EditPromptPage = () => {
                 />
               </div>
 
-              {/* 카테고리 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  카테고리 *
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {categories.map((cat) => (
+              {/* 카테고리 & AI 모델 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 카테고리 */}
+                <div className="dropdown-container">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    카테고리 *
+                  </label>
+                  <div className="relative">
                     <button
-                      key={cat.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, category: cat.value }))}
-                      className={`p-3 rounded-lg border-2 transition-colors ${
-                        formData.category === cat.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      className="w-full flex items-center justify-between p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
-                      <div className="text-2xl mb-1">{cat.icon}</div>
-                      <div className="text-xs font-medium">{cat.label}</div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">
+                          {categories.find(cat => cat.value === formData.category)?.icon}
+                        </span>
+                        <span className="text-sm font-medium">
+                          {categories.find(cat => cat.value === formData.category)?.label}
+                        </span>
+                      </div>
+                      <svg className={`w-5 h-5 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </button>
-                  ))}
+                    
+                    {showCategoryDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                        {categories.map((cat) => (
+                          <button
+                            key={cat.value}
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, category: cat.value }));
+                              setShowCategoryDropdown(false);
+                            }}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            <span className="text-xl">{cat.icon}</span>
+                            <span className="text-sm font-medium">{cat.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* AI 모델 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  AI 모델 *
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-96 overflow-y-auto">
-                  {aiModels.map((model) => (
+                {/* AI 모델 */}
+                <div className="dropdown-container">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    AI 모델 *
+                  </label>
+                  <div className="relative">
                     <button
-                      key={model.id}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, aiModel: model.id }))}
-                      className={`p-3 rounded-lg border-2 transition-colors ${
-                        formData.aiModel === model.id
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      onClick={() => setShowAIModelDropdown(!showAIModelDropdown)}
+                      className="w-full flex items-center justify-between p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
-                      <div className="text-2xl mb-1">{model.icon}</div>
-                      <div className="text-sm font-medium">{model.name}</div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6">
+                          {(() => {
+                            const selectedModel = aiModels.find(model => model.id === formData.aiModel);
+                            if (selectedModel?.icon === '🔧') {
+                              return <div className="text-lg">{selectedModel.icon}</div>;
+                            } else {
+                              return (
+                                <img 
+                                  src={selectedModel?.icon} 
+                                  alt={selectedModel?.name}
+                                  className="w-full h-full object-contain"
+                                />
+                              );
+                            }
+                          })()}
+                        </div>
+                        <span className="text-sm font-medium">
+                          {aiModels.find(model => model.id === formData.aiModel)?.name}
+                        </span>
+                      </div>
+                      <svg className={`w-5 h-5 transition-transform ${showAIModelDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </button>
-                  ))}
+                    
+                    {showAIModelDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                        {aiModels.map((model) => (
+                          <button
+                            key={model.id}
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, aiModel: model.id }));
+                              setShowAIModelDropdown(false);
+                            }}
+                            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            <div className="w-6 h-6">
+                              {model.icon === '🔧' ? (
+                                <div className="text-lg">{model.icon}</div>
+                              ) : (
+                                <img 
+                                  src={model.icon} 
+                                  alt={model.name}
+                                  className="w-full h-full object-contain"
+                                />
+                              )}
+                            </div>
+                            <span className="text-sm font-medium">{model.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

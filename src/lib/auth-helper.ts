@@ -15,7 +15,7 @@ export async function verifyToken(token: string): Promise<{ userId: string; user
     // 사용자 프로필 정보 가져오기
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id, name, email')
+      .select('id, name, email, avatar_url')
       .eq('id', user.id)
       .single();
 
