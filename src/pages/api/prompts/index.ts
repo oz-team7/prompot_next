@@ -102,6 +102,7 @@ export default async function handler(
       tags: typeof prompt.tags === 'string' ? JSON.parse(prompt.tags) : prompt.tags,
       aiModel: prompt.ai_model,
       previewImage: prompt.preview_image,
+      additionalImages: prompt.additional_images || [], // additional_images 필드 추가
       isPublic: prompt.is_public,
       author: {
         id: prompt.author.id,

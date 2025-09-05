@@ -313,21 +313,27 @@ const CreatePromptPage = () => {
       
       // 메인 이미지 업로드
       if (image) {
-        const formDataImage = new FormData();
-        formDataImage.append('image', image);
+        // 파일을 Base64로 변환
+        const imageData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(image);
+        });
         
         // 인증 토큰 가져오기
         const token = localStorage.getItem('token');
-        const headers: Record<string, string> = {};
-        
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
         
         const uploadRes = await fetch('/api/upload-image', {
           method: 'POST',
-          headers,
-          body: formDataImage,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            imageData: imageData,
+            fileName: image.name,
+          }),
         });
         
         if (!uploadRes.ok) {
@@ -342,20 +348,26 @@ const CreatePromptPage = () => {
       // 추가 이미지들 업로드
       if (additionalImages.length > 0) {
         const token = localStorage.getItem('token');
-        const headers: Record<string, string> = {};
-        
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
 
         for (const additionalImage of additionalImages) {
-          const formDataImage = new FormData();
-          formDataImage.append('image', additionalImage);
+          // 파일을 Base64로 변환
+          const imageData = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(additionalImage);
+          });
           
           const uploadRes = await fetch('/api/upload-image', {
             method: 'POST',
-            headers,
-            body: formDataImage,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              imageData: imageData,
+              fileName: additionalImage.name,
+            }),
           });
           
           if (!uploadRes.ok) {
