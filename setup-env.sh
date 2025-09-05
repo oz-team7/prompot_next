@@ -15,8 +15,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 # Supabase CLI 액세스 토큰
 SUPABASE_ACCESS_TOKEN=sbp_c1efde168325ad9dec24bf77836a7633286f8453
 
-# JWT 시크릿 (기존 시스템용)
-JWT_SECRET=VKIP0GjFU9XZfez3xQbXupimzEU27g7SZYBwwHr5iV/qQEEXejdWUWVslwLqeXkCuwYvuCQYyw+r5ap0wtFlqg==
+# JWT 시크릿 제거됨 - Supabase Auth 사용
 
 # 사이트 URL 설정
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -43,8 +42,7 @@ SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 # Supabase CLI 액세스 토큰 (프로덕션용)
 SUPABASE_ACCESS_TOKEN="sbp_c1efde168325ad9dec24bf77836a7633286f8453"
 
-# JWT 시크릿 (프로덕션용)
-JWT_SECRET="VKIP0GjFU9XZfez3xQbXupimzEU27g7SZYBwwHr5iV/qQEEXejdWUWVslwLqeXkCuwYvuCQYyw+r5ap0wtFlqg=="
+# JWT 시크릿 제거됨 - Supabase Auth 사용
 
 # 환경 설정
 NODE_ENV="production"
