@@ -3,8 +3,13 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
 import { verifyToken } from '@/lib/auth-helper'
 
-const isUUID = (s: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
+const isValidId = (s: string) => {
+  // UUID 형식인지 확인
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s)
+  // 숫자 형식인지 확인 (프롬프트 ID는 SERIAL)
+  const isNumeric = /^\d+$/.test(s)
+  return isUUID || isNumeric
+}
 
 function json(res: NextApiResponse, status: number, body: any) {
   return res.status(status).json(body)
@@ -41,7 +46,7 @@ async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null>
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query
-  if (!id || typeof id !== 'string' || !isUUID(id)) {
+  if (!id || typeof id !== 'string' || !isValidId(id)) {
     return json(res, 400, { ok: false, error: 'INVALID_ID' })
   }
 

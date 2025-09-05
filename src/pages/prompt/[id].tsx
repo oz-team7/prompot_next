@@ -11,6 +11,52 @@ import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 
+// 추가 이미지 컴포넌트
+const AdditionalImageItem = ({ imageUrl, index }: { imageUrl: string; index: number }) => {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl text-gray-400 mb-1">🖼️</div>
+          <p className="text-xs text-gray-500">이미지 로드 실패</p>
+          <button
+            onClick={() => setImageError(false)}
+            className="mt-1 text-xs text-blue-500 hover:text-blue-700"
+          >
+            재시도
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
+      <Image
+        src={imageUrl}
+        alt={`추가 이미지 ${index + 1}`}
+        fill
+        className="object-cover transition-transform group-hover:scale-105"
+        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+        unoptimized={true}
+        onError={() => {
+          console.error('[DEBUG] Additional image load error for:', imageUrl);
+          setImageError(true);
+        }}
+      />
+      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface AIModel {
   id: string;
   name: string;
@@ -175,8 +221,12 @@ const PromptDetailPage = () => {
 
   const confirmDelete = async () => {
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`/api/prompts/${prompt.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (!res.ok) {
@@ -345,22 +395,38 @@ const PromptDetailPage = () => {
               </div>
 
               {/* Preview Image */}
-              {prompt.previewImage && !imageError && (
+              {prompt.previewImage && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">미리보기</h3>
                   <div className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                    <Image
-                      src={prompt.previewImage}
-                      alt={prompt.title}
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
-                      priority
-                      onError={() => {
-                        console.error('[DEBUG] Image load error for:', prompt.previewImage);
-                        setImageError(true);
-                      }}
-                    />
+                    {!imageError ? (
+                      <Image
+                        src={prompt.previewImage}
+                        alt={prompt.title}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
+                        priority
+                        unoptimized={true}
+                        onError={() => {
+                          console.error('[DEBUG] Image load error for:', prompt.previewImage);
+                          setImageError(true);
+                        }}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <div className="text-4xl text-gray-400 mb-2">🖼️</div>
+                          <p className="text-sm text-gray-500">이미지를 불러올 수 없습니다</p>
+                          <button
+                            onClick={() => setImageError(false)}
+                            className="mt-2 text-xs text-blue-500 hover:text-blue-700"
+                          >
+                            다시 시도
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -371,18 +437,7 @@ const PromptDetailPage = () => {
                   <h3 className="text-lg font-semibold mb-3">추가 이미지</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {prompt.additionalImages.map((imageUrl, index) => (
-                      <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                        <Image
-                          src={imageUrl}
-                          alt={`추가 이미지 ${index + 1}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                          onError={() => {
-                            console.error('[DEBUG] Additional image load error for:', imageUrl);
-                          }}
-                        />
-                      </div>
+                      <AdditionalImageItem key={index} imageUrl={imageUrl} index={index} />
                     ))}
                   </div>
                 </div>
