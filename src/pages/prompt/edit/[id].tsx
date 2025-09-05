@@ -348,7 +348,37 @@ const EditPromptPage = () => {
     try {
       console.log('Sending update request for prompt:', id);
       
+      let previewImageUrl = previewImage;
       let additionalImageUrls: string[] = [];
+      
+      // 미리보기 이미지 업로드 (새로 업로드된 경우)
+      if (previewImage && previewImage.startsWith('data:')) {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
+        }
+        
+        // Base64 데이터에서 파일명 추출 (임시 파일명 사용)
+        const uploadRes = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            imageData: previewImage,
+            fileName: 'preview-image.jpg',
+          }),
+        });
+        
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json();
+          throw new Error(errorData.message || '미리보기 이미지 업로드에 실패했습니다.');
+        }
+        
+        const uploadData = await uploadRes.json();
+        previewImageUrl = uploadData.imageUrl;
+      }
       
       // 추가 이미지들 업로드
       if (additionalImages.length > 0) {
@@ -358,15 +388,24 @@ const EditPromptPage = () => {
         }
 
         for (const additionalImage of additionalImages) {
-          const formDataImage = new FormData();
-          formDataImage.append('image', additionalImage);
+          // 파일을 Base64로 변환
+          const imageData = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(additionalImage);
+          });
           
           const uploadRes = await fetch('/api/upload-image', {
             method: 'POST',
             headers: {
+              'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
-            body: formDataImage,
+            body: JSON.stringify({
+              imageData: imageData,
+              fileName: additionalImage.name,
+            }),
           });
           
           if (!uploadRes.ok) {
@@ -387,7 +426,7 @@ const EditPromptPage = () => {
       
       const updateData = {
         ...formData,
-        preview_image: previewImage,
+        preview_image: previewImageUrl,
         additional_images: allAdditionalImages,
         is_public: formData.isPublic,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)

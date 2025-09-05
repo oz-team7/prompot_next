@@ -125,7 +125,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
       date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
       isOwner,
       previewImage: prompt.preview_image, // preview_image를 previewImage로 변환
-      additionalImages: prompt.additional_images || [], // additional_images를 additionalImages로 변환
+      additionalImages: prompt.additional_images || [], // additional_images를 additionalImages로 변환 (필드가 없으면 빈 배열)
       isPublic: prompt.is_public, // is_public을 isPublic으로 변환
       aiModel: prompt.ai_model // ai_model을 aiModel로 변환
     }
