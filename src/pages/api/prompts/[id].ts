@@ -88,7 +88,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
   // 3) 작성자 정보 가져오기
   const { data: author } = await svc
     .from('profiles')
-    .select('id, name, email')
+    .select('id, name, email, avatar_url')
     .eq('id', prompt.author_id)
     .single()
 
@@ -117,7 +117,8 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
       author: {
         id: author.id,
         name: author.name,
-        email: author.email
+        email: author.email,
+        avatar_url: author.avatar_url
       },
       likes: likesCount ?? 0,
       bookmarks: bookmarksCount ?? 0,

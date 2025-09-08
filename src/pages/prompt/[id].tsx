@@ -107,6 +107,7 @@ interface PromptDetail {
   author: {
     id: string;
     name: string;
+    avatar_url?: string;
   };
   createdAt: string;
   date: string;
@@ -448,7 +449,32 @@ const PromptDetailPage = () => {
               <div>
                 <h1 className="text-2xl font-bold mb-2">{prompt.title}</h1>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>{prompt.author.name}</span>
+                  <div className="flex items-center gap-2">
+                    {prompt.author.avatar_url ? (
+                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                        <Image
+                          src={prompt.author.avatar_url}
+                          alt={prompt.author.name}
+                          width={24}
+                          height={24}
+                          className="w-full h-full object-cover"
+                          unoptimized={true}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <Image
+                          src="/logo.png"
+                          alt="프롬팟 로고"
+                          width={24}
+                          height={24}
+                          className="w-full h-full object-contain"
+                          unoptimized={true}
+                        />
+                      </div>
+                    )}
+                    <span>{prompt.author.name}</span>
+                  </div>
                   <span>•</span>
                   <time dateTime={prompt.createdAt}>{prompt.date}</time>
                 </div>
@@ -492,106 +518,7 @@ const PromptDetailPage = () => {
 
             {/* Prompt content */}
             <div className={`mt-6 ${!isAuthenticated ? 'blur-md pointer-events-none' : ''}`}>
-              {/* 프롬프트 정보 섹션 */}
-              <div className="mb-6 space-y-4">
-                {/* 설명 */}
-                {prompt.description && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">설명</h3>
-                    <p className="text-gray-700 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      {prompt.description}
-                    </p>
-                  </div>
-                )}
-
-                {/* 카테고리와 AI 모델 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">카테고리</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">
-                        {prompt.category === 'work' && '💼'}
-                        {prompt.category === 'dev' && '💻'}
-                        {prompt.category === 'design' && '🎨'}
-                        {prompt.category === 'edu' && '📚'}
-                        {prompt.category === 'image' && '🖼️'}
-                      </span>
-                      <span className="text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm">
-                        {prompt.category === 'work' && '업무/마케팅'}
-                        {prompt.category === 'dev' && '개발/코드'}
-                        {prompt.category === 'design' && '디자인/브랜드'}
-                        {prompt.category === 'edu' && '교육/학습'}
-                        {prompt.category === 'image' && '이미지/아트'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">AI 모델</h3>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8">
-                        {(() => {
-                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
-                          const model = aiModels.find(m => m.id === modelId);
-                          if (model?.icon === '🔧') {
-                            return <div className="text-2xl">{model.icon}</div>;
-                          } else if (model?.icon) {
-                            return (
-                              <img 
-                                src={model.icon} 
-                                alt={model.name}
-                                className="w-full h-full object-contain"
-                              />
-                            );
-                          } else {
-                            return <div className="text-2xl">🤖</div>;
-                          }
-                        })()}
-                      </div>
-                      <span className="text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm">
-                        {(() => {
-                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
-                          const model = aiModels.find(m => m.id === modelId);
-                          return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 태그 */}
-                {prompt.tags && prompt.tags.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">태그</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {prompt.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 공개 설정 */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">공개 설정</h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      prompt.isPublic 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-red-100 text-red-700'
-                    }`}>
-                      {prompt.isPublic ? '🌐 공개' : '🔒 비공개'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Preview Image */}
+              {/* 미리보기 */}
               {prompt.previewImage && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">미리보기</h3>
@@ -628,7 +555,7 @@ const PromptDetailPage = () => {
                 </div>
               )}
 
-              {/* Additional Images */}
+              {/* 추가 이미지 */}
               {prompt.additionalImages && prompt.additionalImages.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">추가 이미지</h3>
@@ -640,7 +567,7 @@ const PromptDetailPage = () => {
                 </div>
               )}
 
-              {/* Video Preview */}
+              {/* 동영상 */}
               {prompt.videoUrl && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">동영상</h3>
@@ -650,8 +577,116 @@ const PromptDetailPage = () => {
                 </div>
               )}
 
-              <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200">
-                {prompt.content}
+              {/* 프롬프트 정보 섹션 */}
+              <div className="mb-6 space-y-4">
+                {/* 설명 */}
+                {prompt.description && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">설명</h3>
+                    <p className="text-gray-700 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      {prompt.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* 프롬프트 내용 */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">프롬프트 내용</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200">
+                    {prompt.content}
+                  </div>
+                </div>
+
+                {/* 카테고리, AI 모델, 공개 설정 */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* 카테고리 */}
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800">카테고리</h3>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {prompt.category === 'work' && '💼'}
+                        {prompt.category === 'dev' && '💻'}
+                        {prompt.category === 'design' && '🎨'}
+                        {prompt.category === 'edu' && '📚'}
+                        {prompt.category === 'image' && '🖼️'}
+                      </span>
+                      <span className="text-gray-700 bg-white px-3 py-2 rounded-full text-sm font-medium shadow-sm">
+                        {prompt.category === 'work' && '업무/마케팅'}
+                        {prompt.category === 'dev' && '개발/코드'}
+                        {prompt.category === 'design' && '디자인/브랜드'}
+                        {prompt.category === 'edu' && '교육/학습'}
+                        {prompt.category === 'image' && '이미지/아트'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* AI 모델 */}
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800">AI 모델</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 flex-shrink-0">
+                        {(() => {
+                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
+                          const model = aiModels.find(m => m.id === modelId);
+                          if (model?.icon === '🔧') {
+                            return <div className="text-2xl">{model.icon}</div>;
+                          } else if (model?.icon) {
+                            return (
+                              <img 
+                                src={model.icon} 
+                                alt={model.name}
+                                className="w-full h-full object-contain"
+                              />
+                            );
+                          } else {
+                            return <div className="text-2xl">🤖</div>;
+                          }
+                        })()}
+                      </div>
+                      <span className="text-gray-700 bg-white px-3 py-2 rounded-full text-sm font-medium shadow-sm">
+                        {(() => {
+                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
+                          const model = aiModels.find(m => m.id === modelId);
+                          return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 공개 설정 */}
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800">공개 설정</h3>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {prompt.isPublic ? '🌍' : '🔒'}
+                      </span>
+                      <span className={`px-3 py-2 rounded-full text-sm font-medium shadow-sm ${
+                        prompt.isPublic 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {prompt.isPublic ? '공개' : '비공개'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 태그 */}
+                {prompt.tags && prompt.tags.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">태그</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {prompt.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4">
