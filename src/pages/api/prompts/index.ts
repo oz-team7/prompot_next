@@ -18,7 +18,7 @@ export default async function handler(
     const supabase = createSupabaseServiceClient();
     const { category, author, isPublic, sort = 'latest' } = req.query;
 
-    // 기본 쿼리 시작 (별점 정보 포함)
+    // 기본 쿼리 시작 (별점 및 댓글 정보 포함)
     let query = supabase
       .from('prompts')
       .select(`
@@ -30,6 +30,9 @@ export default async function handler(
         ),
         ratings:prompt_ratings!prompt_id (
           rating
+        ),
+        comments:prompt_comments!prompt_id (
+          id
         )
       `);
 
@@ -54,10 +57,12 @@ export default async function handler(
       throw error;
     }
 
-    // 별점 계산 및 정렬
+    // 별점 및 댓글 수 계산
     const promptsWithRatings = prompts?.map(prompt => {
       const ratings = prompt.ratings || [];
+      const comments = prompt.comments || [];
       const totalRatings = ratings.length;
+      const totalComments = comments.length;
       const averageRating = totalRatings > 0 
         ? ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / totalRatings 
         : 0;
@@ -65,7 +70,8 @@ export default async function handler(
       return {
         ...prompt,
         averageRating: Number(averageRating.toFixed(1)),
-        totalRatings
+        totalRatings,
+        totalComments
       };
     }) || [];
 
@@ -73,13 +79,13 @@ export default async function handler(
     const sortedPrompts = [...promptsWithRatings];
     switch (sort) {
       case 'popular':
-        // 인기순: 평균 별점 높은 순, 평가 수 많은 순, 최신순
+        // 인기순: 댓글 수 많은 순, 평균 별점 높은 순, 최신순
         sortedPrompts.sort((a, b) => {
+          if (a.totalComments !== b.totalComments) {
+            return b.totalComments - a.totalComments;
+          }
           if (a.averageRating !== b.averageRating) {
             return b.averageRating - a.averageRating;
-          }
-          if (a.totalRatings !== b.totalRatings) {
-            return b.totalRatings - a.totalRatings;
           }
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
@@ -117,6 +123,7 @@ export default async function handler(
       isBookmarked: false,
       rating: prompt.averageRating,
       totalRatings: prompt.totalRatings,
+      totalComments: prompt.totalComments,
     }));
 
     res.status(200).json({ prompts: formattedPrompts });

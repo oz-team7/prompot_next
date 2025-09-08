@@ -240,7 +240,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                 className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="none">최신순</option>
-                <option value="popular">인기순 (별점)</option>
+                <option value="popular">인기순 (댓글)</option>
                 <option value="rating">평점순</option>
               </select>
             </div>
