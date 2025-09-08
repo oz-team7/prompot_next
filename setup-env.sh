@@ -22,7 +22,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_PRODUCTION_URL=https://prompot-next.vercel.app
 
 # 서버 포트
-PORT=4000
+PORT=3000
 
 # 환경 설정
 NODE_ENV=development

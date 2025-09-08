@@ -187,7 +187,6 @@ CREATE TABLE bookmarks (
 
 ## 사이트맵 및 네비게이션 구조
 
-```
 [홈]
   %% Prompt 리스트 (/pot)
   %    %% 카테고리 검색
@@ -207,6 +206,16 @@ CREATE TABLE bookmarks (
 
 ### 🚀 개발 환경 설정
 **[SETUP.md](./SETUP.md) 파일을 참고하여 개발 환경을 설정하세요.**
+
+#### 로컬 개발 서버 실행
+
+```bash
+# 개발 서버 시작 (포트 3000)
+npm run dev
+
+# 브라우저에서 접속
+http://localhost:3000
+```
 
 ### 완료된 기능
 - ✅ Next.js + TypeScript 프로젝트 셋업
