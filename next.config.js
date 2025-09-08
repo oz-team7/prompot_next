@@ -30,12 +30,6 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
   },
-  // API 라우트 최적화
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
 }
 
 module.exports = nextConfig

@@ -23,8 +23,8 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       const query = params.toString() ? `?${params.toString()}` : '';
       console.log('[DEBUG] usePrompts fetching with query:', query); // 디버깅 로그 추가
       
-      // localStorage에서 토큰 가져오기 (선택)
-      const token = localStorage.getItem('token');
+      // localStorage에서 토큰 가져오기 (선택) - 클라이언트 사이드에서만
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       console.log('[DEBUG] usePrompts token from localStorage:', token ? 'exists' : 'not found');
       
       const headers: Record<string, string> = {};

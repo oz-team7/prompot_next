@@ -25,7 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 사용자 정보 새로고침 함수
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) return;
 
       const res = await fetch('/api/auth/me', {
@@ -37,7 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
       }
     } catch (error) {
       console.error('Refresh user error:', error);
@@ -49,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = async () => {
       try {
         // 토큰이 없으면 인증되지 않은 것으로 간주
-        const token = localStorage.getItem('token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) {
           setUser(null);
           setIsLoading(false);
@@ -65,24 +67,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
         } else {
           // 인증되지 않은 경우 로컬 스토리지도 클리어
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
           setUser(null);
         }
       } catch (error) {
         console.error('Auth check error:', error);
         // 에러 발생 시 로컬 스토리지 확인
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-        if (storedUser && token) {
-          setUser(JSON.parse(storedUser));
+        if (typeof window !== 'undefined') {
+          const storedUser = localStorage.getItem('user');
+          const token = localStorage.getItem('token');
+          if (storedUser && token) {
+            setUser(JSON.parse(storedUser));
+          } else {
+            // 토큰이 없으면 사용자 정보도 제거
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            setUser(null);
+          }
         } else {
-          // 토큰이 없으면 사용자 정보도 제거
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
           setUser(null);
         }
       } finally {
@@ -111,12 +121,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
     
     // 토큰 저장
     if (data.token) {
       console.log('Saving token:', data.token.substring(0, 20) + '...');  // 디버깅 로그 추가
-      localStorage.setItem('token', data.token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', data.token);
+      }
     } else {
       console.warn('No token received from server');  // 디버깅 로그 추가
     }
@@ -129,8 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
   };
 
   const isAuthenticated = !!user;

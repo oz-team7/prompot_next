@@ -23,6 +23,7 @@
     "@types/react-dom": "^19.1.7",
     "autoprefixer": "^10.4.21",
     "cookie": "^1.0.2",
+    "critters": "^0.0.23",
     "next": "^15.4.6",
     "nodemailer": "^7.0.6",
     "postcss": "^8.5.6",
