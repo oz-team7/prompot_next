@@ -78,12 +78,16 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         ) : (
-          // 기본 아이콘
+          // 기본 Prompot 로고
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50">
-            <svg className="w-12 h-12 sm:w-16 sm:h-16 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+            <Image
+              src="/logo.png"
+              alt="Prompot"
+              width={48}
+              height={48}
+              className="w-12 h-12 sm:w-16 sm:h-16 object-contain opacity-70"
+              unoptimized={true}
+            />
           </div>
         )}
         

@@ -73,6 +73,22 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
         </div>
       )}
       
+      {/* 미리보기 이미지가 없고 동영상 썸네일도 없을 때 Prompot 로고 표시 */}
+      {!prompt.previewImage && !(prompt.videoUrl && getVideoThumbnail(prompt.videoUrl)) && (
+        <div className="mb-3">
+          <div className="relative aspect-video bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg overflow-hidden flex items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="Prompot"
+              width={64}
+              height={64}
+              className="w-16 h-16 object-contain opacity-70"
+              unoptimized={true}
+            />
+          </div>
+        </div>
+      )}
+      
       <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
         {prompt.description}
       </p>
