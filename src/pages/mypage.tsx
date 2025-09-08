@@ -28,7 +28,7 @@ const MyPage = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
   const [userProfile, setUserProfile] = useState<any>(null);
   const { categories: bookmarkCategories } = useBookmarkCategories();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -328,7 +328,7 @@ const MyPage = () => {
   const tabs = [
     { id: 'prompts', label: '내 프롬프트', count: myPrompts.length },
     { id: 'bookmarks', label: '북마크', count: bookmarks.length },
-    { id: 'settings', label: '설정', count: null },
+    { id: 'settings', label: '프로필 수정', count: null },
   ];
 
   if (!isAuthenticated || !user) {
@@ -686,14 +686,16 @@ const MyPage = () => {
               </div>
             )}
 
-            {/* 설정 탭 */}
+            {/* 프로필 수정 탭 */}
             {activeTab === 'settings' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold mb-4">계정 설정</h2>
-                <div className="space-y-6">
-                  {/* 프로필 사진 업로드 섹션 */}
+                <h2 className="text-lg font-semibold mb-6">프로필 수정</h2>
+                
+                {/* 상단: 프로필 사진과 기본 정보 가로 배치 */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                  {/* 왼쪽: 프로필 사진 업로드 섹션 */}
                   <div className="border-b pb-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-4">프로필 사진</h3>
+                    <h4 className="text-sm font-medium text-gray-700 mb-4">프로필 사진</h4>
                     <div className="flex items-start gap-6">
                       <AvatarUpload
                         currentAvatarUrl={userProfile?.avatar_url || user?.avatar_url}
@@ -703,7 +705,7 @@ const MyPage = () => {
                       />
                       <div className="flex-1">
                         <p className="text-sm text-gray-600 mb-2">
-                          프로필 사진을 업로드하여 개인화된 경험을 제공받으세요.
+                          프로필사진 업로드 기준
                         </p>
                         <div className="text-xs text-gray-500">
                           <p>• JPG, PNG 파일만 지원됩니다</p>
@@ -714,9 +716,9 @@ const MyPage = () => {
                     </div>
                   </div>
 
-                  {/* 기본 정보 섹션 */}
+                  {/* 오른쪽: 이름과 이메일 섹션 */}
                   <div className="border-b pb-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-4">기본 정보</h3>
+                    <h4 className="text-sm font-medium text-gray-700 mb-4">기본 정보</h4>
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
@@ -729,81 +731,100 @@ const MyPage = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
-                        <input
-                          type="email"
-                          value={user.email}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="email"
+                            value={user.email}
+                            readOnly
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                          />
+                          <button
+                            onClick={() => {
+                              setToastMessage('이메일 인증 기능은 준비 중입니다.');
+                              setToastType('info');
+                              setShowToast(true);
+                            }}
+                            className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                          >
+                            이메일 인증
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  
-                  {/* 비밀번호 변경 섹션 */}
-                  <div className="border-b pb-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-4">비밀번호 변경</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
-                        <input
-                          type="password"
-                          id="currentPassword"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="현재 비밀번호를 입력하세요"
-                        />
+                </div>
+
+                {/* 하단: 비밀번호 변경 섹션 */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* 왼쪽: 비밀번호 변경 섹션 */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-md font-medium text-gray-800 mb-4">보안 설정</h3>
+                      
+                      {/* 비밀번호 변경 섹션 */}
+                      <div className="border-b pb-6">
+                        <h4 className="text-sm font-medium text-gray-700 mb-4">비밀번호 변경</h4>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
+                            <input
+                              type="password"
+                              id="currentPassword"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                              placeholder="현재 비밀번호를 입력하세요"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+                            <input
+                              type="password"
+                              id="newPassword"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                              placeholder="새 비밀번호를 입력하세요 (6자 이상)"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
+                            <input
+                              type="password"
+                              id="confirmPassword"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                              placeholder="새 비밀번호를 다시 입력하세요"
+                            />
+                          </div>
+                          <button
+                            onClick={handlePasswordChange}
+                            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                          >
+                            비밀번호 변경
+                          </button>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
-                        <input
-                          type="password"
-                          id="newPassword"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="새 비밀번호를 입력하세요 (6자 이상)"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
-                        <input
-                          type="password"
-                          id="confirmPassword"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="새 비밀번호를 다시 입력하세요"
-                        />
-                      </div>
-                      <button
-                        onClick={handlePasswordChange}
-                        className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-                      >
-                        비밀번호 변경
-                      </button>
                     </div>
                   </div>
 
-                  {/* 알림 설정 섹션 */}
-                  <div className="border-b pb-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-4">알림 설정</h3>
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" className="rounded" defaultChecked />
-                        <span className="text-sm text-gray-600">내 프롬프트에 좋아요를 받으면 알림</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" className="rounded" defaultChecked />
-                        <span className="text-sm text-gray-600">내 프롬프트에 댓글이 달리면 알림</span>
-                      </label>
-                      <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
-                        알림 설정 저장
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* 계정 관리 섹션 */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-4">계정 관리</h3>
-                    <div className="space-y-3">
-                      <button className="w-full px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50 transition-colors">
-                        계정 삭제
-                      </button>
+                  {/* 오른쪽: 알림 설정 섹션 */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-md font-medium text-gray-800 mb-4">알림 설정</h3>
+                      
+                      {/* 알림 설정 섹션 */}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-4">알림 옵션</h4>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" className="rounded" defaultChecked />
+                            <span className="text-sm text-gray-600">내 프롬프트에 좋아요를 받으면 알림</span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" className="rounded" defaultChecked />
+                            <span className="text-sm text-gray-600">내 프롬프트에 댓글이 달리면 알림</span>
+                          </label>
+                          <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
+                            알림 설정 저장
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
