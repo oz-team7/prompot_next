@@ -17,7 +17,7 @@ export const useBookmarks = () => {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
         // 토큰이 없으면 빈 배열로 설정하고 조용히 리턴
         setBookmarks([]);
@@ -74,7 +74,7 @@ export const useBookmarks = () => {
         throw new Error('유효하지 않은 프롬프트 ID입니다.');
       }
 
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
         throw new Error('인증이 필요합니다.');
       }
@@ -108,7 +108,7 @@ export const useBookmarks = () => {
 
   const removeBookmark = async (promptId: string | number) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
         throw new Error('인증이 필요합니다.');
       }
