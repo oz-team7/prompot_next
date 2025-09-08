@@ -30,7 +30,7 @@ const MyPage = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
   const [userProfile, setUserProfile] = useState<any>(null);
-  const { categories: bookmarkCategories } = useBookmarkCategories();
+  const { categories: bookmarkCategories, refetch: refetchBookmarkCategories } = useBookmarkCategories();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -633,7 +633,7 @@ const MyPage = () => {
                             <button
                               onClick={async () => {
                                 try {
-                                  await removeBookmark(bookmark.id);
+                                  await removeBookmark(bookmark.prompt.id);
                                   setToastMessage("북마크가 삭제되었습니다.");
                                   setToastType("success");
                                   setShowToast(true);
@@ -677,9 +677,12 @@ const MyPage = () => {
                   isOpen={showCategoryManager}
                   onClose={() => setShowCategoryManager(false)}
                   onCategoryChange={() => {
-                    // 북마크 목록 새로고침
+                    // 북마크 목록과 카테고리 목록 새로고침
                     if (refetchBookmarks && typeof refetchBookmarks === "function") {
                       refetchBookmarks();
+                    }
+                    if (refetchBookmarkCategories && typeof refetchBookmarkCategories === "function") {
+                      refetchBookmarkCategories();
                     }
                   }}
                 />

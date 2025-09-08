@@ -253,7 +253,6 @@ const PromptDetailPage = () => {
         additionalImages: data.prompt.additionalImages,
         hasAdditionalImages: !!(data.prompt.additionalImages && data.prompt.additionalImages.length > 0)
       });
-      setLocalBookmarkState(bookmarks.some(bookmark => bookmark.prompt.id === data.prompt.id));
       setImageError(false); // 이미지 에러 상태 초기화
     } catch (error: any) {
       setToastMessage(error.message);
@@ -262,13 +261,29 @@ const PromptDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, bookmarks]);
+  }, [id]);
 
   useEffect(() => {
     if (id) {
       fetchPrompt();
     }
   }, [id, fetchPrompt]);
+
+  // 북마크 상태 업데이트
+  useEffect(() => {
+    if (prompt && bookmarks) {
+      console.log('[DEBUG] Checking bookmark state for prompt:', prompt.id);
+      console.log('[DEBUG] Current bookmarks:', bookmarks.map(b => ({ 
+        bookmarkId: b.id, 
+        promptId: b.prompt.id, 
+        categoryId: b.categoryId 
+      })));
+      
+      const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt.id);
+      setLocalBookmarkState(isBookmarked);
+      console.log('[DEBUG] Bookmark state updated:', { promptId: prompt.id, isBookmarked });
+    }
+  }, [prompt, bookmarks]);
 
   if (loading) {
     return (
@@ -312,6 +327,7 @@ const PromptDetailPage = () => {
       if (isBookmarked) {
         console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
         await removeBookmark(prompt.id);
+        setLocalBookmarkState(false); // 즉시 로컬 상태 업데이트
         setToastMessage('북마크가 제거되었습니다.');
       } else {
         console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
@@ -324,7 +340,6 @@ const PromptDetailPage = () => {
       }
       setToastType('success');
       setShowToast(true);
-      setLocalBookmarkState(!isBookmarked);
     } catch (error: any) {
       console.error('[DEBUG] Bookmark toggle error:', error);
       setToastMessage(error.message || '북마크 처리 중 오류가 발생했습니다.');
@@ -336,11 +351,20 @@ const PromptDetailPage = () => {
   const handleCategorySelect = async (categoryId: string | null) => {
     try {
       console.log('[DEBUG] Adding bookmark with category ID:', categoryId);
+      console.log('[DEBUG] Prompt ID:', prompt.id, 'type:', typeof prompt.id);
+      
       await addBookmark(prompt.id, categoryId);
+      
+      console.log('[DEBUG] Bookmark added successfully, updating local state');
       setToastMessage('북마크에 추가되었습니다!');
       setToastType('success');
       setShowToast(true);
       setLocalBookmarkState(true);
+      
+      // 북마크 목록 새로고침을 위해 잠시 후 상태 확인
+      setTimeout(() => {
+        console.log('[DEBUG] Checking bookmarks after add:', bookmarks);
+      }, 1000);
     } catch (error: any) {
       console.error('[DEBUG] Add bookmark with category error:', error);
       setToastMessage(error.message || '북마크 추가 중 오류가 발생했습니다.');

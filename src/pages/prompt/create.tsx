@@ -384,10 +384,12 @@ const CreatePromptPage = () => {
       }
 
       // 프롬프트 생성
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/prompts/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,

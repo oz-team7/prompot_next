@@ -222,7 +222,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
 
 async function handleDelete(req: NextApiRequest, res: NextApiResponse, id: string) {
   const userId = await getUserIdFromRequest(req)
-  if (!userId) return json(res, 401, { ok: false, error: 'UNAUTHORIZED' })
+  if (!userId) return json(res, 401, { message: '인증이 필요합니다.' })
 
   const svc = createSupabaseServiceClient()
 
@@ -233,13 +233,13 @@ async function handleDelete(req: NextApiRequest, res: NextApiResponse, id: strin
     .eq('id', id)
     .single()
 
-  if (ownerErr || !ownerRow) return json(res, 404, { ok: false, error: 'NOT_FOUND' })
-  if (ownerRow.author_id !== userId) return json(res, 403, { ok: false, error: 'FORBIDDEN' })
+  if (ownerErr || !ownerRow) return json(res, 404, { message: '프롬프트를 찾을 수 없습니다.' })
+  if (ownerRow.author_id !== userId) return json(res, 403, { message: '프롬프트 삭제 권한이 없습니다.' })
 
   const { error } = await svc.from('prompts').delete().eq('id', id)
   if (error) {
     console.error('[DELETE prompts] error:', error)
-    return json(res, 500, { ok: false, error: 'DB_ERROR' })
+    return json(res, 500, { message: '데이터베이스 오류가 발생했습니다.' })
   }
-  return json(res, 200, { ok: true, message: 'DELETED' })
+  return json(res, 200, { message: '프롬프트가 삭제되었습니다.' })
 }
