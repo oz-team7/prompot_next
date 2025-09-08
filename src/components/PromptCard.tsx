@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
+import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -44,6 +46,33 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
       <div className="text-sm text-gray-500 mb-2">
         {prompt.author?.name || '익명'} · {prompt.date}
       </div>
+      
+      {/* 동영상 썸네일 */}
+      {prompt.videoUrl && getVideoThumbnail(prompt.videoUrl) && (
+        <div className="mb-3">
+          <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+            <Image
+              src={getVideoThumbnail(prompt.videoUrl)!}
+              alt={getVideoTitle(prompt.videoUrl)}
+              fill
+              className="object-cover"
+              unoptimized={true}
+              onError={(e) => {
+                console.error('썸네일 로드 실패:', e);
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
+              <div className="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
         {prompt.description}
       </p>

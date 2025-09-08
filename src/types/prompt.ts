@@ -18,6 +18,7 @@ export interface Prompt {
   isBookmarked?: boolean;
   category?: "work" | "dev" | "design" | "edu" | "image";
   previewImage?: string;
+  videoUrl?: string;
   aiModel?: {
     name: string;
     icon: string;

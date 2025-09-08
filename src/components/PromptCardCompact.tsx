@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
+import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
 interface PromptCardCompactProps {
   prompt: Prompt;
@@ -43,9 +44,32 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
   };
   return (
     <Link href={`/prompt/${prompt.id}`} className="block bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden cursor-pointer">
-      {/* Preview Image */}
+      {/* Preview Image or Video Thumbnail */}
       <div className="relative w-full aspect-[4/3] bg-gray-100">
-        {prompt.previewImage ? (
+        {prompt.videoUrl && getVideoThumbnail(prompt.videoUrl) ? (
+          // 동영상 썸네일 우선 표시
+          <>
+            <Image
+              src={getVideoThumbnail(prompt.videoUrl)!}
+              alt={getVideoTitle(prompt.videoUrl)}
+              fill
+              className="object-cover"
+              unoptimized={true}
+              onError={(e) => {
+                console.error('썸네일 로드 실패:', e);
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
+              <div className="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+          </>
+        ) : prompt.previewImage ? (
+          // 기존 미리보기 이미지
           <Image
             src={prompt.previewImage}
             alt={prompt.title}
@@ -54,6 +78,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         ) : (
+          // 기본 아이콘
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50">
             <svg className="w-12 h-12 sm:w-16 sm:h-16 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
