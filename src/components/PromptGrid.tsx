@@ -17,7 +17,7 @@ interface PromptGridProps {
 }
 
 type CategoryType = 'all' | 'work' | 'dev' | 'design' | 'edu' | 'image';
-type SortType = 'none' | 'popular' | 'recent' | 'rating';
+type SortType = 'none' | 'popular' | 'rating';
 
 const PromptGrid: React.FC<PromptGridProps> = ({ 
   prompts: initialPrompts, 
@@ -39,7 +39,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [sortBy, setSortBy] = useState<SortType>('none');
   const [showBookmarks, setShowBookmarks] = useState(false);
   
-  const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ sort: sortBy === 'popular' ? 'popular' : sortBy === 'recent' ? 'latest' : undefined });
+  const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ sort: sortBy === 'popular' ? 'popular' : undefined });
   
   // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
   const promptsData = useAPI ? apiPrompts : (initialPrompts || []);
@@ -123,9 +123,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       case 'popular':
         filtered.sort((a, b) => b.likes - a.likes);
         break;
-      case 'recent':
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        break;
       case 'rating':
         filtered.sort((a, b) => b.rating - a.rating);
         break;
@@ -195,7 +192,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               >
                 <option value="none">최신순</option>
                 <option value="popular">인기순 (별점)</option>
-                <option value="recent">최근순</option>
                 <option value="rating">평점순</option>
               </select>
             </div>
