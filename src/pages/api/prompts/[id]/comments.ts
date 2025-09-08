@@ -38,7 +38,8 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, promptId: st
       user_id,
       profiles:user_id (
         id,
-        name
+        name,
+        avatar_url
       )
     `, { count: 'exact' })
     .eq('prompt_id', promptId)
@@ -87,7 +88,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, promptId: s
       updated_at,
       profiles:user_id (
         id,
-        name
+        name,
+        avatar_url
       )
     `)
     .single()
@@ -145,7 +147,8 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, promptId: st
       updated_at,
       profiles:user_id (
         id,
-        name
+        name,
+        avatar_url
       )
     `)
     .single()

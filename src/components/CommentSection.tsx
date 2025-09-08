@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Comment {
@@ -9,6 +10,7 @@ interface Comment {
   profiles: {
     id: string;
     name: string;
+    avatar_url?: string;
   };
 }
 
@@ -193,14 +195,39 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
               ) : (
                 <>
                   <div className="flex justify-between items-start">
-                    <div>
-                      <span className="font-medium">{comment.profiles.name}</span>
-                      <span className="text-sm text-gray-500 ml-2">
-                        {new Date(comment.created_at).toLocaleDateString()}
-                      </span>
-                      {comment.updated_at !== comment.created_at && (
-                        <span className="text-xs text-gray-400 ml-2">(수정됨)</span>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                        {comment.profiles.avatar_url ? (
+                          <Image
+                            src={comment.profiles.avatar_url}
+                            alt={comment.profiles.name}
+                            width={24}
+                            height={24}
+                            className="w-full h-full object-cover"
+                            unoptimized={true}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <Image
+                              src="/logo.png"
+                              alt="프롬팟 로고"
+                              width={24}
+                              height={24}
+                              className="w-full h-full object-contain"
+                              unoptimized={true}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium">{comment.profiles.name}</span>
+                        <span className="text-sm text-gray-500 ml-2">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+                        {comment.updated_at !== comment.created_at && (
+                          <span className="text-xs text-gray-400 ml-2">(수정됨)</span>
+                        )}
+                      </div>
                     </div>
                     {user?.id === comment.profiles.id && (
                       <div className="flex gap-2">

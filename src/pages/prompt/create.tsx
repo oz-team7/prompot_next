@@ -461,6 +461,102 @@ const CreatePromptPage = () => {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               
+              {/* 이미지 업로드 섹션 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 미리보기 이미지 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    미리보기 이미지
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      {previewUrl ? (
+                        <div className="space-y-2">
+                          <div className="relative w-32 h-32 mx-auto">
+                            <Image
+                              src={previewUrl}
+                              alt="미리보기"
+                              fill
+                              className="object-cover rounded-lg"
+                              unoptimized={true}
+                            />
+                          </div>
+                          <p className="text-sm text-gray-600">클릭하여 이미지 변경</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="text-4xl text-gray-400">🖼️</div>
+                          <p className="text-sm text-gray-600">미리보기 이미지를 업로드하려면 클릭하세요</p>
+                          <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB)</p>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                {/* 추가 이미지 업로드 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    추가 이미지 (최대 5개)
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleAdditionalImagesChange}
+                      className="hidden"
+                      id="additional-images-upload"
+                    />
+                    <label htmlFor="additional-images-upload" className="cursor-pointer">
+                      <div className="space-y-2">
+                        <div className="text-4xl text-gray-400">🖼️</div>
+                        <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하세요</p>
+                        <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB, 최대 5개)</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 추가 이미지 미리보기 */}
+              {additionalPreviewUrls.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">업로드된 추가 이미지 ({additionalPreviewUrls.length}/5)</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {additionalPreviewUrls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <div className="relative w-full h-24">
+                          <Image
+                            src={url}
+                            alt={`추가 이미지 ${index + 1}`}
+                            fill
+                            className="object-cover rounded-lg"
+                            unoptimized={true}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAdditionalImage(index)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 제목 */}
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
@@ -709,101 +805,6 @@ const CreatePromptPage = () => {
                 )}
               </div>
 
-              {/* 이미지 업로드 섹션 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 미리보기 이미지 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    미리보기 이미지
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload" className="cursor-pointer">
-                      {previewUrl ? (
-                        <div className="space-y-2">
-                          <div className="relative w-32 h-32 mx-auto">
-                            <Image
-                              src={previewUrl}
-                              alt="미리보기"
-                              fill
-                              className="object-cover rounded-lg"
-                              unoptimized={true}
-                            />
-                          </div>
-                          <p className="text-sm text-gray-600">이미지를 변경하려면 클릭하세요</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="text-4xl text-gray-400">📷</div>
-                          <p className="text-sm text-gray-600">이미지를 업로드하려면 클릭하세요</p>
-                          <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB)</p>
-                        </div>
-                      )}
-                    </label>
-                  </div>
-                </div>
-
-                {/* 추가 이미지 업로드 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    추가 이미지 (최대 5개)
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleAdditionalImagesChange}
-                      className="hidden"
-                      id="additional-images-upload"
-                    />
-                    <label htmlFor="additional-images-upload" className="cursor-pointer">
-                      <div className="space-y-2">
-                        <div className="text-4xl text-gray-400">🖼️</div>
-                        <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하세요</p>
-                        <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB, 최대 5개)</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 추가 이미지 미리보기 */}
-              {additionalPreviewUrls.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">업로드된 추가 이미지 ({additionalPreviewUrls.length}/5)</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {additionalPreviewUrls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <div className="relative w-full h-24">
-                          <Image
-                            src={url}
-                            alt={`추가 이미지 ${index + 1}`}
-                            fill
-                            className="object-cover rounded-lg"
-                            unoptimized={true}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeAdditionalImage(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* 공개 설정 */}
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
