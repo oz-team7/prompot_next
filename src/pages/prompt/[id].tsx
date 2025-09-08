@@ -64,6 +64,38 @@ interface AIModel {
   icon: string;
 }
 
+const aiModels: AIModel[] = [
+  // 텍스트 생성 AI
+  { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
+  { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
+  { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
+  { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
+  
+  // 코딩 AI
+  { id: 'copilot', name: 'GitHub Copilot', icon: '/image/icon_gpt-4_code.png' },
+  { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
+  { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
+  { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
+  
+  // 이미지 생성 AI
+  { id: 'dalle', name: 'DALL-E', icon: '/image/icon_dall_e_3.png' },
+  { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
+  { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
+  { id: 'leonardo', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
+  
+  // 비디오 생성 AI
+  { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
+  { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
+  { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
+  { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
+  
+  // 기타 AI 도구
+  { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
+  { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
+  { id: 'copy-ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
+  { id: 'other', name: '기타', icon: '🔧' },
+];
+
 interface PromptDetail {
   id: string;
   title: string;
@@ -497,24 +529,31 @@ const PromptDetailPage = () => {
                   <div>
                     <h3 className="text-lg font-semibold mb-2">AI 모델</h3>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">
-                        {prompt.aiModel === 'chatgpt' && '🤖'}
-                        {prompt.aiModel === 'claude' && '🧠'}
-                        {prompt.aiModel === 'gemini' && '💎'}
-                        {prompt.aiModel === 'dalle' && '🖼️'}
-                        {prompt.aiModel === 'midjourney' && '🎨'}
-                        {prompt.aiModel === 'copilot' && '👨‍💻'}
-                        {prompt.aiModel === 'other' && '🔧'}
-                      </span>
+                      <div className="w-8 h-8">
+                        {(() => {
+                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
+                          const model = aiModels.find(m => m.id === modelId);
+                          if (model?.icon === '🔧') {
+                            return <div className="text-2xl">{model.icon}</div>;
+                          } else if (model?.icon) {
+                            return (
+                              <img 
+                                src={model.icon} 
+                                alt={model.name}
+                                className="w-full h-full object-contain"
+                              />
+                            );
+                          } else {
+                            return <div className="text-2xl">🤖</div>;
+                          }
+                        })()}
+                      </div>
                       <span className="text-gray-700 bg-gray-100 px-3 py-1 rounded-full text-sm">
-                        {prompt.aiModel === 'chatgpt' && 'ChatGPT'}
-                        {prompt.aiModel === 'claude' && 'Claude'}
-                        {prompt.aiModel === 'gemini' && 'Gemini'}
-                        {prompt.aiModel === 'dalle' && 'DALL-E'}
-                        {prompt.aiModel === 'midjourney' && 'Midjourney'}
-                        {prompt.aiModel === 'copilot' && 'GitHub Copilot'}
-                        {prompt.aiModel === 'other' && '기타'}
-                        {typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name}
+                        {(() => {
+                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
+                          const model = aiModels.find(m => m.id === modelId);
+                          return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
+                        })()}
                       </span>
                     </div>
                   </div>
