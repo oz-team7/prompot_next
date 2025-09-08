@@ -67,7 +67,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
   // 1) 프롬프트 본문(조인 없이 단건)
   const { data: prompt, error } = await svc
     .from('prompts')
-    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image,additional_images')
+    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image,additional_images,video_url')
     .eq('id', id)
     .single()
 
@@ -126,6 +126,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
       isOwner,
       previewImage: prompt.preview_image, // preview_image를 previewImage로 변환
       additionalImages: prompt.additional_images || [], // additional_images를 additionalImages로 변환 (필드가 없으면 빈 배열)
+      videoUrl: prompt.video_url || null, // video_url을 videoUrl로 변환
       isPublic: prompt.is_public, // is_public을 isPublic으로 변환
       aiModel: prompt.ai_model // ai_model을 aiModel로 변환
     }
@@ -166,6 +167,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
     aiModel,
     preview_image,
     additional_images,
+    video_url,
     is_public,
   } = req.body ?? {}
 
@@ -180,6 +182,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
   if (typeof is_public === 'boolean') payload.is_public = is_public
   if (preview_image === null || typeof preview_image === 'string') payload.preview_image = preview_image
   if (Array.isArray(additional_images)) payload.additional_images = additional_images
+  if (video_url === null || typeof video_url === 'string') payload.video_url = video_url
 
   // tags 허용: 배열 또는 문자열("a,b")
   const tagsArr = parseTags(tags)

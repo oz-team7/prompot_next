@@ -52,6 +52,7 @@ const EditPromptPage = () => {
     description: '',
     content: '',
     isPublic: true,
+    videoUrl: '',
   });
 
   const categories: { value: CategoryType; label: string; icon: string }[] = [
@@ -195,6 +196,7 @@ const EditPromptPage = () => {
         description: prompt.description,
         content: prompt.content,
         isPublic: prompt.is_public,
+        videoUrl: prompt.video_url || '',
       });
       
       if (prompt.preview_image) {
@@ -428,6 +430,7 @@ const EditPromptPage = () => {
         ...formData,
         preview_image: previewImageUrl,
         additional_images: allAdditionalImages,
+        video_url: formData.videoUrl,
         is_public: formData.isPublic,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
       };
@@ -734,6 +737,25 @@ const EditPromptPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
                   required
                 />
+              </div>
+
+              {/* 동영상 URL */}
+              <div>
+                <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                  동영상 URL (선택사항)
+                </label>
+                <input
+                  type="url"
+                  id="videoUrl"
+                  name="videoUrl"
+                  value={formData.videoUrl}
+                  onChange={handleChange}
+                  placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  지원 형식: YouTube, Vimeo, 기타 동영상 플랫폼 URL
+                </p>
               </div>
 
               {/* 이미지 업로드 섹션 */}

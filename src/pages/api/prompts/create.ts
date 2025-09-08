@@ -41,7 +41,7 @@ export default async function handler(
     }
   }
   
-  const { title, description, content, category, tags, aiModel, previewImage, additionalImages, isPublic } = req.body;
+  const { title, description, content, category, tags, aiModel, previewImage, additionalImages, videoUrl, isPublic } = req.body;
 
   if (!title || !content || !category || !aiModel) {
     return res.status(400).json({ message: "제목, 프롬프트 내용, 카테고리, AI 모델은 필수입니다." });
@@ -69,6 +69,7 @@ export default async function handler(
       ai_model: aiModel,
       preview_image: previewImage || null,
       additional_images: additionalImages || [],
+      video_url: videoUrl || null,
       is_public: isPublic ?? true,
       author_id: authUser.id,
     };
@@ -105,6 +106,7 @@ export default async function handler(
         aiModel: prompt.ai_model,
         previewImage: prompt.preview_image,
         additionalImages: prompt.additional_images || [],
+        videoUrl: prompt.video_url || null,
         isPublic: prompt.is_public,
         author: {
           id: prompt.author.id,

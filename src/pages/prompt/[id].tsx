@@ -82,7 +82,100 @@ interface PromptDetail {
   isPublic?: boolean;
   previewImage?: string;
   additionalImages?: string[];
+  videoUrl?: string;
 }
+
+// 동영상 미리보기 컴포넌트
+const VideoPreview = ({ url }: { url: string }) => {
+  const [videoError, setVideoError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // YouTube URL 처리
+  const getYouTubeEmbedUrl = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
+  };
+
+  // Vimeo URL 처리
+  const getVimeoEmbedUrl = (url: string) => {
+    const regExp = /vimeo\.com\/(\d+)/;
+    const match = url.match(regExp);
+    return match ? `https://player.vimeo.com/video/${match[1]}` : null;
+  };
+
+  const getEmbedUrl = (url: string) => {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      return getYouTubeEmbedUrl(url);
+    } else if (url.includes('vimeo.com')) {
+      return getVimeoEmbedUrl(url);
+    }
+    return null;
+  };
+
+  const embedUrl = getEmbedUrl(url);
+
+  if (videoError) {
+    return (
+      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl text-gray-400 mb-2">🎥</div>
+          <p className="text-sm text-gray-500 mb-2">동영상을 불러올 수 없습니다</p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-500 hover:text-blue-700 underline"
+          >
+            원본 링크로 이동
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (!embedUrl) {
+    return (
+      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl text-gray-400 mb-2">🎥</div>
+          <p className="text-sm text-gray-500 mb-2">지원되지 않는 동영상 형식입니다</p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-500 hover:text-blue-700 underline"
+          >
+            원본 링크로 이동
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-gray-500">동영상 로딩 중...</p>
+          </div>
+        </div>
+      )}
+      <iframe
+        src={embedUrl}
+        title="동영상 미리보기"
+        className="w-full h-full"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        onLoad={() => setIsLoading(false)}
+        onError={() => setVideoError(true)}
+      />
+    </div>
+  );
+};
 
 const PromptDetailPage = () => {
   const router = useRouter();
@@ -439,6 +532,16 @@ const PromptDetailPage = () => {
                     {prompt.additionalImages.map((imageUrl, index) => (
                       <AdditionalImageItem key={index} imageUrl={imageUrl} index={index} />
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Video Preview */}
+              {prompt.videoUrl && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">동영상</h3>
+                  <div className="relative w-full max-w-2xl mx-auto">
+                    <VideoPreview url={prompt.videoUrl} />
                   </div>
                 </div>
               )}
