@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import Toast from '@/components/Toast';
+import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
 type CategoryType = 'work' | 'dev' | 'design' | 'edu' | 'image';
 
@@ -756,6 +757,38 @@ const EditPromptPage = () => {
                 <p className="mt-1 text-xs text-gray-500">
                   지원 형식: YouTube, Vimeo, 기타 동영상 플랫폼 URL
                 </p>
+                
+                {/* 동영상 썸네일 미리보기 */}
+                {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">동영상 미리보기</p>
+                    <div className="relative w-full max-w-md mx-auto">
+                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                        <Image
+                          src={getVideoThumbnail(formData.videoUrl)!}
+                          alt={getVideoTitle(formData.videoUrl)}
+                          fill
+                          className="object-cover"
+                          unoptimized={true}
+                          onError={(e) => {
+                            console.error('썸네일 로드 실패:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                          <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-600 text-center">
+                        {getVideoTitle(formData.videoUrl)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 이미지 업로드 섹션 */}

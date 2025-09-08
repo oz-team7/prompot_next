@@ -10,6 +10,7 @@ import RatingSystem from '@/components/RatingSystem';
 import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
+import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
 // 추가 이미지 컴포넌트
 const AdditionalImageItem = ({ imageUrl, index }: { imageUrl: string; index: number }) => {
@@ -89,6 +90,7 @@ interface PromptDetail {
 const VideoPreview = ({ url }: { url: string }) => {
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // YouTube URL 처리
   const getYouTubeEmbedUrl = (url: string) => {
@@ -114,6 +116,11 @@ const VideoPreview = ({ url }: { url: string }) => {
   };
 
   const embedUrl = getEmbedUrl(url);
+  const thumbnailUrl = getVideoThumbnail(url);
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+  };
 
   if (videoError) {
     return (
@@ -153,26 +160,60 @@ const VideoPreview = ({ url }: { url: string }) => {
     );
   }
 
+  if (isPlaying) {
+    return (
+      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+        <iframe
+          src={embedUrl}
+          title="동영상 미리보기"
+          className="w-full h-full"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          onLoad={() => setIsLoading(false)}
+          onError={() => setVideoError(true)}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+    <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden cursor-pointer group" onClick={handlePlay}>
+      {thumbnailUrl ? (
+        <>
+          <Image
+            src={thumbnailUrl}
+            alt={getVideoTitle(url)}
+            fill
+            className="object-cover transition-transform group-hover:scale-105"
+            unoptimized={true}
+            onError={() => setVideoError(true)}
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all duration-200">
+            <div className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+              <svg className="w-8 h-8 text-gray-700 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+          <div className="absolute bottom-4 left-4 right-4">
+            <p className="text-white text-sm font-medium bg-black bg-opacity-50 px-3 py-1 rounded">
+              {getVideoTitle(url)}
+            </p>
+          </div>
+        </>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-            <p className="text-sm text-gray-500">동영상 로딩 중...</p>
+            <div className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center mx-auto mb-2">
+              <svg className="w-8 h-8 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+            <p className="text-sm text-gray-600">클릭하여 동영상 재생</p>
           </div>
         </div>
       )}
-      <iframe
-        src={embedUrl}
-        title="동영상 미리보기"
-        className="w-full h-full"
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        onLoad={() => setIsLoading(false)}
-        onError={() => setVideoError(true)}
-      />
     </div>
   );
 };
