@@ -64,7 +64,7 @@ export const useBookmarks = () => {
     }
   };
 
-  const addBookmark = async (promptId: string | number, categoryId?: number | null) => {
+  const addBookmark = async (promptId: string | number, categoryId?: string | null) => {
     try {
       console.log('[DEBUG] Adding bookmark for promptId:', promptId, 'type:', typeof promptId, 'categoryId:', categoryId);
       

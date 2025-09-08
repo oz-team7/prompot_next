@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ 
         ok: false, 
         error: 'SQL_EXECUTION_ERROR',
-        message: error.message 
+        message: error?.message || 'Unknown error'
       })
     }
 

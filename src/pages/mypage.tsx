@@ -599,9 +599,9 @@ const MyPage = () => {
                   ) : bookmarks.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {bookmarks
-                        .filter((bookmark: Bookmark) => 
+                        .filter((bookmark: any) => 
                           selectedCategory === null || 
-                          (bookmark as any).categoryId === selectedCategory
+                          bookmark.categoryId === selectedCategory
                         )
                         .map(bookmark => (
                         <div key={bookmark.id} className="bg-white rounded-lg shadow-sm p-4">

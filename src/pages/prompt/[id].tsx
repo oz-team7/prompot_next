@@ -333,7 +333,7 @@ const PromptDetailPage = () => {
     }
   };
 
-  const handleCategorySelect = async (categoryId: number | null) => {
+  const handleCategorySelect = async (categoryId: string | null) => {
     try {
       console.log('[DEBUG] Adding bookmark with category ID:', categoryId);
       await addBookmark(prompt.id, categoryId);
@@ -490,7 +490,7 @@ const PromptDetailPage = () => {
                         {prompt.aiModel === 'midjourney' && 'Midjourney'}
                         {prompt.aiModel === 'copilot' && 'GitHub Copilot'}
                         {prompt.aiModel === 'other' && '기타'}
-                        {prompt.aiModel}
+                        {typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name}
                       </span>
                     </div>
                   </div>

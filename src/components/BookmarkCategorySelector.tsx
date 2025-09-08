@@ -5,8 +5,8 @@ import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 interface BookmarkCategorySelectorProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (categoryId: number | null) => void;
-  selectedCategoryId?: number | null;
+  onSelect: (categoryId: string | null) => void;
+  selectedCategoryId?: string | null;
 }
 
 const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
@@ -16,13 +16,13 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
   selectedCategoryId,
 }) => {
   const { categories, loading } = useBookmarkCategories();
-  const [selectedId, setSelectedId] = useState<number | null>(selectedCategoryId || null);
+  const [selectedId, setSelectedId] = useState<string | null>(selectedCategoryId || null);
 
   useEffect(() => {
     setSelectedId(selectedCategoryId || null);
   }, [selectedCategoryId]);
 
-  const handleSelect = (categoryId: number | null) => {
+  const handleSelect = (categoryId: string | null) => {
     setSelectedId(categoryId);
   };
 
