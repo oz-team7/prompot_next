@@ -7,14 +7,7 @@ import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 interface PromptCardProps {
   prompt: Prompt;
   onLike: (id: number) => void;
-  onBookmark?: (id: number, categoryId?: number | null) => void;
-  isBookmarked?: boolean;
-}
-
-interface PromptCardProps {
-  prompt: Prompt;
-  onLike: (id: number) => void;
-  onBookmark?: (id: number) => void;
+  onBookmark?: (id: number, categoryId?: string | null) => void;
   isBookmarked?: boolean;
 }
 
@@ -33,7 +26,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
     }
   };
 
-  const handleCategorySelect = (categoryId: number | null) => {
+  const handleCategorySelect = (categoryId: string | null) => {
     if (onBookmark) {
       onBookmark(prompt.id, categoryId);
     }

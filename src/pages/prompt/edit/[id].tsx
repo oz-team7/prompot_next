@@ -352,7 +352,7 @@ const EditPromptPage = () => {
       console.log('Sending update request for prompt:', id);
       
       let previewImageUrl = previewImage;
-      let additionalImageUrls: string[] = [];
+      const additionalImageUrls: string[] = [];
       
       // 미리보기 이미지 업로드 (새로 업로드된 경우)
       if (previewImage && previewImage.startsWith('data:')) {
@@ -591,6 +591,23 @@ const EditPromptPage = () => {
                 />
               </div>
 
+              {/* 프롬프트 내용 */}
+              <div>
+                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+                  프롬프트 내용 *
+                </label>
+                <textarea
+                  id="content"
+                  name="content"
+                  value={formData.content}
+                  onChange={handleChange}
+                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요..."
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
+                  required
+                />
+              </div>
+
               {/* 카테고리 & AI 모델 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 카테고리 */}
@@ -720,23 +737,6 @@ const EditPromptPage = () => {
                   onChange={handleChange}
                   placeholder="태그를 쉼표로 구분하여 입력하세요 (예: AI, 생산성, 팁)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-
-              {/* 프롬프트 내용 */}
-              <div>
-                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                  프롬프트 내용 *
-                </label>
-                <textarea
-                  id="content"
-                  name="content"
-                  value={formData.content}
-                  onChange={handleChange}
-                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요..."
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
-                  required
                 />
               </div>
 
