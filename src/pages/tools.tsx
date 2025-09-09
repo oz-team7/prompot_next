@@ -153,26 +153,6 @@ const ToolsPage = () => {
             ))}
           </div>
 
-          {/* 통계 섹션 */}
-          <div className="mt-12 bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4">AI Tools 통계</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {categories.filter(cat => cat !== 'all').map(category => (
-                <div key={category} className="text-center">
-                  <div className="text-2xl font-bold text-primary">
-                    {aiTools.filter(tool => tool.category === category).length}
-                  </div>
-                  <div className="text-sm text-gray-600">{category}</div>
-                </div>
-              ))}
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {aiTools.length}
-                </div>
-                <div className="text-sm text-gray-600">전체</div>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </>
