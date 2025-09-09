@@ -536,7 +536,7 @@ const PromptDetailPage = () => {
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">미리보기</h3>
                   <div 
-                    className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden cursor-pointer group"
+                    className="relative w-full aspect-video bg-white rounded-lg overflow-hidden cursor-pointer group"
                     onClick={() => handleImageClick(prompt.previewImage!, prompt.title)}
                   >
                     {!imageError ? (
