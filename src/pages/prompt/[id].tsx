@@ -11,7 +11,7 @@ import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import ImageModal from '@/components/ImageModal';
-import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
+import TranslationModal from '@/components/TranslationModal';
 
 // 추가 이미지 컴포넌트
 const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: string; index: number; onImageClick: (imageUrl: string, alt: string) => void }) => {
@@ -127,13 +127,26 @@ interface PromptDetail {
 const VideoPreview = ({ url }: { url: string }) => {
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
 
-  // YouTube URL 처리
+  // YouTube URL 처리 (일반 동영상 및 숏츠 지원)
   const getYouTubeEmbedUrl = (url: string) => {
+    // 일반 YouTube URL 패턴
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
-    return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : null;
+    
+    if (match && match[2].length === 11) {
+      return `https://www.youtube.com/embed/${match[2]}`;
+    }
+    
+    // YouTube Shorts URL 패턴
+    const shortsRegExp = /^.*(youtube\.com\/shorts\/|youtu\.be\/)([^#&?]*).*/;
+    const shortsMatch = url.match(shortsRegExp);
+    
+    if (shortsMatch && shortsMatch[2].length === 11) {
+      return `https://www.youtube.com/embed/${shortsMatch[2]}`;
+    }
+    
+    return null;
   };
 
   // Vimeo URL 처리
@@ -144,7 +157,7 @@ const VideoPreview = ({ url }: { url: string }) => {
   };
 
   const getEmbedUrl = (url: string) => {
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('youtube.com/shorts')) {
       return getYouTubeEmbedUrl(url);
     } else if (url.includes('vimeo.com')) {
       return getVimeoEmbedUrl(url);
@@ -153,11 +166,6 @@ const VideoPreview = ({ url }: { url: string }) => {
   };
 
   const embedUrl = getEmbedUrl(url);
-  const thumbnailUrl = getVideoThumbnail(url);
-
-  const handlePlay = () => {
-    setIsPlaying(true);
-  };
 
   if (videoError) {
     return (
@@ -197,60 +205,23 @@ const VideoPreview = ({ url }: { url: string }) => {
     );
   }
 
-  if (isPlaying) {
-    return (
-      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-        <iframe
-          src={embedUrl}
-          title="동영상 미리보기"
-          className="w-full h-full"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          onLoad={() => setIsLoading(false)}
-          onError={() => setVideoError(true)}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden cursor-pointer group" onClick={handlePlay}>
-      {thumbnailUrl ? (
-        <>
-          <Image
-            src={thumbnailUrl}
-            alt={getVideoTitle(url)}
-            fill
-            className="object-cover transition-transform group-hover:scale-105"
-            unoptimized={true}
-            onError={() => setVideoError(true)}
-          />
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all duration-200">
-            <div className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-              <svg className="w-8 h-8 text-gray-700 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-          </div>
-          <div className="absolute bottom-4 left-4 right-4">
-            <p className="text-white text-sm font-medium bg-black bg-opacity-50 px-3 py-1 rounded">
-              {getVideoTitle(url)}
-            </p>
-          </div>
-        </>
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center mx-auto mb-2">
-              <svg className="w-8 h-8 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-            <p className="text-sm text-gray-600">클릭하여 동영상 재생</p>
-          </div>
+    <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
+      <iframe
+        src={embedUrl}
+        title="동영상 미리보기"
+        className="w-full h-full"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        onLoad={() => setIsLoading(false)}
+        onError={() => setVideoError(true)}
+      />
     </div>
   );
 };
@@ -274,6 +245,10 @@ const PromptDetailPage = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState('');
   const [modalImageAlt, setModalImageAlt] = useState('');
+  const [showTranslationModal, setShowTranslationModal] = useState(false);
+  const [translatedText, setTranslatedText] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translationError, setTranslationError] = useState('');
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -430,6 +405,34 @@ const PromptDetailPage = () => {
       setToastMessage('복사에 실패했습니다. 다시 시도해주세요.');
       setToastType('error');
       setShowToast(true);
+    }
+  };
+
+  const handleTranslateContent = async (targetLanguage: string = 'en') => {
+    setIsTranslating(true);
+    setTranslationError('');
+    setShowTranslationModal(true);
+
+    try {
+      // Google Translate API를 사용한 번역 (무료 버전)
+      const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${targetLanguage}&dt=t&q=${encodeURIComponent(prompt.content)}`);
+      
+      if (!response.ok) {
+        throw new Error('번역 서비스에 연결할 수 없습니다.');
+      }
+
+      const data = await response.json();
+      
+      if (data && data[0] && data[0][0] && data[0][0][0]) {
+        setTranslatedText(data[0][0][0]);
+      } else {
+        throw new Error('번역 결과를 처리할 수 없습니다.');
+      }
+    } catch (error: any) {
+      console.error('번역 실패:', error);
+      setTranslationError(error.message || '번역에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -632,15 +635,26 @@ const PromptDetailPage = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold">프롬프트 내용</h3>
-                    <button
-                      onClick={handleCopyContent}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="프롬프트 내용 복사"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleTranslateContent}
+                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="프롬프트 내용 번역"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={handleCopyContent}
+                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="프롬프트 내용 복사"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200">
                     {prompt.content}
@@ -863,6 +877,17 @@ const PromptDetailPage = () => {
         onClose={() => setShowImageModal(false)}
         imageUrl={modalImageUrl}
         alt={modalImageAlt}
+      />
+
+      {/* Translation Modal */}
+      <TranslationModal
+        isOpen={showTranslationModal}
+        onClose={() => setShowTranslationModal(false)}
+        originalText={prompt?.content || ''}
+        translatedText={translatedText}
+        isLoading={isTranslating}
+        error={translationError}
+        onTranslate={handleTranslateContent}
       />
     </div>
   );
