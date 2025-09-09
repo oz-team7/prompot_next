@@ -154,7 +154,7 @@ const EditPromptPage = () => {
 
   const fetchPrompt = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
         throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
       }
@@ -356,7 +356,7 @@ const EditPromptPage = () => {
       
       // 미리보기 이미지 업로드 (새로 업로드된 경우)
       if (previewImage && previewImage.startsWith('data:')) {
-        const token = localStorage.getItem('token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) {
           throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
         }
@@ -385,7 +385,7 @@ const EditPromptPage = () => {
       
       // 추가 이미지들 업로드
       if (additionalImages.length > 0) {
-        const token = localStorage.getItem('token');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) {
           throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
         }
@@ -436,7 +436,7 @@ const EditPromptPage = () => {
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
       };
       
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
         throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
       }
@@ -569,7 +569,7 @@ const EditPromptPage = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleImageChange}
+                      onChange={handleImageUpload}
                       className="hidden"
                       id="image-upload"
                     />
