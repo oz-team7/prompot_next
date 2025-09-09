@@ -38,6 +38,49 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('latest');
   const [showBookmarks, setShowBookmarks] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  
+  // 정렬 옵션 정의
+  const sortOptions = [
+    { value: 'latest', label: '최신순', icon: '⌄' },
+    { value: 'latest-desc', label: '오래된순', icon: '⌄' },
+    { value: 'popular-desc', label: '인기순', icon: '⌄' },
+    { value: 'popular', label: '인기순', icon: '⌄' },
+    { value: 'rating-desc', label: '평점순', icon: '⌄' },
+    { value: 'rating', label: '평점순', icon: '⌄' },
+  ];
+  
+  const categories: { value: CategoryType; label: string }[] = [
+    { value: 'all', label: '전체' },
+    { value: 'work', label: '업무/마케팅' },
+    { value: 'dev', label: '개발/코드' },
+    { value: 'design', label: '디자인/브랜드' },
+    { value: 'edu', label: '교육/학습' },
+    { value: 'image', label: '이미지/아트' },
+  ];
+
+  const selectedSortOption = sortOptions.find(option => option.value === sortBy) || sortOptions[0];
+  const selectedCategoryOption = categories.find(category => category.value === activeCategory) || categories[0];
+  
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.sort-dropdown-container')) {
+        setShowSortDropdown(false);
+      }
+      if (!target.closest('.category-dropdown-container')) {
+        setShowCategoryDropdown(false);
+      }
+    };
+
+    if (showSortDropdown || showCategoryDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSortDropdown, showCategoryDropdown]);
   
   const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ 
     sort: sortBy.includes('popular') ? 'popular' : undefined 
@@ -57,15 +100,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       setPrompts(initialPrompts);
     }
   }, [apiPrompts, initialPrompts, useAPI]);
-
-  const categories: { value: CategoryType; label: string }[] = [
-    { value: 'all', label: '전체' },
-    { value: 'work', label: '업무/마케팅' },
-    { value: 'dev', label: '개발/코드' },
-    { value: 'design', label: '디자인/브랜드' },
-    { value: 'edu', label: '교육/학습' },
-    { value: 'image', label: '이미지/아트' },
-  ];
 
 
   const handleLike = (id: number) => {
@@ -186,35 +220,69 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
               {/* Category Selector */}
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700">카테고리</span>
-                <select
-                  value={activeCategory}
-                  onChange={(e) => setActiveCategory(e.target.value as CategoryType)}
-                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-                >
-                  {categories.map(category => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
+                <span className="text-sm font-medium text-orange-600">카테고리</span>
+                <div className="category-dropdown-container relative">
+                  <button
+                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                    className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-2 w-[120px] h-[40px]"
+                  >
+                    <span className="text-orange-600">{selectedCategoryOption.label}</span>
+                    <span className="text-orange-600">⌄</span>
+                  </button>
+
+                  {showCategoryDropdown && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg">
+                      {categories.map((category) => (
+                        <button
+                          key={category.value}
+                          onClick={() => {
+                            setActiveCategory(category.value as CategoryType);
+                            setShowCategoryDropdown(false);
+                          }}
+                          className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                            selectedCategoryOption.value === category.value ? 'bg-orange-50 text-orange-700' : ''
+                          }`}
+                        >
+                          <span className="text-sm font-medium text-orange-600">{category.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Sort Selector */}
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700">정렬</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortType)}
-                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-                >
-                  <option value="latest">최신순</option>
-                  <option value="latest-desc">오래된순</option>
-                  <option value="popular">인기순 (낮은순)</option>
-                  <option value="popular-desc">인기순 (높은순)</option>
-                  <option value="rating">평점순 (낮은순)</option>
-                  <option value="rating-desc">평점순 (높은순)</option>
-                </select>
+                <span className="text-sm font-medium text-orange-600">정렬</span>
+                <div className="sort-dropdown-container relative">
+                  <button
+                    onClick={() => setShowSortDropdown(!showSortDropdown)}
+                    className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[120px] h-[40px]"
+                  >
+                    <span className="text-orange-600">{selectedSortOption.label}</span>
+                    <span className="text-orange-600">{selectedSortOption.icon}</span>
+                  </button>
+
+                  {showSortDropdown && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg">
+                      {sortOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            setSortBy(option.value as SortType);
+                            setShowSortDropdown(false);
+                          }}
+                          className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                            selectedSortOption.value === option.value ? 'bg-orange-50 text-orange-700' : ''
+                          }`}
+                        >
+                          <span className="text-sm font-medium text-orange-600">{option.label}</span>
+                          <span className="text-sm text-orange-600">{option.icon}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -223,12 +291,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               {showCreateButton && (
                 <button
                   onClick={handleCreatePrompt}
-                  className="px-4 py-2.5 text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                  className="px-4 py-2 text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  새 프롬프트
+                  New
                 </button>
               )}
 
@@ -236,7 +304,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               {isAuthenticated && (
                 <button
                   onClick={() => setShowBookmarks(!showBookmarks)}
-                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                  className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
