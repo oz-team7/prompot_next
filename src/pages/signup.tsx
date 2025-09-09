@@ -196,7 +196,7 @@ const SignupPage = () => {
           onClose={() => setShowToast(false)}
         />
       )}
-      <main className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center px-4">
+      <main className="min-h-screen bg-orange-50/20 pt-20 flex items-center justify-center px-4">
         <div className="max-w-md w-full">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h1 className="text-2xl font-bold text-center mb-8">회원가입</h1>

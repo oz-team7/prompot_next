@@ -602,7 +602,7 @@ const CreatePromptPage = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-orange-50/20">
         <Header />
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
@@ -621,7 +621,7 @@ const CreatePromptPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-orange-50/20">
       <Header />
       
       <main className="container mx-auto px-4 py-8">
