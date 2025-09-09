@@ -17,7 +17,7 @@ interface PromptGridProps {
 }
 
 type CategoryType = 'all' | 'work' | 'dev' | 'design' | 'edu' | 'image';
-type SortType = 'none' | 'popular' | 'rating';
+type SortType = 'latest' | 'latest-desc' | 'popular' | 'popular-desc' | 'rating' | 'rating-desc';
 
 const PromptGrid: React.FC<PromptGridProps> = ({ 
   prompts: initialPrompts, 
@@ -36,10 +36,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   // 북마크된 프롬프트 ID 목록 (안전하게 접근)
   const bookmarkedPromptIds = bookmarks ? bookmarks.map(bookmark => bookmark.prompt.id) : [];
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
-  const [sortBy, setSortBy] = useState<SortType>('none');
+  const [sortBy, setSortBy] = useState<SortType>('latest');
   const [showBookmarks, setShowBookmarks] = useState(false);
   
-  const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ sort: sortBy === 'popular' ? 'popular' : undefined });
+  const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ 
+    sort: sortBy.includes('popular') ? 'popular' : undefined 
+  });
   
   // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
   const promptsData = useAPI ? apiPrompts : (initialPrompts || []);
@@ -122,10 +124,22 @@ const PromptGrid: React.FC<PromptGridProps> = ({
 
     // Sorting
     switch (sortBy) {
+      case 'latest':
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      case 'latest-desc':
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
       case 'popular':
+        filtered.sort((a, b) => a.likes - b.likes);
+        break;
+      case 'popular-desc':
         filtered.sort((a, b) => b.likes - a.likes);
         break;
       case 'rating':
+        filtered.sort((a, b) => a.rating - b.rating);
+        break;
+      case 'rating-desc':
         filtered.sort((a, b) => b.rating - a.rating);
         break;
     }
@@ -145,7 +159,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     <>
       {/* Hero Section - 조건부 렌더링 */}
       {showHero && (
-        <section className="py-8 sm:py-12 bg-gradient-to-b from-orange-50 to-white">
+        <section className="py-4 sm:py-6 bg-gradient-to-b from-orange-50 to-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-2xl sm:text-4xl font-bold mb-2 sm:mb-4">
               프롬프트의 모든 것, <span className="text-primary">PROMPOT</span>
@@ -157,7 +171,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
         </section>
       )}
 
-      <section className="py-6 sm:py-12 bg-gray-50">
+      <section className="py-2 sm:py-4 bg-gray-50">
         <div className="container mx-auto px-3 sm:px-4">
           {/* 페이지 타이틀과 프롬프트 작성 버튼 - 조건부 렌더링 */}
           {(pageTitle || showCreateButton) && (
@@ -166,40 +180,46 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             </div>
           )}
 
-          {/* Category Tabs */}
-          <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map(category => (
-              <button
-                key={category.value}
-                onClick={() => setActiveCategory(category.value)}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-full whitespace-nowrap transition-colors ${
-                  activeCategory === category.value
-                    ? 'bg-primary text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
+          {/* Category, Sort, and Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-4 sm:mb-6">
+            {/* Left side: Category and Sort Selectors */}
+            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+              {/* Category Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">카테고리:</span>
+                <select
+                  value={activeCategory}
+                  onChange={(e) => setActiveCategory(e.target.value as CategoryType)}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                >
+                  {categories.map(category => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-
-          {/* Filters and Sort */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">정렬:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortType)}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="none">최신순</option>
-                <option value="popular">인기순 (댓글)</option>
-                <option value="rating">평점순</option>
-              </select>
+              {/* Sort Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">정렬:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortType)}
+                  className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                >
+                  <option value="latest">최신순 ↑</option>
+                  <option value="latest-desc">최신순 ↓</option>
+                  <option value="popular">인기순 ↑</option>
+                  <option value="popular-desc">인기순 ↓</option>
+                  <option value="rating">평점순 ↑</option>
+                  <option value="rating-desc">평점순 ↓</option>
+                </select>
+              </div>
             </div>
 
-            <div className="ml-auto flex gap-2">
+            {/* Right side: Action Buttons */}
+            <div className="flex gap-2">
               {showCreateButton && (
                 <button
                   onClick={handleCreatePrompt}
