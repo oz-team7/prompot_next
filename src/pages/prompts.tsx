@@ -9,7 +9,6 @@ const PromptsPage = () => {
       <PromptGrid 
         showHero={false}
         showCreateButton={true}
-        pageTitle="Prompt"
         useAPI={true}
       />
     </>
