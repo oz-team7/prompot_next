@@ -224,10 +224,9 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                 <div className="category-dropdown-container relative">
                   <button
                     onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                    className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-2 w-[120px] h-[40px]"
+                    className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center w-[120px] h-[40px]"
                   >
-                    <span className="text-orange-600">{selectedCategoryOption.label}</span>
-                    <span className="text-orange-600">⌄</span>
+                    <span className="text-gray-700">{selectedCategoryOption.label}</span>
                   </button>
 
                   {showCategoryDropdown && (
@@ -243,7 +242,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                             selectedCategoryOption.value === category.value ? 'bg-orange-50 text-orange-700' : ''
                           }`}
                         >
-                          <span className="text-sm font-medium text-orange-600">{category.label}</span>
+                          <span className="text-sm font-medium text-gray-700">{category.label}</span>
                         </button>
                       ))}
                     </div>
@@ -259,8 +258,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                     onClick={() => setShowSortDropdown(!showSortDropdown)}
                     className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[120px] h-[40px]"
                   >
-                    <span className="text-orange-600">{selectedSortOption.label}</span>
-                    <span className="text-orange-600">{selectedSortOption.icon}</span>
+                    <span className="text-gray-700">{selectedSortOption.label}</span>
+                    <span className="text-gray-700">{selectedSortOption.icon}</span>
                   </button>
 
                   {showSortDropdown && (
@@ -276,8 +275,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                             selectedSortOption.value === option.value ? 'bg-orange-50 text-orange-700' : ''
                           }`}
                         >
-                          <span className="text-sm font-medium text-orange-600">{option.label}</span>
-                          <span className="text-sm text-orange-600">{option.icon}</span>
+                          <span className="text-sm font-medium text-gray-700">{option.label}</span>
+                          <span className="text-sm text-gray-700">{option.icon}</span>
                         </button>
                       ))}
                     </div>
