@@ -185,12 +185,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             {/* Left side: Category and Sort Selectors */}
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
               {/* Category Selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">카테고리:</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700">카테고리</span>
                 <select
                   value={activeCategory}
                   onChange={(e) => setActiveCategory(e.target.value as CategoryType)}
-                  className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
                 >
                   {categories.map(category => (
                     <option key={category.value} value={category.value}>
@@ -201,19 +201,19 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               </div>
 
               {/* Sort Selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">정렬:</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700">정렬</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortType)}
-                  className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white"
+                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
                 >
-                  <option value="latest">최신순 ↑</option>
-                  <option value="latest-desc">최신순 ↓</option>
-                  <option value="popular">인기순 ↑</option>
-                  <option value="popular-desc">인기순 ↓</option>
-                  <option value="rating">평점순 ↑</option>
-                  <option value="rating-desc">평점순 ↓</option>
+                  <option value="latest">최신순</option>
+                  <option value="latest-desc">오래된순</option>
+                  <option value="popular">인기순 (낮은순)</option>
+                  <option value="popular-desc">인기순 (높은순)</option>
+                  <option value="rating">평점순 (낮은순)</option>
+                  <option value="rating-desc">평점순 (높은순)</option>
                 </select>
               </div>
             </div>
@@ -223,12 +223,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               {showCreateButton && (
                 <button
                   onClick={handleCreatePrompt}
-                  className="px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1 sm:gap-2"
+                  className="px-4 py-2.5 text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  New
+                  새 프롬프트
                 </button>
               )}
 
@@ -236,9 +236,9 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               {isAuthenticated && (
                 <button
                   onClick={() => setShowBookmarks(!showBookmarks)}
-                  className="px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1 sm:gap-2"
+                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
                   북마크
