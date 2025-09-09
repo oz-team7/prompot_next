@@ -171,7 +171,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
         </section>
       )}
 
-      <section className="py-2 sm:py-4 bg-gray-50">
+      <section className="py-2 sm:py-4 bg-orange-50/20">
         <div className="container mx-auto px-3 sm:px-4">
           {/* 페이지 타이틀과 프롬프트 작성 버튼 - 조건부 렌더링 */}
           {(pageTitle || showCreateButton) && (
