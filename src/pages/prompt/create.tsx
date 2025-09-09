@@ -81,6 +81,10 @@ const CreatePromptPage = () => {
   // 드롭다운 상태 추가
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showAIModelDropdown, setShowAIModelDropdown] = useState(false);
+  
+  // 드래그 앤 드롭 상태
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isAdditionalDragOver, setIsAdditionalDragOver] = useState(false);
 
   // 인증 확인
   useEffect(() => {
@@ -290,6 +294,177 @@ const CreatePromptPage = () => {
     handleInputChange('tags', formData.tags.filter(tag => tag !== tagToRemove));
   };
 
+  // 드래그 앤 드롭 핸들러
+  const handleDragOver = (e: React.DragEvent, isAdditional: boolean = false) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isAdditional) {
+      setIsAdditionalDragOver(true);
+    } else {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent, isAdditional: boolean = false) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isAdditional) {
+      setIsAdditionalDragOver(false);
+    } else {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent, isAdditional: boolean = false) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isAdditional) {
+      setIsAdditionalDragOver(false);
+    } else {
+      setIsDragOver(false);
+    }
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      setToastMessage('이미지 파일만 업로드할 수 있습니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    if (isAdditional) {
+      // 추가 이미지 업로드
+      const maxImages = 5;
+      if (additionalImages.length + imageFiles.length > maxImages) {
+        setToastMessage(`최대 ${maxImages}개의 추가 이미지만 업로드할 수 있습니다.`);
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+
+      // 파일 검증 및 업로드
+      const validFiles = imageFiles.filter(file => {
+        if (file.size > 5 * 1024 * 1024) {
+          setToastMessage(`${file.name}의 크기가 5MB를 초과합니다.`);
+          setToastType('error');
+          setShowToast(true);
+          return false;
+        }
+        return true;
+      });
+
+      if (validFiles.length > 0) {
+        const uploadedImages: string[] = [];
+        
+        for (const file of validFiles) {
+          try {
+            const reader = new FileReader();
+            const imageData = await new Promise<string>((resolve, reject) => {
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            
+            const token = localStorage.getItem('token');
+            const response = await fetch('/api/upload-image', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                imageData: imageData,
+                fileName: file.name,
+              }),
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+              uploadedImages.push(result.imageUrl);
+            } else {
+              throw new Error(result.message || '이미지 업로드에 실패했습니다.');
+            }
+          } catch (error) {
+            console.error('Additional image upload error:', error);
+            setToastMessage(`${file.name} 업로드에 실패했습니다.`);
+            setToastType('error');
+            setShowToast(true);
+          }
+        }
+
+        if (uploadedImages.length > 0) {
+          setAdditionalImages(prev => [...prev, ...validFiles]);
+          setAdditionalPreviewUrls(prev => [...prev, ...uploadedImages]);
+          
+          setFormData(prev => ({
+            ...prev,
+            additionalImages: [...(prev.additionalImages || []), ...uploadedImages]
+          }));
+          
+          setToastMessage(`${uploadedImages.length}개의 이미지가 업로드되었습니다.`);
+          setToastType('success');
+          setShowToast(true);
+        }
+      }
+    } else {
+      // 메인 이미지 업로드
+      const file = imageFiles[0];
+      
+      if (file.size > 5 * 1024 * 1024) {
+        setToastMessage('이미지 크기는 5MB 이하여야 합니다.');
+        setToastType('error');
+        setShowToast(true);
+        return;
+      }
+
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const imageData = e.target?.result as string;
+          
+          const token = localStorage.getItem('token');
+          const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              imageData: imageData,
+              fileName: file.name,
+            }),
+          });
+
+          const result = await response.json();
+          
+          if (response.ok) {
+            setImage(file);
+            setPreviewUrl(imageData);
+            setFormData(prev => ({
+              ...prev,
+              previewImage: result.imageUrl
+            }));
+            setToastMessage('이미지가 업로드되었습니다.');
+            setToastType('success');
+            setShowToast(true);
+          } else {
+            throw new Error(result.message || '이미지 업로드에 실패했습니다.');
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Image upload error:', error);
+        setToastMessage('이미지 업로드에 실패했습니다.');
+        setToastType('error');
+        setShowToast(true);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -468,7 +643,16 @@ const CreatePromptPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     미리보기 이미지
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <div 
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      isDragOver 
+                        ? 'border-orange-400 bg-orange-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, false)}
+                    onDragLeave={(e) => handleDragLeave(e, false)}
+                    onDrop={(e) => handleDrop(e, false)}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -493,7 +677,7 @@ const CreatePromptPage = () => {
                       ) : (
                         <div className="space-y-2">
                           <div className="text-4xl text-gray-400">🖼️</div>
-                          <p className="text-sm text-gray-600">미리보기 이미지를 업로드하려면 클릭하세요</p>
+                          <p className="text-sm text-gray-600">미리보기 이미지를 업로드하려면 클릭하거나 드래그하세요</p>
                           <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB)</p>
                         </div>
                       )}
@@ -506,7 +690,16 @@ const CreatePromptPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     추가 이미지 (최대 5개)
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <div 
+                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      isAdditionalDragOver 
+                        ? 'border-orange-400 bg-orange-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, true)}
+                    onDragLeave={(e) => handleDragLeave(e, true)}
+                    onDrop={(e) => handleDrop(e, true)}
+                  >
                     <input
                       type="file"
                       accept="image/*"
@@ -518,7 +711,7 @@ const CreatePromptPage = () => {
                     <label htmlFor="additional-images-upload" className="cursor-pointer">
                       <div className="space-y-2">
                         <div className="text-4xl text-gray-400">🖼️</div>
-                        <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하세요</p>
+                        <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하거나 드래그하세요</p>
                         <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB, 최대 5개)</p>
                       </div>
                     </label>
