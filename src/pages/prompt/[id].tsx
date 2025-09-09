@@ -548,7 +548,17 @@ const PromptDetailPage = () => {
 
             {/* Prompt content */}
             <div className={`mt-6 ${!isAuthenticated ? 'blur-md pointer-events-none' : ''}`}>
-              {/* 미리보기 */}
+              {/* 동영상 (우선 표시) */}
+              {prompt.videoUrl && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">동영상</h3>
+                  <div className="relative w-full max-w-2xl mx-auto">
+                    <VideoPreview url={prompt.videoUrl} />
+                  </div>
+                </div>
+              )}
+
+              {/* 미리보기 이미지 */}
               {prompt.previewImage && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">미리보기</h3>
@@ -605,16 +615,6 @@ const PromptDetailPage = () => {
                     {prompt.additionalImages.map((imageUrl, index) => (
                       <AdditionalImageItem key={index} imageUrl={imageUrl} index={index} onImageClick={handleImageClick} />
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 동영상 */}
-              {prompt.videoUrl && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3">동영상</h3>
-                  <div className="relative w-full max-w-2xl mx-auto">
-                    <VideoPreview url={prompt.videoUrl} />
                   </div>
                 </div>
               )}
