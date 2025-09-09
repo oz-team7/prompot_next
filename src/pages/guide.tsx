@@ -169,7 +169,7 @@ const GuidePage = () => {
   return (
     <>
       <Header />
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-orange-50/20">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* 헤더 섹션 */}
           <div className="text-center mb-10">
