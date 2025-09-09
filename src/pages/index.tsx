@@ -21,7 +21,6 @@ export default function Home() {
           showHero={true} 
           useAPI={true} 
           showCreateButton={true}
-          pageTitle="최신 프롬프트"
         />
       </main>
     </>
