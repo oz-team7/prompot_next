@@ -38,7 +38,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [activeCategory, setActiveCategory] = useState<CategoryType>('all');
   const [sortBy, setSortBy] = useState<SortType>('none');
   const [showBookmarks, setShowBookmarks] = useState(false);
-  const [activeTag, setActiveTag] = useState<string>('all');
   
   const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ sort: sortBy === 'popular' ? 'popular' : undefined });
   
@@ -66,14 +65,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     { value: 'image', label: '이미지/아트' },
   ];
 
-  // 모든 태그 추출 및 중복 제거
-  const getAllTags = () => {
-    const allTags = prompts.flatMap(prompt => prompt.tags || []);
-    const uniqueTags = [...new Set(allTags)].sort();
-    return uniqueTags;
-  };
-
-  const availableTags = getAllTags();
 
   const handleLike = (id: number) => {
     setPrompts(prevPrompts =>
@@ -128,12 +119,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       filtered = filtered.filter(prompt => prompt.category === activeCategory);
     }
 
-    // Tag filter
-    if (activeTag !== 'all') {
-      filtered = filtered.filter(prompt => 
-        prompt.tags && prompt.tags.includes(activeTag)
-      );
-    }
 
     // Sorting
     switch (sortBy) {
@@ -146,7 +131,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
 
     setFilteredPrompts(filtered);
-  }, [prompts, activeCategory, sortBy, searchQuery, activeTag]);
+  }, [prompts, activeCategory, sortBy, searchQuery]);
 
   const handleCreatePrompt = () => {
     if (isAuthenticated) {
@@ -198,37 +183,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             ))}
           </div>
 
-          {/* Tag Tabs */}
-          {availableTags.length > 0 && (
-            <div className="mb-4 sm:mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">태그</h3>
-              <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                <button
-                  onClick={() => setActiveTag('all')}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-full whitespace-nowrap transition-colors ${
-                    activeTag === 'all'
-                      ? 'bg-gray-800 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  전체
-                </button>
-                {availableTags.map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => setActiveTag(tag)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-full whitespace-nowrap transition-colors ${
-                      activeTag === tag
-                        ? 'bg-gray-800 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    #{tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Filters and Sort */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 sm:mb-8">
