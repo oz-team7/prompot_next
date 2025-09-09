@@ -419,6 +419,20 @@ const PromptDetailPage = () => {
     setShowImageModal(true);
   };
 
+  const handleCopyContent = async () => {
+    try {
+      await navigator.clipboard.writeText(prompt.content);
+      setToastMessage('프롬프트 내용이 클립보드에 복사되었습니다!');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      console.error('복사 실패:', error);
+      setToastMessage('복사에 실패했습니다. 다시 시도해주세요.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
   const handleDelete = () => {
     setShowDeleteModal(true);
   };
@@ -616,7 +630,18 @@ const PromptDetailPage = () => {
 
                 {/* 프롬프트 내용 */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">프롬프트 내용</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold">프롬프트 내용</h3>
+                    <button
+                      onClick={handleCopyContent}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="프롬프트 내용 복사"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
                   <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200">
                     {prompt.content}
                   </div>
