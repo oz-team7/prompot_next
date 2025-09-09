@@ -15,6 +15,17 @@ interface PromptCardCompactProps {
 const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, onBookmark, isBookmarked = false }) => {
   const [showCategorySelector, setShowCategorySelector] = useState(false);
 
+  const getCategoryLabel = (category: string) => {
+    const categoryLabels: { [key: string]: string } = {
+      'work': '업무/마케팅',
+      'dev': '개발/코드',
+      'design': '디자인/브랜드',
+      'edu': '교육/학습',
+      'image': '이미지/아트',
+    };
+    return categoryLabels[category] || category;
+  };
+
   const handleBookmarkClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -117,6 +128,27 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
           {prompt.description}
         </p>
         
+        {/* Category and AI Model */}
+        <div className="mb-2 flex flex-wrap gap-1">
+          {prompt.category && (
+            <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium">
+              {getCategoryLabel(prompt.category)}
+            </span>
+          )}
+          {prompt.aiModel && (
+            <span className="inline-flex items-center gap-1 bg-white text-yellow-600 text-xs px-2 py-0.5 rounded font-medium border border-yellow-200">
+              {prompt.aiModel.icon && (
+                <img 
+                  src={prompt.aiModel.icon} 
+                  alt={prompt.aiModel.name}
+                  className="w-3 h-3 object-contain"
+                />
+              )}
+              {prompt.aiModel.name}
+            </span>
+          )}
+        </div>
+
         {/* Tags - Mobile Compact */}
         <div className="mb-2 flex flex-wrap gap-1">
           {prompt.tags.slice(0, 2).map((tag, index) => (

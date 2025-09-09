@@ -33,6 +33,9 @@ const MyPage = () => {
   const { categories: bookmarkCategories, refetch: refetchBookmarkCategories } = useBookmarkCategories();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // 사용자 프로필 정보 새로고침 함수
   const refreshUserProfile = async () => {
@@ -260,6 +263,58 @@ const MyPage = () => {
       setToastMessage('프로필 업데이트에 실패했습니다.');
       setToastType('error');
       setShowToast(true);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deleteAccountPassword.trim()) {
+      setToastMessage('비밀번호를 입력해주세요.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          password: deleteAccountPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // 로그아웃 처리
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToastMessage('계정이 성공적으로 삭제되었습니다.');
+        setToastType('success');
+        setShowToast(true);
+        
+        // 로그인 페이지로 리다이렉트
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+      } else {
+        throw new Error(data.message || '계정 삭제에 실패했습니다.');
+      }
+    } catch (error: any) {
+      console.error('Account deletion error:', error);
+      setToastMessage(error.message || '계정 삭제 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setIsDeletingAccount(false);
+      setDeleteAccountPassword('');
+      setShowDeleteAccountModal(false);
     }
   };
 
@@ -803,6 +858,22 @@ const MyPage = () => {
                           </button>
                         </div>
                       </div>
+
+                      {/* 계정 관리 섹션 */}
+                      <div className="pt-6">
+                        <h4 className="text-sm font-medium text-gray-700 mb-4">계정 관리</h4>
+                        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+                          <button
+                            onClick={() => setShowDeleteAccountModal(true)}
+                            className="text-xs text-red-600 hover:text-red-800 underline"
+                          >
+                            회원탈퇴
+                          </button>
+                          <p className="text-xs text-red-600">
+                            계정을 삭제하면 개인 정보는 삭제되고 작성한 콘텐츠는 익명으로 유지됩니다.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -857,6 +928,86 @@ const MyPage = () => {
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
                 삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 회원탈퇴 확인 모달 */}
+      {showDeleteAccountModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">회원탈퇴</h3>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                계정을 삭제하면 다음과 같이 처리됩니다:
+              </p>
+              
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-red-600 mb-1">삭제되는 데이터:</p>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• 개인 프로필 정보</li>
+                    <li>• 북마크한 프롬프트 목록</li>
+                    <li>• 북마크 카테고리</li>
+                    <li>• 계정 로그인 정보</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <p className="text-sm font-medium text-green-600 mb-1">유지되는 데이터 (익명화):</p>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• 작성한 프롬프트 (작성자: "삭제된 사용자")</li>
+                    <li>• 작성한 댓글 (작성자: "삭제된 사용자")</li>
+                    <li>• 남긴 평점 (작성자: "삭제된 사용자")</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <p className="text-sm text-red-600 font-medium mt-4">
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                비밀번호를 입력하여 확인하세요
+              </label>
+              <input
+                type="password"
+                value={deleteAccountPassword}
+                onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="현재 비밀번호를 입력하세요"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteAccountModal(false);
+                  setDeleteAccountPassword('');
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isDeletingAccount}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isDeletingAccount || !deleteAccountPassword.trim()}
+              >
+                {isDeletingAccount ? '삭제 중...' : '계정 삭제'}
               </button>
             </div>
           </div>
