@@ -130,7 +130,7 @@ const AdminPage = () => {
     dev: '개발/코드',
     design: '디자인/브랜드',
     edu: '교육/학습',
-    image: '이미지/아트',
+    image: '이미지/동영상',
   };
 
   if (authLoading || loading) {

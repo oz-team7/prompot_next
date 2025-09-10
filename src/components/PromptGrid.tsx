@@ -55,7 +55,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     { value: 'dev', label: '개발/코드' },
     { value: 'design', label: '디자인/브랜드' },
     { value: 'edu', label: '교육/학습' },
-    { value: 'image', label: '이미지/아트' },
+    { value: 'image', label: '이미지/동영상' },
   ];
 
   const selectedSortOption = sortOptions.find(option => option.value === sortBy) || sortOptions[0];
