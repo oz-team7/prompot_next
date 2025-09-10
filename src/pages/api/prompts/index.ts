@@ -53,12 +53,20 @@ export default async function handler(
   try {
     console.log('[DEBUG] API /api/prompts called with query:', req.query);
     
+    // 환경 변수 확인
+    console.log('[DEBUG] Environment check:');
+    console.log('- NODE_ENV:', process.env.NODE_ENV);
+    console.log('- NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log('- SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    
     // 옵셔널 인증 확인 (로그인한 사용자의 좋아요/북마크 정보를 위해)
     const authUser = await getAuthUser(req);
     const userId = authUser?.id || null;
     console.log('[DEBUG] Authenticated user ID:', userId);
 
     const supabase = createSupabaseServiceClient();
+    console.log('[DEBUG] Supabase client created successfully');
+    
     const { category, author, isPublic, sort = 'latest', page = '1', limit = '20' } = req.query;
 
     // 페이지네이션 설정
