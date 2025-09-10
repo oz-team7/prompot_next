@@ -51,9 +51,12 @@ export default async function handler(
   }
 
   try {
+    console.log('[DEBUG] API /api/prompts called with query:', req.query);
+    
     // 옵셔널 인증 확인 (로그인한 사용자의 좋아요/북마크 정보를 위해)
     const authUser = await getAuthUser(req);
     const userId = authUser?.id || null;
+    console.log('[DEBUG] Authenticated user ID:', userId);
 
     const supabase = createSupabaseServiceClient();
     const { category, author, isPublic, sort = 'latest', page = '1', limit = '20' } = req.query;
@@ -138,10 +141,14 @@ export default async function handler(
     const { data: prompts, error } = await query;
 
     if (error) {
+      console.error('[DEBUG] Supabase query error:', error);
       throw error;
     }
 
+    console.log('[DEBUG] Retrieved prompts count:', prompts?.length || 0);
+
     if (!prompts) {
+      console.log('[DEBUG] No prompts found');
       return sendSuccess(res, [], '프롬프트가 없습니다.');
     }
 
