@@ -5,10 +5,49 @@ import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
-// 태그 표시 유틸리티 함수
-const getDisplayTags = (tags: string[], maxCount: number = 3): { displayTags: string[]; remainingCount: number } => {
-  const displayTags = tags.slice(0, maxCount);
-  const remainingCount = Math.max(0, tags.length - maxCount);
+// 태그 표시 유틸리티 함수 - 더 정확한 너비 계산
+const getDisplayTags = (tags: string[], cardWidth: number = 280): { displayTags: string[]; remainingCount: number } => {
+  if (tags.length === 0) return { displayTags: [], remainingCount: 0 };
+  
+  // 더 보수적인 태그 너비 계산 (한글 문자 고려)
+  const getTagWidth = (tag: string) => {
+    // 한글은 더 넓은 공간 필요 (한글 1자 = 약 12px, 영문 1자 = 약 6px)
+    const koreanChars = (tag.match(/[가-힣]/g) || []).length;
+    const otherChars = tag.length - koreanChars;
+    const textWidth = koreanChars * 12 + otherChars * 6;
+    
+    const padding = 16; // px-2 (8px * 2) + 여유분
+    const gap = 6; // gap-1 + 여유분
+    return textWidth + padding + gap;
+  };
+  
+  // + 표시 너비 (더 여유있게)
+  const plusWidth = 30; // +숫자 표시 예상 너비 + 여유분
+  
+  let totalWidth = 0;
+  let displayCount = 0;
+  
+  for (let i = 0; i < tags.length; i++) {
+    const tagWidth = getTagWidth(tags[i]);
+    
+    // + 표시가 필요한지 확인 (다음 태그가 있으면)
+    const needsPlus = i < tags.length - 1;
+    const requiredWidth = totalWidth + tagWidth + (needsPlus ? plusWidth : 0);
+    
+    // 더 보수적인 계산 (카드 너비의 90%까지만 사용)
+    const availableWidth = cardWidth * 0.9;
+    
+    if (requiredWidth <= availableWidth) {
+      totalWidth += tagWidth;
+      displayCount++;
+    } else {
+      break;
+    }
+  }
+  
+  const displayTags = tags.slice(0, displayCount);
+  const remainingCount = Math.max(0, tags.length - displayCount);
+  
   return { displayTags, remainingCount };
 };
 
@@ -78,6 +117,13 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                onError={(e) => {
+                  console.error('이미지 로드 실패:', prompt.previewImage, e);
+                  e.currentTarget.style.display = 'none';
+                }}
+                onLoad={() => {
+                  console.log('이미지 로드 성공:', prompt.previewImage);
+                }}
               />
             </div>
           ) : (
@@ -109,19 +155,19 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
         {/* Tags - 고정 높이 */}
         <div className="h-6 flex items-center">
           {(() => {
-            const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 3);
+            const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 260); // 더 보수적인 카드 너비
             return displayTags.length > 0 || remainingCount > 0 ? (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-nowrap gap-1 overflow-hidden">
                 {displayTags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded"
+                    className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
                   >
                     {tag}
                   </span>
                 ))}
                 {remainingCount > 0 && (
-                  <span className="inline-block bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded">
+                  <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
                     +{remainingCount}
                   </span>
                 )}
@@ -133,7 +179,8 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
         </div>
         
         {/* Footer - 카테고리/AI모델/작성자 */}
-        <div className="flex justify-between items-center">
+        <div className="space-y-2">
+          {/* 첫 번째 줄: 카테고리와 AI 모델 */}
           <div className="flex items-center gap-2">
             {/* 카테고리 */}
             {prompt.category && (
@@ -142,25 +189,29 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
                 {prompt.category === 'dev' && '개발/코드'}
                 {prompt.category === 'design' && '디자인/브랜드'}
                 {prompt.category === 'edu' && '교육/학습'}
-                {prompt.category === 'image' && '이미지/아트'}
+                  {prompt.category === 'image' && '이미지/동영상'}
                 {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
               </span>
             )}
             {/* AI 모델 */}
             {prompt.aiModel && (
-              <span className="inline-flex items-center gap-1 bg-white text-yellow-600 text-xs px-2 py-0.5 rounded font-medium border border-yellow-200">
-                {prompt.aiModel.icon && (
-                  <img 
-                    src={prompt.aiModel.icon} 
-                    alt={prompt.aiModel.name}
-                    className="w-3 h-3 object-contain"
-                  />
-                )}
-                {prompt.aiModel.name}
+              <span className="inline-block bg-orange-100 text-black text-xs px-2 py-0.5 rounded font-medium">
+                <div className="flex items-center gap-1">
+                  {prompt.aiModel.icon && (
+                    <img 
+                      src={prompt.aiModel.icon} 
+                      alt={prompt.aiModel.name}
+                      className="w-3 h-3 object-contain"
+                    />
+                  )}
+                  {prompt.aiModel.name}
+                </div>
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 min-w-0">
+          
+          {/* 두 번째 줄: 작성자와 북마크 */}
+          <div className="flex justify-between items-center">
             <span className="text-xs text-gray-500 whitespace-nowrap">
               {prompt.author?.name || '익명'}
             </span>

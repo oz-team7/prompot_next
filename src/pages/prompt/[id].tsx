@@ -635,7 +635,7 @@ const PromptDetailPage = () => {
                         {prompt.category === 'dev' && '개발/코드'}
                         {prompt.category === 'design' && '디자인/브랜드'}
                         {prompt.category === 'edu' && '교육/학습'}
-                        {prompt.category === 'image' && '이미지/아트'}
+                        {prompt.category === 'image' && '이미지/동영상'}
                       </span>
                     </div>
                   </div>

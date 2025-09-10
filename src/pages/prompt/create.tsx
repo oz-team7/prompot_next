@@ -49,7 +49,7 @@ const categories = [
   { value: 'dev', label: '개발/코드', icon: '💻' },
   { value: 'design', label: '디자인/브랜드', icon: '🎨' },
   { value: 'edu', label: '교육/학습', icon: '📚' },
-  { value: 'image', label: '이미지/아트', icon: '🖼️' },
+    { value: 'image', label: '이미지/동영상', icon: '🖼️' },
 ];
 
 const CreatePromptPage = () => {
