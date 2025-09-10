@@ -430,7 +430,7 @@ const PromptDetailPage = () => {
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     {prompt.author.avatar_url ? (
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0">
                         <Image
                           src={prompt.author.avatar_url}
                           alt={prompt.author.name}

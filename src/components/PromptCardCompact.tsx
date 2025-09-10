@@ -165,21 +165,21 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
               <h3 className="text-sm sm:text-base font-semibold line-clamp-1 flex-1 min-w-0" title={prompt.title}>
                 {prompt.title}
               </h3>
-              {onBookmark && (
+              {isAuthenticated && (
                 <button
                   onClick={(e) => {
                     e.preventDefault();
                     handleBookmarkClick(e);
                   }}
                   className="flex items-center hover:scale-110 transition-transform ml-2 flex-shrink-0"
-                  title={isBookmarked ? '북마크 제거' : '북마크 추가'}
+                  title={actualIsBookmarked ? '북마크 제거' : '북마크 추가'}
                 >
                   <svg
-                    className={`w-4 h-4 ${
-                      isBookmarked ? 'text-primary fill-current' : 'text-gray-500'
+                    className={`w-5 h-5 ${
+                      actualIsBookmarked ? 'text-primary fill-current' : 'text-gray-500'
                     }`}
                     viewBox="0 0 24 24"
-                    fill={isBookmarked ? 'currentColor' : 'none'}
+                    fill={actualIsBookmarked ? 'currentColor' : 'none'}
                     stroke="currentColor"
                   >
                     <path
@@ -294,13 +294,13 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
                   {displayTags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
+                    className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
                   >
                     {tag}
                   </span>
                   ))}
                   {remainingCount > 0 && (
-                    <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
+                    <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
                       +{remainingCount}
                     </span>
                   )}
@@ -317,7 +317,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
             <div className="flex items-center gap-2">
               {/* 카테고리 */}
               {prompt.category && (
-                <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium">
+                <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
                   {prompt.category === 'work' && '업무/마케팅'}
                   {prompt.category === 'dev' && '개발/코드'}
                   {prompt.category === 'design' && '디자인/브랜드'}
@@ -328,7 +328,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
               )}
               {/* AI 모델 */}
               {prompt.aiModel && (
-                <span className="inline-block bg-orange-100 text-black text-xs px-2 py-0.5 rounded font-medium">
+                <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
                   <div className="flex items-center gap-1">
                     {prompt.aiModel.icon && (
                       <img 
@@ -344,10 +344,10 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
             </div>
             
             {/* 두 번째 줄: 작성자 */}
-            <div className="flex justify-start">
+            <div className="flex justify-end">
               <div className="flex items-center gap-2">
                 {/* 작성자 프로필사진 */}
-                <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                <div className="w-4 h-4 rounded-full overflow-hidden bg-white flex-shrink-0">
                   {prompt.author?.avatar_url ? (
                     <Image
                       src={prompt.author.avatar_url}

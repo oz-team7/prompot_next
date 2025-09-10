@@ -146,9 +146,39 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
       >
       {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
       <div className="flex-shrink-0 mb-4">
-        <h3 className="text-lg font-semibold mb-0 line-clamp-1" title={prompt.title}>
-          {prompt.title}
-        </h3>
+        <div className="flex justify-between items-start mb-0">
+          <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0" title={prompt.title}>
+            {prompt.title}
+          </h3>
+          {/* 북마크 아이콘 */}
+          {isAuthenticated && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleBookmarkClick();
+              }}
+              className="flex items-center hover:scale-110 transition-transform ml-2 flex-shrink-0"
+              title={actualIsBookmarked ? '북마크 제거' : '북마크 추가'}
+            >
+              <svg
+                className={`w-5 h-5 ${
+                  actualIsBookmarked ? 'text-primary fill-current' : 'text-gray-500'
+                }`}
+                viewBox="0 0 24 24"
+                fill={actualIsBookmarked ? 'currentColor' : 'none'}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
         
         {/* 미리보기 이미지 - 최대 확장된 높이 */}
         <div className="h-48 mb-3">
@@ -250,13 +280,13 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
                 {displayTags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
+                    className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
                   >
                     {tag}
                   </span>
                 ))}
                 {remainingCount > 0 && (
-                  <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
+                  <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
                     +{remainingCount}
                   </span>
                 )}
@@ -273,7 +303,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
           <div className="flex items-center gap-2">
             {/* 카테고리 */}
             {prompt.category && (
-              <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium">
+              <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
                 {prompt.category === 'work' && '업무/마케팅'}
                 {prompt.category === 'dev' && '개발/코드'}
                 {prompt.category === 'design' && '디자인/브랜드'}
@@ -284,7 +314,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
             )}
             {/* AI 모델 */}
             {prompt.aiModel && (
-              <span className="inline-block bg-orange-100 text-black text-xs px-2 py-0.5 rounded font-medium">
+              <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
                 <div className="flex items-center gap-1">
                   {prompt.aiModel.icon && (
                     <img 
@@ -300,10 +330,10 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
           </div>
           
           {/* 두 번째 줄: 작성자 */}
-          <div className="flex justify-start">
+          <div className="flex justify-end">
             <div className="flex items-center gap-2">
               {/* 작성자 프로필사진 */}
-              <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+              <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
                 {prompt.author?.avatar_url ? (
                   <Image
                     src={prompt.author.avatar_url}
