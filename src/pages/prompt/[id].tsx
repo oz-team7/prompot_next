@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
-import RatingSystem from '@/components/RatingSystem';
 import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
@@ -114,8 +113,6 @@ interface PromptDetail {
   };
   createdAt: string;
   date: string;
-  rating?: number;
-  userRating?: number;
   isPublic?: boolean;
   previewImage?: string;
   additionalImages?: string[];
@@ -237,7 +234,7 @@ const PromptDetailPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
   const [imageError, setImageError] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -304,7 +301,9 @@ const PromptDetailPage = () => {
     );
   }
 
-  const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt?.id);
+  const isBookmarked = bookmarks.some(bookmark => 
+    bookmark && bookmark.prompt && bookmark.prompt.id === prompt?.id
+  );
   const isAuthor = user?.id === prompt.author?.id;
 
   const handleBookmarkToggle = async () => {
@@ -319,20 +318,15 @@ const PromptDetailPage = () => {
 
     try {
       if (isBookmarked) {
-        console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
         await removeBookmark(prompt.id);
         setToastMessage('북마크가 제거되었습니다.');
+        setToastType('bookmark');
+        setShowToast(true);
       } else {
-        console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
-        console.log('[DEBUG] Prompt ID type:', typeof prompt.id);
-        console.log('[DEBUG] Prompt ID value:', prompt.id);
-        
         // 북마크 추가 시 카테고리 선택 모달 표시
         setShowCategorySelector(true);
         return;
       }
-      setToastType('success');
-      setShowToast(true);
     } catch (error: any) {
       console.error('[DEBUG] Bookmark toggle error:', error);
       setToastMessage(error.message || '북마크 처리 중 오류가 발생했습니다.');
@@ -343,20 +337,13 @@ const PromptDetailPage = () => {
 
   const handleCategorySelect = async (categoryId: string | null) => {
     try {
-      console.log('[DEBUG] Adding bookmark with category ID:', categoryId);
-      console.log('[DEBUG] Prompt ID:', prompt.id, 'type:', typeof prompt.id);
-      
       await addBookmark(prompt.id, categoryId);
       
-      console.log('[DEBUG] Bookmark added successfully, updating local state');
       setToastMessage('북마크에 추가되었습니다!');
-      setToastType('success');
+      setToastType('bookmark');
       setShowToast(true);
       
-      // 북마크 목록 새로고침을 위해 잠시 후 상태 확인
-      setTimeout(() => {
-        console.log('[DEBUG] Checking bookmarks after add:', bookmarks);
-      }, 1000);
+      setShowCategorySelector(false);
     } catch (error: any) {
       console.error('[DEBUG] Add bookmark with category error:', error);
       setToastMessage(error.message || '북마크 추가 중 오류가 발생했습니다.');
@@ -422,12 +409,14 @@ const PromptDetailPage = () => {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-6 relative">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 relative">
             {/* Content header */}
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h1 className="text-2xl font-bold mb-2">{prompt.title}</h1>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold mb-3 text-gray-900">{prompt.title}</h1>
+                
+                {/* 작성자 정보 */}
+                <div className="flex items-center gap-3 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     {prompt.author.avatar_url ? (
                       <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0">
@@ -452,10 +441,10 @@ const PromptDetailPage = () => {
                         />
                       </div>
                     )}
-                    <span>{prompt.author.name}</span>
+                    <span className="font-medium">{prompt.author.name}</span>
                   </div>
-                  <span>•</span>
-                  <time dateTime={prompt.createdAt}>{prompt.date}</time>
+                  <span className="text-gray-400">•</span>
+                  <time dateTime={prompt.createdAt} className="text-gray-500">{prompt.date}</time>
                 </div>
               </div>
               
@@ -464,13 +453,13 @@ const PromptDetailPage = () => {
                   <>
                     <button
                       onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
-                      className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                      className="px-3 py-1.5 text-sm bg-orange-400 text-white rounded-lg hover:bg-orange-500 transition-colors font-medium"
                     >
                       수정
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                      className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                     >
                       삭제
                     </button>
@@ -480,16 +469,16 @@ const PromptDetailPage = () => {
                 {isAuthenticated && (
                   <button
                     onClick={handleBookmarkToggle}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 font-medium
                       ${isBookmarked 
-                        ? 'bg-orange-100 text-primary border border-orange-200 hover:bg-orange-200' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-orange-100 text-orange-400 border border-orange-400 hover:bg-orange-200' 
+                        : 'bg-white text-orange-400 border border-orange-400 hover:bg-orange-100'
                       }`}
                   >
                     <svg className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
-                    {isBookmarked ? '북마크됨' : '북마크'}
+                    {isBookmarked ? '북마크' : '북마크'}
                   </button>
                 )}
               </div>
@@ -573,17 +562,23 @@ const PromptDetailPage = () => {
                 {/* 설명 */}
                 {prompt.description && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">설명</h3>
-                    <p className="text-gray-700 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      {prompt.description}
-                    </p>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                      설명
+                    </h3>
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                      <p className="text-gray-700 leading-relaxed">{prompt.description}</p>
+                    </div>
                   </div>
                 )}
 
                 {/* 프롬프트 내용 */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold">프롬프트 내용</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                      프롬프트 내용
+                    </h3>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleCopyContent}
@@ -618,88 +613,73 @@ const PromptDetailPage = () => {
                 </div>
 
                 {/* 카테고리, AI 모델, 공개 설정 */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* 카테고리 */}
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800">카테고리</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">
-                        {prompt.category === 'work' && '💼'}
-                        {prompt.category === 'dev' && '💻'}
-                        {prompt.category === 'design' && '🎨'}
-                        {prompt.category === 'edu' && '📚'}
-                        {prompt.category === 'image' && '🖼️'}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                    정보
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {/* 카테고리 */}
+                    {prompt.category && (
+                      <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                        {prompt.category === 'work' && '⚡ 업무/마케팅'}
+                        {prompt.category === 'dev' && '⚙️ 개발/코드'}
+                        {prompt.category === 'design' && '✨ 디자인/브랜드'}
+                        {prompt.category === 'edu' && '🎯 교육/학습'}
+                        {prompt.category === 'image' && '🎬 이미지/동영상'}
+                        {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
                       </span>
-                      <span className="text-gray-700 bg-white px-3 py-2 rounded-full text-sm font-medium shadow-sm">
-                        {prompt.category === 'work' && '업무/마케팅'}
-                        {prompt.category === 'dev' && '개발/코드'}
-                        {prompt.category === 'design' && '디자인/브랜드'}
-                        {prompt.category === 'edu' && '교육/학습'}
-                        {prompt.category === 'image' && '이미지/동영상'}
+                    )}
+                    
+                    {/* AI 모델 */}
+                    {prompt.aiModel && (
+                      <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
+                            const model = aiModels.find(m => m.id === modelId);
+                            if (model?.icon === '🔧') {
+                              return <span>{model.icon}</span>;
+                            } else if (model?.icon) {
+                              return <img src={model.icon} alt={model.name} className="w-4 h-4 object-contain" />;
+                            } else {
+                              return <span>🤖</span>;
+                            }
+                          })()}
+                          <span>
+                            {(() => {
+                              const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
+                              const model = aiModels.find(m => m.id === modelId);
+                              return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
+                            })()}
+                          </span>
+                        </div>
                       </span>
-                    </div>
-                  </div>
-                  
-                  {/* AI 모델 */}
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800">AI 모델</h3>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 flex-shrink-0">
-                        {(() => {
-                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
-                          const model = aiModels.find(m => m.id === modelId);
-                          if (model?.icon === '🔧') {
-                            return <div className="text-2xl">{model.icon}</div>;
-                          } else if (model?.icon) {
-                            return (
-                              <img 
-                                src={model.icon} 
-                                alt={model.name}
-                                className="w-full h-full object-contain"
-                              />
-                            );
-                          } else {
-                            return <div className="text-2xl">🤖</div>;
-                          }
-                        })()}
-                      </div>
-                      <span className="text-gray-700 bg-white px-3 py-2 rounded-full text-sm font-medium shadow-sm">
-                        {(() => {
-                          const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
-                          const model = aiModels.find(m => m.id === modelId);
-                          return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 공개 설정 */}
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800">공개 설정</h3>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">
-                        {prompt.isPublic ? '🌍' : '🔒'}
-                      </span>
-                      <span className={`px-3 py-2 rounded-full text-sm font-medium shadow-sm ${
-                        prompt.isPublic 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {prompt.isPublic ? '공개' : '비공개'}
-                      </span>
-                    </div>
+                    )}
+                    
+                    {/* 공개 설정 */}
+                    <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium ${
+                      prompt.isPublic 
+                        ? 'bg-orange-100 text-orange-400' 
+                        : 'bg-gray-100 text-gray-400'
+                    }`}>
+                      {prompt.isPublic ? '🌐 공개' : '🔐 비공개'}
+                    </span>
                   </div>
                 </div>
 
                 {/* 태그 */}
                 {prompt.tags && prompt.tags.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-2">태그</h3>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                      태그
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                       {prompt.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium"
+                          className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
                         >
                           #{tag}
                         </span>
@@ -712,19 +692,6 @@ const PromptDetailPage = () => {
               <div className="mt-4">
                 <SharePrompt promptId={prompt.id.toString()} title={prompt.title} />
               </div>
-            </div>
-
-            {/* Rating */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold mb-2">평가하기</h3>
-              <RatingSystem 
-                promptId={prompt.id.toString()}
-                onRatingChange={(success, message) => {
-                  setToastMessage(message);
-                  setToastType(success ? 'success' : 'error');
-                  setShowToast(true);
-                }}
-              />
             </div>
 
             {/* Comments */}

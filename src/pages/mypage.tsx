@@ -12,6 +12,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import ProfileImageModal from '@/components/ProfileImageModal';
 import BookmarkCategoryManager from '@/components/BookmarkCategoryManager';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
+import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
 const MyPage = () => {
   const router = useRouter();
@@ -28,7 +29,7 @@ const MyPage = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
   const [userProfile, setUserProfile] = useState<any>(null);
   const { categories: bookmarkCategories, refetch: refetchBookmarkCategories } = useBookmarkCategories();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -126,19 +127,27 @@ const MyPage = () => {
       try {
         // localStorage에서 토큰 가져오기
         const token = localStorage.getItem('token');
-        console.log('Delete - Token from localStorage:', token); // 디버깅 로그
+        console.log('[DEBUG] Delete - Token from localStorage:', token ? 'exists' : 'not found');
+        console.log('[DEBUG] Delete - Target ID:', deleteTargetId);
+        
+        if (!token) {
+          throw new Error('로그인 토큰이 없습니다. 다시 로그인해주세요.');
+        }
         
         const res = await fetch(`/api/prompts/${deleteTargetId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${token}`, // 인증 헤더 추가
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         });
 
-        console.log('Delete - Response status:', res.status); // 디버깅 로그
+        console.log('[DEBUG] Delete - Response status:', res.status);
+        console.log('[DEBUG] Delete - Response headers:', Object.fromEntries(res.headers.entries()));
         
         if (!res.ok) {
           const errorData = await res.json();
+          console.log('[DEBUG] Delete - Error data:', errorData);
           throw new Error(errorData.message || '프롬프트 삭제에 실패했습니다.');
         }
 
@@ -523,48 +532,173 @@ const MyPage = () => {
                     </button>
                   </div>
                 ) : myPrompts.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {myPrompts.map(prompt => (
-                      <div key={prompt.id} className="bg-white rounded-lg shadow-sm p-4">
-                        {prompt.preview_image && (
-                          <div className="relative w-full h-40 mb-3">
-                            <Image
-                              src={prompt.preview_image}
-                              alt={prompt.title}
-                              fill
-                              className="object-cover rounded-lg"
-                            />
+                      <Link key={prompt.id} href={`/prompt/${prompt.id}`} className="block">
+                        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 h-[450px] flex flex-col w-full mb-2 overflow-hidden cursor-pointer">
+                          {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
+                          <div className="flex-shrink-0 mb-4">
+                            <div className="flex justify-between items-start mb-0">
+                              <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0" title={prompt.title}>
+                                {prompt.title}
+                              </h3>
+                            </div>
+                            
+                            {/* 미리보기 이미지 - 최대 확장된 높이 */}
+                            <div className="h-48 mb-3">
+                              {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
+                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+                                  <Image
+                                    src={getVideoThumbnail(prompt.video_url)!}
+                                    alt={getVideoTitle(prompt.video_url)}
+                                    fill
+                                    className="object-cover"
+                                    unoptimized={true}
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
+                                    <div className="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                                      <svg className="w-4 h-4 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z"/>
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : prompt.preview_image ? (
+                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+                                  <Image
+                                    src={prompt.preview_image}
+                                    alt={prompt.title}
+                                    fill
+                                    className="object-cover"
+                                    unoptimized={true}
+                                  />
+                                </div>
+                              ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
+                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+                                  <Image
+                                    src={prompt.additional_images[0]}
+                                    alt={prompt.title}
+                                    fill
+                                    className="object-cover"
+                                    unoptimized={true}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="relative w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg overflow-hidden flex items-center justify-center">
+                                  <Image
+                                    src="/logo.png"
+                                    alt="Prompot"
+                                    width={64}
+                                    height={64}
+                                    className="w-16 h-16 object-contain opacity-70"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        <h3 className="font-semibold mb-1">{prompt.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                          {prompt.description}
-                        </p>
-                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                          <span>{prompt.date}</span>
-                          <span>좋아요 {prompt.likes}개</span>
+
+                          {/* 중간 고정 영역: 설명 */}
+                          <div className="flex-shrink-0 mb-3">
+                            <div className="h-12">
+                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                                {prompt.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* 하단 고정 영역: 태그 + 카테고리/AI모델/작성자 */}
+                          <div className="flex-shrink-0 space-y-2">
+                            {/* Tags - 고정 높이 */}
+                            <div className="h-6 flex items-center">
+                              {(() => {
+                                const tags = prompt.tags || [];
+                                const displayTags = tags.slice(0, 3);
+                                const remainingCount = Math.max(0, tags.length - 3);
+                                return displayTags.length > 0 || remainingCount > 0 ? (
+                                  <div className="flex flex-nowrap gap-1 overflow-hidden">
+                                    {displayTags.map((tag, index) => (
+                                      <span
+                                        key={index}
+                                        className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                    {remainingCount > 0 && (
+                                      <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
+                                        +{remainingCount}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="h-6"></div>
+                                );
+                              })()}
+                            </div>
+                            
+                            {/* Footer - 카테고리/AI모델/작성자 */}
+                            <div className="space-y-2">
+                              {/* 첫 번째 줄: 카테고리와 AI 모델 */}
+                              <div className="flex items-center gap-2">
+                                {/* 카테고리 */}
+                                {prompt.category && (
+                                  <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                                    {prompt.category === 'work' && '⚡ 업무/마케팅'}
+                                    {prompt.category === 'dev' && '⚙️ 개발/코드'}
+                                    {prompt.category === 'design' && '✨ 디자인/브랜드'}
+                                    {prompt.category === 'edu' && '🎯 교육/학습'}
+                                    {prompt.category === 'image' && '🎬 이미지/동영상'}
+                                    {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
+                                  </span>
+                                )}
+                                {/* AI 모델 */}
+                                {prompt.aiModel && (
+                                  <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                                    <div className="flex items-center gap-1">
+                                      {prompt.aiModel.icon && (
+                                        <img 
+                                          src={prompt.aiModel.icon} 
+                                          alt={prompt.aiModel.name}
+                                          className="w-3 h-3 object-contain"
+                                        />
+                                      )}
+                                      {prompt.aiModel.name}
+                                    </div>
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* 두 번째 줄: 작성자 */}
+                              <div className="flex justify-end">
+                                <div className="flex items-center gap-2">
+                                  {/* 작성자 프로필사진 */}
+                                  <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
+                                    {prompt.author?.avatar_url ? (
+                                      <Image
+                                        src={prompt.author.avatar_url}
+                                        alt={prompt.author.name || '작성자'}
+                                        width={20}
+                                        height={20}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                                        <span className="text-xs font-medium text-orange-600">
+                                          {(prompt.author?.name || '익명').charAt(0).toUpperCase()}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* 작성자 이름 */}
+                                  <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">
+                                    {prompt.author?.name || '익명'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/prompt/${prompt.id}`}
-                            className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-center text-sm"
-                          >
-                            보기
-                          </Link>
-                          <Link
-                            href={`/prompt/edit/${prompt.id}`}
-                            className="flex-1 px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
-                          >
-                            수정
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(prompt.id)}
-                            className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (
@@ -652,59 +786,133 @@ const MyPage = () => {
                       </button>
                     </div>
                   ) : bookmarks.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {bookmarks
                         .filter((bookmark: any) => 
                           selectedCategory === null || 
                           bookmark.categoryId === selectedCategory
                         )
                         .map(bookmark => (
-                        <div key={bookmark.id} className="bg-white rounded-lg shadow-sm p-4">
-                          {bookmark.prompt.previewImage && (
-                            <div className="relative w-full h-40 mb-3">
-                              <Image
-                                src={bookmark.prompt.previewImage}
-                                alt={bookmark.prompt.title}
-                                fill
-                                className="object-cover rounded-lg"
-                                unoptimized={true}
-                              />
+      <Link key={bookmark.id} href={`/prompt/${bookmark.prompt.id}`} className="block">
+        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 h-[450px] flex flex-col w-full mb-2 overflow-hidden cursor-pointer">
+                          {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
+                          <div className="flex-shrink-0 mb-4">
+                            <div className="flex justify-between items-start mb-0">
+                              <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0" title={bookmark.prompt.title}>
+                                {bookmark.prompt.title}
+                              </h3>
                             </div>
-                          )}
-                          <h3 className="font-semibold mb-1">{bookmark.prompt.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                            {bookmark.prompt.description}
-                          </p>
-                          <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span>{bookmark.prompt.author}</span>
-                            <span>{new Date(bookmark.createdAt).toLocaleDateString()}</span>
+                            
+                            {/* 미리보기 이미지 - 최대 확장된 높이 */}
+                            <div className="h-48 mb-3">
+                              {bookmark.prompt.previewImage ? (
+                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+                                  <Image
+                                    src={bookmark.prompt.previewImage}
+                                    alt={bookmark.prompt.title}
+                                    fill
+                                    className="object-cover"
+                                    unoptimized={true}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="relative w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg overflow-hidden flex items-center justify-center">
+                                  <Image
+                                    src="/logo.png"
+                                    alt="Prompot"
+                                    width={64}
+                                    height={64}
+                                    className="w-16 h-16 object-contain opacity-70"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Link
-                              href={`/prompt/${bookmark.prompt.id}`}
-                              className="flex-1 px-3 py-1.5 bg-primary text-white rounded hover:bg-orange-600 transition-colors text-center text-sm"
-                            >
-                              자세히 보기
-                            </Link>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await removeBookmark(bookmark.prompt.id);
-                                  setToastMessage("북마크가 삭제되었습니다.");
-                                  setToastType("success");
-                                  setShowToast(true);
-                                } catch (error) {
-                                  setToastMessage("북마크 삭제에 실패했습니다.");
-                                  setToastType("error");
-                                  setShowToast(true);
-                                }
-                              }}
-                              className="px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
-                            >
-                              삭제
-                            </button>
+
+                          {/* 중간 고정 영역: 설명 */}
+                          <div className="flex-shrink-0 mb-3">
+                            <div className="h-12">
+                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                                {bookmark.prompt.description}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+
+                          {/* 하단 고정 영역: 태그 + 카테고리/AI모델/작성자 */}
+                          <div className="flex-shrink-0 space-y-2">
+                            {/* Tags - 고정 높이 */}
+                            <div className="h-6 flex items-center">
+                              {(() => {
+                                const tags = bookmark.prompt.tags || [];
+                                const displayTags = tags.slice(0, 3);
+                                const remainingCount = Math.max(0, tags.length - 3);
+                                return displayTags.length > 0 || remainingCount > 0 ? (
+                                  <div className="flex flex-nowrap gap-1 overflow-hidden">
+                                    {displayTags.map((tag, index) => (
+                                      <span
+                                        key={index}
+                                        className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                    {remainingCount > 0 && (
+                                      <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
+                                        +{remainingCount}
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="h-6"></div>
+                                );
+                              })()}
+                            </div>
+                            
+                            {/* Footer - 카테고리/AI모델/작성자 */}
+                            <div className="space-y-2">
+                              {/* 첫 번째 줄: 카테고리와 AI 모델 */}
+                              <div className="flex items-center gap-2">
+                                {/* 카테고리 */}
+                                {bookmark.prompt.category && (
+                                  <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                                    {bookmark.prompt.category === 'work' && '⚡ 업무/마케팅'}
+                                    {bookmark.prompt.category === 'dev' && '⚙️ 개발/코드'}
+                                    {bookmark.prompt.category === 'design' && '✨ 디자인/브랜드'}
+                                    {bookmark.prompt.category === 'edu' && '🎯 교육/학습'}
+                                    {bookmark.prompt.category === 'image' && '🎬 이미지/동영상'}
+                                    {!['work', 'dev', 'design', 'edu', 'image'].includes(bookmark.prompt.category) && bookmark.prompt.category}
+                                  </span>
+                                )}
+                                {/* AI 모델 */}
+                                {bookmark.prompt.aiModel && (
+                                  <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                                    {bookmark.prompt.aiModel}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* 두 번째 줄: 작성자 */}
+                              <div className="flex justify-end">
+                                <div className="flex items-center gap-2">
+                                  {/* 작성자 프로필사진 */}
+                                  <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
+                                    <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                                      <span className="text-xs font-medium text-orange-600">
+                                        {(bookmark.prompt.author || '익명').charAt(0).toUpperCase()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {/* 작성자 이름 */}
+                                  <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">
+                                    {bookmark.prompt.author || '익명'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   ) : (

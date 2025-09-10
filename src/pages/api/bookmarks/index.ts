@@ -166,108 +166,85 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'POST':
       try {
-        console.log('[DEBUG] POST request body:', req.body);
-        console.log('[DEBUG] POST request headers:', req.headers);
-        
         const { promptId, categoryId } = req.body;
-        console.log('[DEBUG] Extracted promptId:', promptId, 'type:', typeof promptId);
-        console.log('[DEBUG] Extracted categoryId:', categoryId, 'type:', typeof categoryId);
 
-        // promptId를 숫자로 변환 및 유효성 검증
+        // promptId 유효성 검증
         let numericPromptId: string | number = promptId;
-        
-        // UUID 형식인지 확인 (하이픈이 포함된 문자열)
         const isUUID = typeof promptId === 'string' && promptId.includes('-');
         
         if (!isUUID && typeof promptId === 'string') {
-          // UUID가 아닌 문자열인 경우 숫자로 변환 시도
           numericPromptId = parseInt(promptId, 10);
         }
-        
-        console.log('[DEBUG] Converted promptId:', numericPromptId, 'type:', typeof numericPromptId, 'isUUID:', isUUID);
 
         if (!numericPromptId || 
             (typeof numericPromptId === 'number' && (isNaN(numericPromptId) || numericPromptId <= 0)) ||
             (typeof numericPromptId === 'string' && numericPromptId.trim() === '')) {
-          console.log('[DEBUG] promptId validation failed:', { promptId, numericPromptId });
           return res.status(400).json({ 
-            message: '유효한 프롬프트 ID가 필요합니다.',
-            received: promptId,
-            converted: numericPromptId
+            message: '유효한 프롬프트 ID가 필요합니다.'
           });
         }
 
-        // 프롬프트가 실제로 존재하는지 확인
-        console.log('[DEBUG] Checking if prompt exists:', numericPromptId);
-        const { data: promptExists, error: promptCheckError } = await supabase
-          .from('prompts')
-          .select('id, title')
-          .eq('id', numericPromptId)
-          .single();
-
-        console.log('[DEBUG] Prompt existence check:', { promptExists, promptCheckError });
-
-        if (promptCheckError || !promptExists) {
-          console.log('[DEBUG] Prompt does not exist, error:', promptCheckError);
-          return res.status(404).json({ 
-            message: '프롬프트를 찾을 수 없습니다.',
-            promptId: numericPromptId,
-            error: promptCheckError?.message
-          });
-        }
-
-        // 이미 북마크되어 있는지 확인
-        console.log('[DEBUG] Checking if already bookmarked');
-        const { data: existingBookmark, error: existingError } = await supabase
-          .from('prompt_bookmarks')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('prompt_id', numericPromptId)
-          .single();
-
-        if (existingBookmark) {
-          console.log('[DEBUG] Already bookmarked');
-          return res.status(409).json({ message: '이미 북마크된 프롬프트입니다.' });
-        }
-
-        // 북마크 추가
-        console.log('[DEBUG] Inserting bookmark with data:', {
-          user_id: userId,
-          prompt_id: numericPromptId,
-          category_id: categoryId || null,
-        });
-
+        // UPSERT 패턴으로 북마크 추가/업데이트 (가장 빠른 방법)
         const { data: bookmark, error } = await supabase
           .from('prompt_bookmarks')
-          .insert({
+          .upsert({
             user_id: userId,
             prompt_id: numericPromptId,
             category_id: categoryId || null,
+          }, {
+            onConflict: 'user_id,prompt_id',
+            ignoreDuplicates: false
           })
-          .select()
+          .select(`
+            id,
+            created_at,
+            prompt_id,
+            category_id,
+            prompts!inner(
+              id,
+              title,
+              description,
+              content,
+              category,
+              tags,
+              ai_model,
+              preview_image,
+              is_public,
+              created_at,
+              updated_at,
+              author_id,
+              profiles!inner(
+                id,
+                name,
+                avatar_url
+              )
+            )
+          `)
           .single();
 
-        console.log('[DEBUG] Add bookmark result:', { bookmark, error });
-
         if (error) {
-          console.error('Bookmark create error:', error);
+          // 프롬프트가 존재하지 않는 경우
+          if (error.code === '23503') {
+            return res.status(404).json({ 
+              message: '프롬프트를 찾을 수 없습니다.'
+            });
+          }
+          
+          console.error('Bookmark upsert error:', error);
           return res.status(500).json({ 
             message: '북마크 추가에 실패했습니다.',
-            error: error.message,
-            code: error.code
+            error: error.message
           });
         }
 
         res.status(201).json({ 
           bookmark,
-          message: '북마크가 추가되었습니다.',
-          promptTitle: promptExists.title
+          message: '북마크가 추가되었습니다.'
         });
       } catch (error) {
         console.error('Add bookmark error:', error);
         res.status(500).json({ 
-          message: '서버 오류가 발생했습니다.',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          message: '서버 오류가 발생했습니다.'
         });
       }
       break;
