@@ -67,7 +67,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
 
   // 실제 북마크 상태 확인 (프롬프트 보기 페이지와 동일)
   const actualIsBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt.id);
@@ -89,6 +89,8 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
         console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
         await removeBookmark(prompt.id);
         setToastMessage('북마크가 제거되었습니다.');
+        setToastType('bookmark');
+        setShowToast(true);
       } else {
         console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
         console.log('[DEBUG] Prompt ID type:', typeof prompt.id);
@@ -117,7 +119,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
       
       console.log('[DEBUG] Bookmark added successfully, updating local state');
       setToastMessage('북마크에 추가되었습니다!');
-      setToastType('success');
+      setToastType('bookmark');
       setShowToast(true);
       
       // 북마크 목록 새로고침을 위해 잠시 후 상태 확인
@@ -304,11 +306,11 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
             {/* 카테고리 */}
             {prompt.category && (
               <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
-                {prompt.category === 'work' && '업무/마케팅'}
-                {prompt.category === 'dev' && '개발/코드'}
-                {prompt.category === 'design' && '디자인/브랜드'}
-                {prompt.category === 'edu' && '교육/학습'}
-                  {prompt.category === 'image' && '이미지/동영상'}
+                {prompt.category === 'work' && '⚡ 업무/마케팅'}
+                {prompt.category === 'dev' && '⚙️ 개발/코드'}
+                {prompt.category === 'design' && '✨ 디자인/브랜드'}
+                {prompt.category === 'edu' && '🎯 교육/학습'}
+                {prompt.category === 'image' && '🎬 이미지/동영상'}
                 {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
               </span>
             )}

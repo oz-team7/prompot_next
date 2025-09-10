@@ -81,8 +81,6 @@ export const useBookmarks = () => {
 
   const addBookmark = async (promptId: string | number, categoryId?: string | null) => {
     try {
-      console.log('[DEBUG] Adding bookmark for promptId:', promptId, 'type:', typeof promptId, 'categoryId:', categoryId);
-      
       // ID 유효성 검증
       if (!promptId || (typeof promptId === 'number' && (isNaN(promptId) || promptId <= 0)) || 
           (typeof promptId === 'string' && promptId.trim() === '')) {
@@ -94,8 +92,6 @@ export const useBookmarks = () => {
         throw new Error('인증이 필요합니다.');
       }
 
-      console.log('[DEBUG] Sending request with data:', { promptId, categoryId, token: token.substring(0, 20) + '...' });
-
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -104,19 +100,46 @@ export const useBookmarks = () => {
         },
         body: JSON.stringify({ promptId, categoryId }),
       });
-
-      console.log('[DEBUG] Add bookmark response status:', res.status);
       
       if (!res.ok) {
         const errorData = await res.json();
-        console.error('[DEBUG] Add bookmark error data:', errorData);
         throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
       }
 
-      // 북마크 목록 새로고침
-      await fetchBookmarks();
+      const result = await res.json();
+      
+      // 전체 목록 새로고침 대신 로컬 상태만 업데이트 (더 빠름)
+      setBookmarks(prev => {
+        // 이미 북마크된 경우가 있으면 제거하고 새로 추가
+        const filtered = prev.filter(b => b && b.prompt && b.prompt.id !== Number(promptId));
+        if (result.bookmark && result.bookmark.prompts) {
+          return [...filtered, {
+            id: result.bookmark.id,
+            createdAt: result.bookmark.created_at,
+            categoryId: result.bookmark.category_id,
+            prompt: {
+              id: result.bookmark.prompts.id,
+              title: result.bookmark.prompts.title,
+              description: result.bookmark.prompts.description,
+              content: result.bookmark.prompts.content,
+              category: result.bookmark.prompts.category,
+              tags: result.bookmark.prompts.tags,
+              aiModel: result.bookmark.prompts.ai_model,
+              previewImage: result.bookmark.prompts.preview_image,
+              isPublic: result.bookmark.prompts.is_public,
+              createdAt: result.bookmark.prompts.created_at,
+              updatedAt: result.bookmark.prompts.updated_at,
+              author: result.bookmark.prompts.profiles?.name || 'Unknown',
+              authorId: result.bookmark.prompts.author_id
+            }
+          }];
+        }
+        return filtered;
+      });
+      
+      return result;
     } catch (err: unknown) {
-      console.error('[DEBUG] Add bookmark error:', err);
+      console.error('Add bookmark error:', err);
       throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
     }
   };
@@ -140,10 +163,12 @@ export const useBookmarks = () => {
         throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
       }
 
-      // 북마크 목록 새로고침
-      await fetchBookmarks();
+      // 전체 목록 새로고침 대신 로컬 상태만 업데이트 (더 빠름)
+      setBookmarks(prev => prev.filter(b => b && b.prompt && b.prompt.id !== Number(promptId)));
+      
+      return await res.json();
     } catch (err: unknown) {
-      console.error('[DEBUG] Remove bookmark error:', err);
+      console.error('Remove bookmark error:', err);
       throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
     }
   };

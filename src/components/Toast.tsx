@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 
 interface ToastProps {
   message: string;
-  type?: 'success' | 'error' | 'info';
+  type?: 'success' | 'error' | 'info' | 'bookmark';
   duration?: number;
   onClose: () => void;
 }
@@ -25,6 +25,7 @@ const Toast: React.FC<ToastProps> = ({
     success: 'bg-green-500',
     error: 'bg-red-500',
     info: 'bg-blue-500',
+    bookmark: 'bg-orange-500',
   }[type];
 
   const icon = {
@@ -44,6 +45,12 @@ const Toast: React.FC<ToastProps> = ({
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    bookmark: (
+      <svg className="w-5 h-5" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
       </svg>
     ),
   }[type];

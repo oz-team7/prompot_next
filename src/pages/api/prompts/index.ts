@@ -112,8 +112,17 @@ export default async function handler(
       query = query.eq('category', category);
     }
 
-    // 작성자 필터
-    if (author) {
+    // 작성자 필터 (author=true인 경우 현재 사용자의 프롬프트만 조회)
+    if (author === 'true') {
+      if (!userId) {
+        return res.status(401).json({ 
+          success: false, 
+          error: '로그인이 필요합니다.' 
+        });
+      }
+      query = query.eq('author_id', userId);
+    } else if (author && author !== 'true') {
+      // 특정 사용자 ID로 필터링하는 경우
       query = query.eq('author_id', author);
     }
 
@@ -204,7 +213,11 @@ export default async function handler(
     if (category && category !== 'all') {
       countQuery = countQuery.eq('category', category);
     }
-    if (author) {
+    if (author === 'true') {
+      if (userId) {
+        countQuery = countQuery.eq('author_id', userId);
+      }
+    } else if (author && author !== 'true') {
       countQuery = countQuery.eq('author_id', author);
     }
     if (isPublic !== undefined) {

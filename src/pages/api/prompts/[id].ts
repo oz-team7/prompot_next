@@ -1,7 +1,7 @@
 // /src/pages/api/prompts/[id].ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createSupabaseServiceClient } from '@/lib/supabase-server'
-import { verifyToken } from '@/lib/auth-helper'
+import { getAuthUser } from '@/lib/auth-utils'
 
 const isValidId = (s: string) => {
   // UUID 형식인지 확인
@@ -28,20 +28,8 @@ function parseTags(input: unknown): string[] {
 }
 
 async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null> {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('[DEBUG] No Bearer token found');
-    return null;
-  }
-
-  const token = authHeader.substring(7);
-  console.log('[DEBUG] Token extracted:', token.substring(0, 20) + '...');
-  
-  const result = await verifyToken(token);
-  console.log('[DEBUG] Token verification result:', result ? 'success' : 'failed');
-  
-  return result?.userId || null;
+  const user = await getAuthUser(req);
+  return user?.id || null;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -222,8 +210,16 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
 }
 
 async function handleDelete(req: NextApiRequest, res: NextApiResponse, id: string) {
+  console.log('[DEBUG] DELETE request headers:', req.headers);
+  console.log('[DEBUG] DELETE request query:', req.query);
+  
   const userId = await getUserIdFromRequest(req)
-  if (!userId) return json(res, 401, { message: '인증이 필요합니다.' })
+  console.log('[DEBUG] Extracted user ID for DELETE:', userId);
+  
+  if (!userId) {
+    console.log('[DEBUG] No user ID found for DELETE, returning UNAUTHORIZED');
+    return json(res, 401, { message: '인증이 필요합니다.' })
+  }
 
   const svc = createSupabaseServiceClient()
 
@@ -234,13 +230,20 @@ async function handleDelete(req: NextApiRequest, res: NextApiResponse, id: strin
     .eq('id', id)
     .single()
 
+  console.log('[DEBUG] Owner check result:', { ownerRow, ownerErr });
+
   if (ownerErr || !ownerRow) return json(res, 404, { message: '프롬프트를 찾을 수 없습니다.' })
-  if (ownerRow.author_id !== userId) return json(res, 403, { message: '프롬프트 삭제 권한이 없습니다.' })
+  if (ownerRow.author_id !== userId) {
+    console.log('[DEBUG] Owner mismatch:', { ownerId: ownerRow.author_id, userId });
+    return json(res, 403, { message: '프롬프트 삭제 권한이 없습니다.' })
+  }
 
   const { error } = await svc.from('prompts').delete().eq('id', id)
   if (error) {
     console.error('[DELETE prompts] error:', error)
     return json(res, 500, { message: '데이터베이스 오류가 발생했습니다.' })
   }
+  
+  console.log('[DEBUG] DELETE successful for prompt:', id);
   return json(res, 200, { message: '프롬프트가 삭제되었습니다.' })
 }
