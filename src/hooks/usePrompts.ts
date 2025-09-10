@@ -39,11 +39,18 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       });
       
       console.log('[DEBUG] usePrompts response status:', res.status);
+      console.log('[DEBUG] usePrompts response headers:', Object.fromEntries(res.headers.entries()));
       
       if (!res.ok) {
-        const errorData = await res.json();
+        let errorData;
+        try {
+          errorData = await res.json();
+        } catch (parseError) {
+          console.error('[DEBUG] Failed to parse error response:', parseError);
+          errorData = { message: `HTTP ${res.status}: ${res.statusText}` };
+        }
         console.error('[DEBUG] usePrompts API error:', errorData);
-        throw new Error(errorData.message || '프롬프트를 가져오는데 실패했습니다.');
+        throw new Error(errorData.message || `프롬프트를 가져오는데 실패했습니다. (${res.status})`);
       }
 
       const data = await res.json();
@@ -70,7 +77,15 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       setPrompts(formattedPrompts);
     } catch (err: unknown) {
       console.error('[DEBUG] usePrompts error:', err); // 디버깅 로그 추가
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+      
+      // 네트워크 오류나 기타 예외 상황 처리
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('네트워크 연결을 확인해주세요.');
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('알 수 없는 오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false);
     }
