@@ -2,23 +2,48 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
+import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 
 interface BookmarkPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  bookmarkedPrompts: number[];
-  prompts: Prompt[];
+  bookmarks: Array<{
+    id: number;
+    prompt: {
+      id: number;
+      title: string;
+      description: string;
+      content: string;
+      category: string;
+      tags: string[];
+      aiModel: string;
+      previewImage?: string;
+      isPublic: boolean;
+      createdAt: string;
+      updatedAt: string;
+      author: string;
+      authorId?: string;
+    };
+    createdAt: string;
+    categoryId?: string | null;
+  }>;
   onRemoveBookmark: (id: number) => void;
 }
 
 const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
   isOpen,
   onClose,
-  bookmarkedPrompts,
-  prompts,
+  bookmarks,
   onRemoveBookmark,
 }) => {
-  const bookmarkedItems = prompts.filter(prompt => bookmarkedPrompts.includes(prompt.id));
+  const { categories } = useBookmarkCategories();
+
+  // 카테고리 이름을 가져오는 함수
+  const getCategoryName = (categoryId: string | null | undefined) => {
+    if (!categoryId) return '카테고리 없음';
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : '알 수 없는 카테고리';
+  };
 
   return (
     <>
@@ -49,27 +74,28 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
         </div>
 
         <div className="p-4 sm:p-6 overflow-y-auto h-[calc(100%-80px)]">
-          {bookmarkedItems.length === 0 ? (
+          {bookmarks.length === 0 ? (
             <p className="text-gray-500 text-center py-8">아직 북마크한 프롬프트가 없습니다.</p>
           ) : (
             <div className="space-y-4">
-              {bookmarkedItems.map(prompt => (
+              {bookmarks.map(bookmark => (
                 <Link 
-                  key={prompt.id} 
-                  href={`/prompt/${prompt.id}`}
+                  key={bookmark.id} 
+                  href={`/prompt/${bookmark.prompt.id}`}
                   className="block bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
                   onClick={onClose}
                 >
                   <div className="flex">
                     {/* Preview Image */}
                     <div className="relative w-24 h-24 flex-shrink-0">
-                      {prompt.preview_image ? (
+                      {bookmark.prompt.previewImage ? (
                         <Image
-                          src={prompt.preview_image}
-                          alt={prompt.title}
+                          src={bookmark.prompt.previewImage}
+                          alt={bookmark.prompt.title}
                           fill
                           className="object-cover"
                           sizes="96px"
+                          unoptimized={true}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50">
@@ -83,15 +109,15 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
                     
                     {/* Content */}
                     <div className="flex-1 p-3">
-                      <h3 className="font-semibold text-sm mb-1 line-clamp-1">{prompt.title}</h3>
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{prompt.description}</p>
+                      <h3 className="font-semibold text-sm mb-1 line-clamp-1">{bookmark.prompt.title}</h3>
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{bookmark.prompt.description}</p>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-500">{prompt.author?.name || '익명'}</span>
+                        <span className="text-xs text-gray-500">{getCategoryName(bookmark.categoryId)}</span>
                         <button
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            onRemoveBookmark(prompt.id);
+                            onRemoveBookmark(bookmark.prompt.id);
                           }}
                           className="text-xs text-red-500 hover:text-red-700"
                         >
