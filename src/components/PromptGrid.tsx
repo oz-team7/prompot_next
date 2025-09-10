@@ -17,7 +17,7 @@ interface PromptGridProps {
 }
 
 type CategoryType = 'all' | 'work' | 'dev' | 'design' | 'edu' | 'image';
-type SortType = 'latest' | 'latest-desc' | 'popular' | 'popular-desc' | 'rating' | 'rating-desc';
+type SortType = 'latest' | 'latest-desc' | 'popular' | 'popular-desc';
 
 const PromptGrid: React.FC<PromptGridProps> = ({ 
   prompts: initialPrompts, 
@@ -47,8 +47,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     { value: 'latest-desc', label: '오래된순', icon: '⌄' },
     { value: 'popular-desc', label: '인기순', icon: '⌃' },
     { value: 'popular', label: '인기순', icon: '⌄' },
-    { value: 'rating-desc', label: '평점순', icon: '⌃' },
-    { value: 'rating', label: '평점순', icon: '⌄' },
   ];
   
   const categories: { value: CategoryType; label: string }[] = [
@@ -177,12 +175,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
         break;
       case 'popular-desc':
         filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-        break;
-      case 'rating':
-        filtered.sort((a, b) => (a.averageRating || a.rating || 0) - (b.averageRating || b.rating || 0));
-        break;
-      case 'rating-desc':
-        filtered.sort((a, b) => (b.averageRating || b.rating || 0) - (a.averageRating || a.rating || 0));
         break;
     }
 
@@ -345,15 +337,16 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               </button>
             </div>
           ) : filteredPrompts.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
               {filteredPrompts.map(prompt => (
-                <PromptCardCompact
-                  key={prompt.id}
-                  prompt={prompt}
-                  onLike={handleLike}
-                  onBookmark={isAuthenticated ? handleBookmark : undefined}
-                  isBookmarked={bookmarkedPromptIds ? bookmarkedPromptIds.includes(prompt.id) : false}
-                />
+                <div key={prompt.id} className="w-full mb-6">
+                  <PromptCardCompact
+                    prompt={prompt}
+                    onLike={handleLike}
+                    onBookmark={isAuthenticated ? handleBookmark : undefined}
+                    isBookmarked={bookmarkedPromptIds ? bookmarkedPromptIds.includes(prompt.id) : false}
+                  />
+                </div>
               ))}
             </div>
           ) : (
