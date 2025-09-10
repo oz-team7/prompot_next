@@ -43,11 +43,11 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   // 정렬 옵션 정의
   const sortOptions = [
-    { value: 'latest', label: '최신순', icon: '⌄' },
+    { value: 'latest', label: '최신순', icon: '⌃' },
     { value: 'latest-desc', label: '오래된순', icon: '⌄' },
-    { value: 'popular-desc', label: '인기순', icon: '⌄' },
+    { value: 'popular-desc', label: '인기순', icon: '⌃' },
     { value: 'popular', label: '인기순', icon: '⌄' },
-    { value: 'rating-desc', label: '평점순', icon: '⌄' },
+    { value: 'rating-desc', label: '평점순', icon: '⌃' },
     { value: 'rating', label: '평점순', icon: '⌄' },
   ];
   
@@ -159,22 +159,30 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     // Sorting
     switch (sortBy) {
       case 'latest':
-        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        filtered.sort((a, b) => {
+          const dateA = a.created_at || a.date || '';
+          const dateB = b.created_at || b.date || '';
+          return new Date(dateA).getTime() - new Date(dateB).getTime();
+        });
         break;
       case 'latest-desc':
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        filtered.sort((a, b) => {
+          const dateA = a.created_at || a.date || '';
+          const dateB = b.created_at || b.date || '';
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        });
         break;
       case 'popular':
-        filtered.sort((a, b) => a.likes - b.likes);
+        filtered.sort((a, b) => (a.likes || 0) - (b.likes || 0));
         break;
       case 'popular-desc':
-        filtered.sort((a, b) => b.likes - a.likes);
+        filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
         break;
       case 'rating':
-        filtered.sort((a, b) => a.rating - b.rating);
+        filtered.sort((a, b) => (a.averageRating || a.rating || 0) - (b.averageRating || b.rating || 0));
         break;
       case 'rating-desc':
-        filtered.sort((a, b) => b.rating - a.rating);
+        filtered.sort((a, b) => (b.averageRating || b.rating || 0) - (a.averageRating || a.rating || 0));
         break;
     }
 
