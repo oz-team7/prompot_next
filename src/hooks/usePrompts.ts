@@ -49,7 +49,16 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       const data = await res.json();
       console.log('[DEBUG] usePrompts response data:', data); // 디버깅 로그 추가
       
-      const formattedPrompts = data.prompts.map((prompt: any) => ({
+      // API 응답 구조 확인 및 처리
+      const promptsData = data.data?.prompts || data.prompts || [];
+      console.log('[DEBUG] Extracted prompts data:', promptsData);
+      
+      if (!Array.isArray(promptsData)) {
+        console.error('[DEBUG] Prompts data is not an array:', promptsData);
+        throw new Error('프롬프트 데이터 형식이 올바르지 않습니다.');
+      }
+      
+      const formattedPrompts = promptsData.map((prompt: any) => ({
         ...prompt,
         aiModel: prompt.aiModel ? {
           name: getAIModelName(prompt.aiModel),
