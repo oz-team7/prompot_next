@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
 import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail } from '@/utils/videoUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import Toast from '@/components/Toast';
 
 // 태그 표시 유틸리티 함수 - 더 정확한 너비 계산
 const getDisplayTags = (tags: string[], cardWidth: number = 250): { displayTags: string[]; remainingCount: number } => {
@@ -59,7 +62,15 @@ interface PromptCardCompactProps {
 }
 
 const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, onBookmark, isBookmarked = false }) => {
+  const { isAuthenticated } = useAuth();
+  const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
   const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+
+  // 실제 북마크 상태 확인 (프롬프트 보기 페이지와 동일)
+  const actualIsBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt.id);
 
   const getCategoryLabel = (category: string) => {
     const categoryLabels: { [key: string]: string } = {
@@ -72,29 +83,81 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
     return categoryLabels[category] || category;
   };
 
-  const handleBookmarkClick = (e: React.MouseEvent) => {
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    if (!onBookmark) return;
-    
-    if (isBookmarked) {
-      // 이미 북마크된 경우 제거
-      onBookmark(prompt.id);
-    } else {
-      // 북마크 추가 시 카테고리 선택 모달 표시
-      setShowCategorySelector(true);
+    if (!isAuthenticated) {
+      setToastMessage('로그인이 필요합니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    console.log('[DEBUG] Bookmark toggle - prompt ID:', prompt.id, 'type:', typeof prompt.id);
+    console.log('[DEBUG] Bookmark toggle - isBookmarked:', actualIsBookmarked);
+    console.log('[DEBUG] Bookmark toggle - current bookmarks:', bookmarks);
+
+    try {
+      if (actualIsBookmarked) {
+        console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
+        await removeBookmark(prompt.id);
+        setToastMessage('북마크가 제거되었습니다.');
+      } else {
+        console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
+        console.log('[DEBUG] Prompt ID type:', typeof prompt.id);
+        console.log('[DEBUG] Prompt ID value:', prompt.id);
+        
+        // 북마크 추가 시 카테고리 선택 모달 표시
+        setShowCategorySelector(true);
+        return;
+      }
+      setToastType('success');
+      setShowToast(true);
+    } catch (error: any) {
+      console.error('[DEBUG] Bookmark toggle error:', error);
+      setToastMessage(error.message || '북마크 처리 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
-  const handleCategorySelect = (categoryId: string | null) => {
-    if (onBookmark) {
-      onBookmark(prompt.id, categoryId);
+  const handleCategorySelect = async (categoryId: string | null) => {
+    try {
+      console.log('[DEBUG] Adding bookmark with category ID:', categoryId);
+      console.log('[DEBUG] Prompt ID:', prompt.id, 'type:', typeof prompt.id);
+      
+      await addBookmark(prompt.id, categoryId);
+      
+      console.log('[DEBUG] Bookmark added successfully, updating local state');
+      setToastMessage('북마크에 추가되었습니다!');
+      setToastType('success');
+      setShowToast(true);
+      
+      // 북마크 목록 새로고침을 위해 잠시 후 상태 확인
+      setTimeout(() => {
+        console.log('[DEBUG] Checking bookmarks after add:', bookmarks);
+      }, 1000);
+    } catch (error: any) {
+      console.error('[DEBUG] Add bookmark with category error:', error);
+      setToastMessage(error.message || '북마크 추가 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
     }
+    setShowCategorySelector(false);
   };
   return (
     <Link href={`/prompt/${prompt.id}`} className="block">
-      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 h-[350px] flex flex-col w-full mb-2 overflow-hidden">
+      <div 
+        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 h-[350px] flex flex-col w-full mb-2 overflow-hidden"
+        onClick={(e) => {
+          // 북마크 카테고리 선택기가 열려있을 때는 페이지 이동 방지
+          if (showCategorySelector) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
         {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
         <div className="flex-shrink-0">
           <div className="px-3 sm:px-4 pt-3 pb-2">
@@ -282,7 +345,28 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
             
             {/* 두 번째 줄: 작성자 */}
             <div className="flex justify-start">
-              <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">{prompt.author?.name}</span>
+              <div className="flex items-center gap-2">
+                {/* 작성자 프로필사진 */}
+                <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                  {prompt.author?.avatar_url ? (
+                    <Image
+                      src={prompt.author.avatar_url}
+                      alt={prompt.author.name || '작성자'}
+                      width={16}
+                      height={16}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                      <span className="text-xs font-medium text-orange-600">
+                        {(prompt.author?.name || '익명').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {/* 작성자 이름 */}
+                <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">{prompt.author?.name}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -294,6 +378,15 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
         onClose={() => setShowCategorySelector(false)}
         onSelect={handleCategorySelect}
       />
+
+      {/* Toast */}
+      {showToast && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </Link>
   );
 };

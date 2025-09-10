@@ -5,6 +5,7 @@ export interface Prompt {
     id: string;
     name: string;
     email?: string;
+    avatar_url?: string;
   };
   authorId?: string;
   date: string;

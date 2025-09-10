@@ -660,13 +660,14 @@ const MyPage = () => {
                         )
                         .map(bookmark => (
                         <div key={bookmark.id} className="bg-white rounded-lg shadow-sm p-4">
-                          {bookmark.prompt.preview_image && (
+                          {bookmark.prompt.previewImage && (
                             <div className="relative w-full h-40 mb-3">
                               <Image
-                                src={bookmark.prompt.preview_image}
+                                src={bookmark.prompt.previewImage}
                                 alt={bookmark.prompt.title}
                                 fill
                                 className="object-cover rounded-lg"
+                                unoptimized={true}
                               />
                             </div>
                           )}
@@ -675,7 +676,7 @@ const MyPage = () => {
                             {bookmark.prompt.description}
                           </p>
                           <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span>{typeof bookmark.prompt.author === "string" ? bookmark.prompt.author : bookmark.prompt.author?.name || "Unknown"}</span>
+                            <span>{bookmark.prompt.author}</span>
                             <span>{new Date(bookmark.createdAt).toLocaleDateString()}</span>
                           </div>
                           <div className="flex gap-2">

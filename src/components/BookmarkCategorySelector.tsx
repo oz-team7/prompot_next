@@ -23,6 +23,7 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
   }, [selectedCategoryId]);
 
   const handleSelect = (categoryId: string | null) => {
+    console.log('[DEBUG] BookmarkCategorySelector - handleSelect called with:', categoryId);
     setSelectedId(categoryId);
   };
 
@@ -39,12 +40,29 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      }}
+    >
+      <div 
+        className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">북마크 카테고리 선택</h3>
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
             className="text-gray-500 hover:text-gray-700"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,13 +82,29 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
             <div className="mb-6">
               <div className="space-y-2">
                 {/* 기본 카테고리 (카테고리 없음) */}
-                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label 
+                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSelect(null);
+                  }}
+                >
                   <input
                     type="radio"
                     name="category"
-                    value=""
+                    value="none"
                     checked={selectedId === null}
-                    onChange={() => handleSelect(null)}
+                    onChange={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(null);
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(null);
+                    }}
                     className="mr-3"
                   />
                   <div className="flex items-center">
@@ -84,13 +118,27 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
                   <label
                     key={category.id}
                     className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelect(category.id);
+                    }}
                   >
                     <input
                       type="radio"
                       name="category"
                       value={category.id}
                       checked={selectedId === category.id}
-                      onChange={() => handleSelect(category.id)}
+                      onChange={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelect(category.id);
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelect(category.id);
+                      }}
                       className="mr-3"
                     />
                     <div className="flex items-center">
@@ -108,13 +156,21 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
             {/* 버튼 */}
             <div className="flex gap-3">
               <button
-                onClick={handleCancel}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCancel();
+                }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 취소
               </button>
               <button
-                onClick={handleConfirm}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleConfirm();
+                }}
                 className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600"
               >
                 선택

@@ -3,8 +3,23 @@ import { Prompt } from '@/types/prompt';
 
 interface Bookmark {
   id: number;
-  prompt: Prompt;
+  prompt: {
+    id: number;
+    title: string;
+    description: string;
+    content: string;
+    category: string;
+    tags: string[];
+    aiModel: string;
+    previewImage?: string;
+    isPublic: boolean;
+    createdAt: string;
+    updatedAt: string;
+    author: string;
+    authorId?: string;
+  };
   createdAt: string;
+  categoryId?: string | null;
 }
 
 export const useBookmarks = () => {

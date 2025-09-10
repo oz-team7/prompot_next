@@ -89,7 +89,8 @@ export default async function handler(
         author:profiles!author_id (
           id,
           name,
-          email
+          email,
+          avatar_url
         ),
         comments:prompt_comments (
           id,
