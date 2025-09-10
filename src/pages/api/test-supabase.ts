@@ -88,7 +88,6 @@ export default async function handler(
       const { data, error } = await supabase
         .from('prompts')
         .select('id, title, created_at')
-        .eq('is_deleted', false)
         .limit(5);
       
       if (error) {

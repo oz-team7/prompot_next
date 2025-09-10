@@ -122,6 +122,32 @@ export default async function handler(
     });
   } catch (error) {
     console.error("Create prompt error:", error);
-    res.status(500).json({ message: "프롬프트 생성 중 오류가 발생했습니다." });
+    
+    // 에러 타입별 처리
+    if (error instanceof Error) {
+      // Supabase 관련 에러
+      if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+        return res.status(409).json({ message: "이미 존재하는 프롬프트입니다." });
+      }
+      
+      // 권한 관련 에러
+      if (error.message.includes('permission') || error.message.includes('unauthorized')) {
+        return res.status(403).json({ message: "프롬프트 생성 권한이 없습니다." });
+      }
+      
+      // 데이터베이스 연결 에러
+      if (error.message.includes('connection') || error.message.includes('timeout')) {
+        return res.status(503).json({ message: "데이터베이스 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요." });
+      }
+      
+      // 일반적인 에러
+      return res.status(500).json({ 
+        message: "프롬프트 생성 중 오류가 발생했습니다.",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+    
+    // 알 수 없는 에러
+    return res.status(500).json({ message: "알 수 없는 오류가 발생했습니다." });
   }
 }

@@ -9,7 +9,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
   const fetchPrompts = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError(null); // 요청 시작 시 에러 상태 초기화
       
       // 쿼리 파라미터 구성
       const params = new URLSearchParams();
@@ -79,21 +79,27 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
         throw new Error('프롬프트 데이터 형식이 올바르지 않습니다.');
       }
       
-      const formattedPrompts = promptsData.map((prompt: any) => ({
-        ...prompt,
-        aiModel: prompt.aiModel ? {
-          name: getAIModelName(prompt.aiModel),
-          icon: getAIModelIcon(prompt.aiModel),
-        } : undefined,
-      }));
+      const formattedPrompts = promptsData.map((prompt: any) => {
+        console.log('[DEBUG] Processing prompt:', { title: prompt.title, ai_model: prompt.ai_model });
+        return {
+          ...prompt,
+          aiModel: prompt.ai_model ? {
+            name: getAIModelName(prompt.ai_model),
+            icon: getAIModelIcon(prompt.ai_model),
+          } : undefined,
+        };
+      });
       
       console.log('[DEBUG] Formatted prompts:', formattedPrompts);
       setPrompts(formattedPrompts);
       
-      // 대체 API 사용 시 사용자에게 알림
-      if (data.warning) {
+      // 대체 API 사용 시에만 사용자에게 알림 (메인 API 성공 시에는 알림 제거)
+      if (data.warning && data.warning.includes('mock data')) {
         console.warn('[DEBUG] Using fallback data:', data.warning);
         setError(`⚠️ ${data.warning}`);
+      } else {
+        // 메인 API 성공 시 이전 에러 상태 초기화
+        setError(null);
       }
       
     } catch (err: unknown) {

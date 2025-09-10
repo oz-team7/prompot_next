@@ -23,6 +23,8 @@ const nextConfig = {
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
+    // Vercel에서 이미지 최적화 비활성화 (외부 이미지 사용 시)
+    unoptimized: false,
   },
   typescript: {
     // 프로덕션 환경에서는 빌드 에러 방지
@@ -76,6 +78,8 @@ const nextConfig = {
       },
     ];
   },
+  // Vercel 최적화
+  output: 'standalone',
 }
 
 module.exports = nextConfig

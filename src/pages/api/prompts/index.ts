@@ -51,21 +51,28 @@ export default async function handler(
   }
 
   try {
-    console.log('[DEBUG] API /api/prompts called with query:', req.query);
-    
-    // 환경 변수 확인
-    console.log('[DEBUG] Environment check:');
-    console.log('- NODE_ENV:', process.env.NODE_ENV);
-    console.log('- NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log('- SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    // 프로덕션 환경에서는 디버그 로그 최소화
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] API /api/prompts called with query:', req.query);
+      console.log('[DEBUG] Environment check:');
+      console.log('- NODE_ENV:', process.env.NODE_ENV);
+      console.log('- NEXT_PUBLIC_SUPABASE_URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log('- SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+    }
     
     // 옵셔널 인증 확인 (로그인한 사용자의 좋아요/북마크 정보를 위해)
     const authUser = await getAuthUser(req);
     const userId = authUser?.id || null;
-    console.log('[DEBUG] Authenticated user ID:', userId);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] Authenticated user ID:', userId);
+    }
 
     const supabase = createSupabaseServiceClient();
-    console.log('[DEBUG] Supabase client created successfully');
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] Supabase client created successfully');
+    }
     
     const { category, author, isPublic, sort = 'latest', page = '1', limit = '20' } = req.query;
 
@@ -84,25 +91,19 @@ export default async function handler(
           name,
           email
         ),
-        aiModel:ai_models (
-          id,
-          name,
-          icon
-        ),
-        comments:comments (
+        comments:prompt_comments (
           id,
           content,
           created_at,
-          author_name
+          user_id
         ),
-        ratings:ratings (
+        ratings:prompt_ratings (
           id,
           rating,
           created_at,
-          author_name
+          user_id
         )
       `)
-      .eq('is_deleted', false)
       .range(offset, offset + limitNum - 1);
 
     // 카테고리 필터
@@ -149,14 +150,18 @@ export default async function handler(
     const { data: prompts, error } = await query;
 
     if (error) {
-      console.error('[DEBUG] Supabase query error:', error);
+      console.error('[ERROR] Supabase query error:', error);
       throw error;
     }
 
-    console.log('[DEBUG] Retrieved prompts count:', prompts?.length || 0);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[DEBUG] Retrieved prompts count:', prompts?.length || 0);
+    }
 
     if (!prompts) {
-      console.log('[DEBUG] No prompts found');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[DEBUG] No prompts found');
+      }
       return sendSuccess(res, [], '프롬프트가 없습니다.');
     }
 
@@ -193,8 +198,7 @@ export default async function handler(
     // 총 개수 조회 (페이지네이션을 위해)
     let countQuery = supabase
       .from('prompts')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_deleted', false);
+      .select('id', { count: 'exact', head: true });
 
     if (category && category !== 'all') {
       countQuery = countQuery.eq('category', category);
@@ -223,6 +227,29 @@ export default async function handler(
     return sendSuccess(res, response, '프롬프트 목록을 성공적으로 조회했습니다.');
 
   } catch (error: any) {
+    // 프로덕션 환경에서는 상세한 에러 로그 최소화
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[DEBUG] Main API error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code
+      });
+      
+      // Supabase 관련 오류인지 확인
+      if (error.message?.includes('Supabase') || error.message?.includes('environment')) {
+        console.error('[DEBUG] Supabase/Environment error detected');
+      }
+      
+      // 데이터베이스 관련 오류인지 확인
+      if (error.message?.includes('relation') || error.message?.includes('table')) {
+        console.error('[DEBUG] Database schema error detected');
+      }
+    } else {
+      // 프로덕션 환경에서는 간단한 에러 로그만
+      console.error('[ERROR] API Error:', error.message);
+    }
+    
     return handleError(res, error, '프롬프트 목록을 불러오는데 실패했습니다.');
   }
 }

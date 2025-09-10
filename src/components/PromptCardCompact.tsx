@@ -5,6 +5,13 @@ import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
+// 태그 표시 유틸리티 함수
+const getDisplayTags = (tags: string[], maxCount: number = 5): { displayTags: string[]; remainingCount: number } => {
+  const displayTags = tags.slice(0, maxCount);
+  const remainingCount = Math.max(0, tags.length - maxCount);
+  return { displayTags, remainingCount };
+};
+
 interface PromptCardCompactProps {
   prompt: Prompt;
   onLike: (id: number) => void;
@@ -124,9 +131,11 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
         <h3 className="text-sm sm:text-base font-semibold mb-1 line-clamp-1" title={prompt.title}>
           {prompt.title}
         </h3>
-        <p className="text-xs sm:text-sm text-gray-600 mb-2 line-clamp-2">
-          {prompt.description}
-        </p>
+        <div className="relative mb-2">
+          <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+            {prompt.description}
+          </p>
+        </div>
         
         {/* Category and AI Model */}
         <div className="mb-2 flex flex-wrap gap-1">
@@ -151,17 +160,24 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
 
         {/* Tags - Mobile Compact */}
         <div className="mb-2 flex flex-wrap gap-1">
-          {prompt.tags.slice(0, 2).map((tag, index) => (
-            <span
-              key={index}
-              className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded"
-            >
-              {tag}
-            </span>
-          ))}
-          {prompt.tags.length > 2 && (
-            <span className="text-xs text-gray-500">+{prompt.tags.length - 2}</span>
-          )}
+          {(() => {
+            const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 5);
+            return (
+              <>
+                {displayTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {remainingCount > 0 && (
+                  <span className="text-xs text-gray-500">+{remainingCount}</span>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Footer */}
@@ -176,30 +192,6 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
                 <span className="text-gray-500">({prompt.totalRatings})</span>
               )}
             </span>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                onLike(prompt.id);
-              }}
-              className="flex items-center gap-1 hover:scale-110 transition-transform"
-            >
-              <svg
-                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
-                  prompt.isLiked ? 'text-red-500 fill-current' : 'text-gray-400'
-                }`}
-                viewBox="0 0 20 20"
-                fill={prompt.isLiked ? 'currentColor' : 'none'}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                />
-              </svg>
-              <span>{prompt.likes}</span>
-            </button>
           </div>
           <span className="text-xs text-gray-500">{prompt.author?.name}</span>
         </div>

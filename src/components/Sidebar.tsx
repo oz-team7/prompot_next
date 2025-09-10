@@ -12,7 +12,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
   const menuItems = [
-    { label: 'Prompt', href: '/prompts' },
+    { label: 'Home', href: '/prompts' },
     { label: 'Guide', href: '/guide' },
     { label: 'Tools', href: '/tools' },
     { label: 'FAQ', href: '/faq' },
