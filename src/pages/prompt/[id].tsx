@@ -101,7 +101,7 @@ const aiModels: AIModel[] = [
 ];
 
 interface PromptDetail {
-  id: string;
+  id: number;
   title: string;
   content: string;
   description?: string;
@@ -234,7 +234,6 @@ const PromptDetailPage = () => {
 
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [localBookmarkState, setLocalBookmarkState] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -284,21 +283,6 @@ const PromptDetailPage = () => {
     }
   }, [id, fetchPrompt]);
 
-  // 북마크 상태 업데이트
-  useEffect(() => {
-    if (prompt && bookmarks) {
-      console.log('[DEBUG] Checking bookmark state for prompt:', prompt.id);
-      console.log('[DEBUG] Current bookmarks:', bookmarks.map(b => ({ 
-        bookmarkId: b.id, 
-        promptId: b.prompt.id, 
-        categoryId: b.categoryId 
-      })));
-      
-      const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt.id);
-      setLocalBookmarkState(isBookmarked);
-      console.log('[DEBUG] Bookmark state updated:', { promptId: prompt.id, isBookmarked });
-    }
-  }, [prompt, bookmarks]);
 
   if (loading) {
     return (
@@ -325,7 +309,7 @@ const PromptDetailPage = () => {
     );
   }
 
-  const isBookmarked = localBookmarkState;
+  const isBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt?.id);
   const isAuthor = user?.id === prompt.author?.id;
 
   const handleBookmarkToggle = async () => {
@@ -342,7 +326,6 @@ const PromptDetailPage = () => {
       if (isBookmarked) {
         console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
         await removeBookmark(prompt.id);
-        setLocalBookmarkState(false); // 즉시 로컬 상태 업데이트
         setToastMessage('북마크가 제거되었습니다.');
       } else {
         console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
@@ -374,7 +357,6 @@ const PromptDetailPage = () => {
       setToastMessage('북마크에 추가되었습니다!');
       setToastType('success');
       setShowToast(true);
-      setLocalBookmarkState(true);
       
       // 북마크 목록 새로고침을 위해 잠시 후 상태 확인
       setTimeout(() => {
@@ -637,7 +619,7 @@ const PromptDetailPage = () => {
                     <h3 className="text-lg font-semibold">프롬프트 내용</h3>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={handleTranslateContent}
+                        onClick={() => handleTranslateContent()}
                         className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                         title="프롬프트 내용 번역"
                       >
@@ -754,7 +736,7 @@ const PromptDetailPage = () => {
               </div>
 
               <div className="mt-4">
-                <SharePrompt promptId={prompt.id} title={prompt.title} />
+                <SharePrompt promptId={prompt.id.toString()} title={prompt.title} />
               </div>
               
               {!isAuthenticated && (
@@ -777,7 +759,7 @@ const PromptDetailPage = () => {
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-2">평가하기</h3>
               <RatingSystem 
-                promptId={prompt.id}
+                promptId={prompt.id.toString()}
                 onRatingChange={(success, message) => {
                   setToastMessage(message);
                   setToastType(success ? 'success' : 'error');
@@ -789,7 +771,7 @@ const PromptDetailPage = () => {
             {/* Comments */}
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-2">댓글</h3>
-              <CommentSection promptId={prompt.id} />
+              <CommentSection promptId={prompt.id.toString()} />
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@/lib/supabase-server';
+import { createSupabaseServiceClient } from '@/lib/supabase-server';
+import { getUserIdFromRequest } from '@/lib/auth-utils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'DELETE') {
@@ -8,42 +9,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { password } = req.body;
-    const token = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!token) {
-      return res.status(401).json({ message: '인증 토큰이 필요합니다.' });
-    }
 
     if (!password) {
-      return res.status(400).json({ message: '비밀번호를 입력해주세요.' });
+      return res.status(400).json({ 
+        success: false, 
+        message: '비밀번호를 입력해주세요.' 
+      });
     }
 
-    const supabase = createClient();
-
-    // 토큰에서 사용자 정보 추출
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // 사용자 인증 확인
+    const userId = await getUserIdFromRequest(req);
     
-    if (userError || !user) {
-      return res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '인증이 필요합니다.' 
+      });
     }
 
-    // 비밀번호 확인
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: user.email!,
-      password: password,
-    });
-
-    if (authError || !authData.user) {
-      return res.status(400).json({ message: '비밀번호가 올바르지 않습니다.' });
-    }
-
-    // 사용자 관련 데이터 삭제
-    const userId = user.id;
+    const supabase = createSupabaseServiceClient();
 
     // 1. 사용자의 프롬프트는 유지하되 작성자 정보만 익명으로 변경
     await supabase
       .from('prompts')
-      .update({ 
+      .update({
         author_id: null,
         author_name: '삭제된 사용자',
         author_email: null
@@ -65,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 4. 사용자의 댓글은 유지하되 작성자 정보만 익명으로 변경
     await supabase
       .from('comments')
-      .update({ 
+      .update({
         user_id: null,
         author_name: '삭제된 사용자'
       })
@@ -74,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 5. 사용자의 평점은 유지하되 작성자 정보만 익명으로 변경
     await supabase
       .from('ratings')
-      .update({ 
+      .update({
         user_id: null,
         author_name: '삭제된 사용자'
       })
@@ -90,18 +79,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
 
     if (deleteError) {
-      console.error('User deletion error:', deleteError);
-      return res.status(500).json({ message: '계정 삭제 중 오류가 발생했습니다.' });
+      console.error('Auth user deletion error:', deleteError);
+      // Auth 사용자 삭제 실패해도 계속 진행 (프로필은 이미 삭제됨)
     }
 
     return res.status(200).json({ 
-      message: '계정이 성공적으로 삭제되었습니다.',
-      ok: true 
+      success: true, 
+      message: '계정이 성공적으로 삭제되었습니다.' 
     });
 
-  } catch (error) {
-    console.error('Delete account error:', error);
+  } catch (error: any) {
+    console.error('Account deletion error:', error);
     return res.status(500).json({ 
+      success: false, 
       message: '계정 삭제 중 오류가 발생했습니다.' 
     });
   }

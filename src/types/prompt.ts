@@ -8,6 +8,7 @@ export interface Prompt {
   };
   authorId?: string;
   date: string;
+  created_at?: string; // 추가
   description: string;
   tags: string[];
   rating: number;
@@ -25,6 +26,9 @@ export interface Prompt {
   };
   content?: string;
   isPublic?: boolean;
+  comments?: any[]; // 추가
+  averageRating?: number; // 추가
+  commentCount?: number; // 추가
 }
 
 export interface Bookmark {
@@ -56,3 +60,6 @@ export interface BookmarkCategory {
   updatedAt: string;
   bookmarkCount?: number;
 }
+
+export type CategoryType = 'all' | 'work' | 'dev' | 'design' | 'edu' | 'image';
+export type SortType = 'latest' | 'latest-desc' | 'popular' | 'popular-desc' | 'rating' | 'rating-desc';

@@ -2,6 +2,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import { getUserIdFromRequest } from '@/lib/auth-utils';
 
+// API 응답 타입 정의
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+// 파일 크기 제한 설정
 export const config = {
   api: {
     bodyParser: {
@@ -10,78 +19,130 @@ export const config = {
   },
 };
 
+// 허용된 이미지 타입
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+// 에러 핸들러
+const handleError = (res: NextApiResponse, error: any, message: string = '서버 오류가 발생했습니다.') => {
+  console.error('Image Upload Error:', error);
+  const response: ApiResponse = {
+    success: false,
+    error: process.env.NODE_ENV === 'development' ? error.message : message
+  };
+  return res.status(500).json(response);
+};
+
+// 성공 응답 헬퍼
+const sendSuccess = <T>(res: NextApiResponse, data: T, message?: string) => {
+  const response: ApiResponse<T> = {
+    success: true,
+    data,
+    message
+  };
+  return res.status(200).json(response);
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // CORS 헤더 설정
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return res.status(405).json({ 
+      success: false, 
+      error: 'Method not allowed' 
+    });
   }
 
   try {
-    // 인증 확인 - 개발 모드에서 우회 가능
+    // 인증 확인
     let userId = await getUserIdFromRequest(req);
     
     if (!userId) {
       if (process.env.NODE_ENV === 'development') {
         console.log('Development mode: Using current user for image upload');
-        userId = '7b03565d-b472-477c-9321-75bb442ae60e'; // 현재 사용자 ID 사용
+        userId = '7b03565d-b472-477c-9321-75bb442ae60e'; // 개발용 사용자 ID
       } else {
-        return res.status(401).json({ message: '인증이 필요합니다.' });
+        return res.status(401).json({ 
+          success: false, 
+          error: '인증이 필요합니다.' 
+        });
       }
     }
 
-    const { imageData, fileName } = req.body;
-    
-    if (!imageData || !fileName) {
-      return res.status(400).json({ message: '이미지 데이터와 파일명이 필요합니다.' });
+    const { imageData, fileName, folder = 'prompts' } = req.body;
+
+    if (!imageData) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '이미지 데이터가 필요합니다.' 
+      });
     }
 
-    // Base64 이미지 데이터를 Buffer로 변환
+    // Base64 데이터 검증
     const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
-    const buffer = Buffer.from(base64Data, 'base64');
-    
-    // 파일 크기 검증 (5MB)
-    if (buffer.length > 5 * 1024 * 1024) {
-      return res.status(400).json({ message: '이미지 크기는 5MB 이하여야 합니다.' });
+    if (!base64Data) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '유효하지 않은 이미지 데이터입니다.' 
+      });
     }
 
-    // 파일 확장자 추출
-    const fileExtension = fileName.split('.').pop() || 'jpg';
-    const contentType = `image/${fileExtension}`;
-    
-    // 파일명 생성
-    const finalFileName = `${userId}/${Date.now()}.${fileExtension}`;
+    // 파일 크기 검증
+    const fileSize = (base64Data.length * 3) / 4; // Base64 to bytes 대략적 계산
+    if (fileSize > MAX_FILE_SIZE) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `파일 크기가 너무 큽니다. 최대 ${MAX_FILE_SIZE / (1024 * 1024)}MB까지 업로드 가능합니다.` 
+      });
+    }
 
-    const supabase = createSupabaseServiceClient();
+    // 파일명 생성 (타임스탬프 + 랜덤 문자열)
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const fileExtension = fileName ? fileName.split('.').pop() : 'jpg';
+    const finalFileName = `${timestamp}_${randomString}.${fileExtension}`;
 
     // Supabase Storage에 업로드
+    const supabase = createSupabaseServiceClient();
     const { data, error } = await supabase.storage
-      .from('prompt-images')
-      .upload(finalFileName, buffer, {
-        contentType: contentType,
-        cacheControl: '3600',
+      .from('images')
+      .upload(`${folder}/${finalFileName}`, Buffer.from(base64Data, 'base64'), {
+        contentType: 'image/jpeg',
         upsert: false
       });
 
     if (error) {
-      console.error('Image upload error:', error);
-      return res.status(500).json({ message: '이미지 업로드에 실패했습니다.' });
+      console.error('Supabase upload error:', error);
+      throw new Error('이미지 업로드에 실패했습니다.');
     }
 
     // 공개 URL 생성
-    const { data: { publicUrl } } = supabase.storage
-      .from('prompt-images')
-      .getPublicUrl(finalFileName);
+    const { data: urlData } = supabase.storage
+      .from('images')
+      .getPublicUrl(`${folder}/${finalFileName}`);
 
-    res.status(200).json({ 
-      message: '이미지 업로드 성공',
-      imageUrl: publicUrl,
-      fileName: finalFileName
-    });
+    if (!urlData?.publicUrl) {
+      throw new Error('이미지 URL 생성에 실패했습니다.');
+    }
 
-  } catch (error) {
-    console.error('Image upload error:', error);
-    res.status(500).json({ 
-      message: '서버 오류가 발생했습니다.',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    const response = {
+      url: urlData.publicUrl,
+      fileName: finalFileName,
+      path: `${folder}/${finalFileName}`,
+      size: fileSize,
+      uploadedAt: new Date().toISOString()
+    };
+
+    return sendSuccess(res, response, '이미지가 성공적으로 업로드되었습니다.');
+
+  } catch (error: any) {
+    return handleError(res, error, '이미지 업로드에 실패했습니다.');
   }
 }

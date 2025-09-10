@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "build:vercel": "next build && next export",
+    "preview": "next build && next start",
+    "clean": "rm -rf .next out",
+    "analyze": "ANALYZE=true next build"
   },
   "keywords": [],
   "author": "",
@@ -40,5 +44,9 @@
     "eslint": "^9.33.0",
     "eslint-config-next": "^15.4.6",
     "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }
