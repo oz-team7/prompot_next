@@ -50,7 +50,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, imageUrl, alt 
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-transparent flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
       <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">

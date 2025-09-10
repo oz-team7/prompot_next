@@ -92,6 +92,30 @@ export const useBookmarks = () => {
         throw new Error('인증이 필요합니다.');
       }
 
+      // 즉시 UI 업데이트 (낙관적 업데이트)
+      const tempBookmark = {
+        id: Date.now(), // 임시 ID
+        createdAt: new Date().toISOString(),
+        categoryId,
+        prompt: {
+          id: Number(promptId),
+          title: '로딩 중...',
+          description: '',
+          content: '',
+          category: '',
+          tags: [],
+          aiModel: '',
+          previewImage: undefined,
+          isPublic: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          author: 'Unknown',
+          authorId: undefined
+        }
+      };
+
+      setBookmarks(prev => [...prev, tempBookmark]);
+
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -102,16 +126,17 @@ export const useBookmarks = () => {
       });
       
       if (!res.ok) {
+        // 실패 시 롤백
+        setBookmarks(prev => prev.filter(b => b.id !== tempBookmark.id));
         const errorData = await res.json();
         throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
       }
 
       const result = await res.json();
       
-      // 전체 목록 새로고침 대신 로컬 상태만 업데이트 (더 빠름)
+      // 실제 데이터로 교체
       setBookmarks(prev => {
-        // 이미 북마크된 경우가 있으면 제거하고 새로 추가
-        const filtered = prev.filter(b => b && b.prompt && b.prompt.id !== Number(promptId));
+        const filtered = prev.filter(b => b.id !== tempBookmark.id);
         if (result.bookmark && result.bookmark.prompts) {
           return [...filtered, {
             id: result.bookmark.id,
@@ -151,6 +176,10 @@ export const useBookmarks = () => {
         throw new Error('인증이 필요합니다.');
       }
 
+      // 즉시 UI 업데이트 (낙관적 업데이트)
+      const bookmarkToRemove = bookmarks.find(b => b && b.prompt && b.prompt.id === Number(promptId));
+      setBookmarks(prev => prev.filter(b => b && b.prompt && b.prompt.id !== Number(promptId)));
+
       const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',
         headers: {
@@ -159,12 +188,13 @@ export const useBookmarks = () => {
       });
 
       if (!res.ok) {
+        // 실패 시 롤백
+        if (bookmarkToRemove) {
+          setBookmarks(prev => [...prev, bookmarkToRemove]);
+        }
         const errorData = await res.json();
         throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
       }
-
-      // 전체 목록 새로고침 대신 로컬 상태만 업데이트 (더 빠름)
-      setBookmarks(prev => prev.filter(b => b && b.prompt && b.prompt.id !== Number(promptId)));
       
       return await res.json();
     } catch (err: unknown) {
