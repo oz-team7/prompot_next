@@ -21,7 +21,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       }
       
       const query = params.toString() ? `?${params.toString()}` : '';
-      console.log('[DEBUG] usePrompts fetching with query:', query); // 디버깅 로그 추가
+      console.log('[DEBUG] usePrompts fetching with query:', query);
       
       // localStorage에서 토큰 가져오기 (선택) - 클라이언트 사이드에서만
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -34,27 +34,41 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       
       console.log('[DEBUG] usePrompts request headers:', headers);
       
-      const res = await fetch(`/api/prompts${query}`, {
-        headers,
-      });
-      
-      console.log('[DEBUG] usePrompts response status:', res.status);
-      console.log('[DEBUG] usePrompts response headers:', Object.fromEntries(res.headers.entries()));
-      
-      if (!res.ok) {
-        let errorData;
-        try {
-          errorData = await res.json();
-        } catch (parseError) {
-          console.error('[DEBUG] Failed to parse error response:', parseError);
-          errorData = { message: `HTTP ${res.status}: ${res.statusText}` };
+      // 메인 API 시도
+      let res;
+      try {
+        res = await fetch(`/api/prompts${query}`, {
+          headers,
+        });
+        
+        console.log('[DEBUG] usePrompts response status:', res.status);
+        console.log('[DEBUG] usePrompts response headers:', Object.fromEntries(res.headers.entries()));
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
-        console.error('[DEBUG] usePrompts API error:', errorData);
-        throw new Error(errorData.message || `프롬프트를 가져오는데 실패했습니다. (${res.status})`);
+      } catch (mainApiError: any) {
+        console.warn('[DEBUG] Main API failed, trying fallback:', mainApiError.message);
+        
+        // 대체 API 시도
+        try {
+          res = await fetch(`/api/prompts-fallback${query}`, {
+            headers,
+          });
+          
+          console.log('[DEBUG] Fallback API response status:', res.status);
+          
+          if (!res.ok) {
+            throw new Error(`Fallback API failed: HTTP ${res.status}`);
+          }
+        } catch (fallbackError: any) {
+          console.error('[DEBUG] Both APIs failed:', fallbackError.message);
+          throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+        }
       }
-
+      
       const data = await res.json();
-      console.log('[DEBUG] usePrompts response data:', data); // 디버깅 로그 추가
+      console.log('[DEBUG] usePrompts response data:', data);
       
       // API 응답 구조 확인 및 처리
       const promptsData = data.data?.prompts || data.prompts || [];
@@ -73,10 +87,17 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
         } : undefined,
       }));
       
-      console.log('[DEBUG] Formatted prompts:', formattedPrompts); // 디버깅 로그 추가
+      console.log('[DEBUG] Formatted prompts:', formattedPrompts);
       setPrompts(formattedPrompts);
+      
+      // 대체 API 사용 시 사용자에게 알림
+      if (data.warning) {
+        console.warn('[DEBUG] Using fallback data:', data.warning);
+        setError(`⚠️ ${data.warning}`);
+      }
+      
     } catch (err: unknown) {
-      console.error('[DEBUG] usePrompts error:', err); // 디버깅 로그 추가
+      console.error('[DEBUG] usePrompts error:', err);
       
       // 네트워크 오류나 기타 예외 상황 처리
       if (err instanceof TypeError && err.message.includes('fetch')) {
