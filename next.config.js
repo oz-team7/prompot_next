@@ -5,7 +5,10 @@ const nextConfig = {
     domains: [
       'picsum.photos', 
       'tlytjitkokavfhwzedml.supabase.co',
-      'localhost'
+      'localhost',
+      '*.supabase.co',
+      'img.youtube.com',
+      'i.ytimg.com'
     ],
     remotePatterns: [
       {
@@ -13,6 +16,24 @@ const nextConfig = {
         hostname: 'tlytjitkokavfhwzedml.supabase.co',
         port: '',
         pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        port: '',
+        pathname: '/vi/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+        port: '',
+        pathname: '/vi/**',
       },
       {
         protocol: 'http',
@@ -23,8 +44,9 @@ const nextConfig = {
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
-    // Vercel에서 이미지 최적화 비활성화 (외부 이미지 사용 시)
+    // 로컬호스트와 Vercel 모두에서 작동하도록 설정
     unoptimized: false,
+    loader: 'default',
   },
   typescript: {
     // 프로덕션 환경에서는 빌드 에러 방지

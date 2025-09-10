@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
-import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
+import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail } from '@/utils/videoUtils';
 
 // 태그 표시 유틸리티 함수 - 더 정확한 너비 계산
 const getDisplayTags = (tags: string[], cardWidth: number = 250): { displayTags: string[]; remainingCount: number } => {
@@ -97,8 +97,8 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
       <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 h-[350px] flex flex-col w-full mb-2 overflow-hidden">
         {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
         <div className="flex-shrink-0">
-          <div className="p-3 sm:p-4 pb-2">
-            <div className="flex justify-between items-start mb-2">
+          <div className="px-3 sm:px-4 pt-3 pb-2">
+            <div className="flex justify-between items-start mb-0">
               <h3 className="text-sm sm:text-base font-semibold line-clamp-1 flex-1 min-w-0" title={prompt.title}>
                 {prompt.title}
               </h3>
@@ -131,19 +131,28 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
             </div>
           </div>
           
-          {/* 미리보기 이미지 - 고정 높이 */}
-          <div className="h-24 mx-3 sm:mx-4 mb-3">
-            {prompt.videoUrl && getVideoThumbnail(prompt.videoUrl) ? (
+          {/* 미리보기 이미지 - 최대 확장된 높이 */}
+          <div className="h-40 mx-3 sm:mx-4 mb-3">
+            {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
               <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
                 <Image
-                  src={getVideoThumbnail(prompt.videoUrl)!}
-                  alt={getVideoTitle(prompt.videoUrl)}
+                  src={getVideoThumbnail(prompt.video_url)!}
+                  alt={getVideoTitle(prompt.video_url)}
                   fill
                   className="object-cover"
-                  unoptimized={true}
                   onError={(e) => {
-                    console.error('썸네일 로드 실패:', e);
-                    e.currentTarget.style.display = 'none';
+                    console.error('썸네일 로드 실패:', prompt.video_url, e);
+                    // 대체 썸네일 시도
+                    const fallbackUrl = prompt.video_url ? getFallbackThumbnail(prompt.video_url) : null;
+                    if (fallbackUrl) {
+                      e.currentTarget.src = fallbackUrl;
+                      console.log('대체 썸네일 시도:', fallbackUrl);
+                    } else {
+                      e.currentTarget.style.display = 'none';
+                    }
+                  }}
+                  onLoad={() => {
+                    console.log('썸네일 로드 성공:', prompt.video_url);
                   }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
@@ -154,20 +163,37 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
                   </div>
                 </div>
               </div>
-            ) : prompt.previewImage ? (
+            ) : prompt.preview_image ? (
               <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
                 <Image
-                  src={prompt.previewImage}
+                  src={prompt.preview_image}
                   alt={prompt.title}
                   fill
                   className="object-cover"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   onError={(e) => {
-                    console.error('이미지 로드 실패:', prompt.previewImage, e);
+                    console.error('이미지 로드 실패:', prompt.preview_image, e);
                     e.currentTarget.style.display = 'none';
                   }}
                   onLoad={() => {
-                    console.log('이미지 로드 성공:', prompt.previewImage);
+                    console.log('이미지 로드 성공:', prompt.preview_image);
+                  }}
+                />
+              </div>
+            ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
+              <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+                <Image
+                  src={prompt.additional_images[0]}
+                  alt={prompt.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  onError={(e) => {
+                    console.error('추가 이미지 로드 실패:', prompt.additional_images?.[0], e);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('추가 이미지 로드 성공:', prompt.additional_images?.[0]);
                   }}
                 />
               </div>
@@ -179,17 +205,16 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
                   width={48}
                   height={48}
                   className="w-12 h-12 object-contain opacity-70"
-                  unoptimized={true}
                 />
               </div>
             )}
           </div>
         </div>
 
-        {/* 중간 가변 영역: 설명 */}
-        <div className="flex-grow px-3 sm:px-4 mb-4 min-h-[80px]">
-          <div className="h-full">
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-4">
+        {/* 중간 고정 영역: 설명 */}
+        <div className="flex-shrink-0 px-3 sm:px-4 mb-3">
+          <div className="h-10">
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-2">
               {prompt.description}
             </p>
           </div>
@@ -257,7 +282,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
             
             {/* 두 번째 줄: 작성자 */}
             <div className="flex justify-start">
-              <span className="text-xs text-gray-500 whitespace-nowrap">{prompt.author?.name}</span>
+              <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">{prompt.author?.name}</span>
             </div>
           </div>
         </div>

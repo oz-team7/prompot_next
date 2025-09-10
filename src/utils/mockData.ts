@@ -16,7 +16,7 @@ export const mockPrompts: Prompt[] = [
     likes: 120,
     isLiked: true,
     category: 'work',
-    previewImage: 'https://picsum.photos/400/300?random=1',
+    preview_image: 'https://picsum.photos/400/300?random=1',
     aiModel: {
       name: 'ChatGPT',
       icon: '/image/icon_chatgpt.png'
@@ -37,7 +37,7 @@ export const mockPrompts: Prompt[] = [
     likes: 30,
     isLiked: false,
     category: 'edu',
-    previewImage: 'https://picsum.photos/400/300?random=2',
+    preview_image: 'https://picsum.photos/400/300?random=2',
     aiModel: {
       name: 'Claude',
       icon: '/image/icon_claude.png'
@@ -58,7 +58,7 @@ export const mockPrompts: Prompt[] = [
     likes: 344,
     isLiked: false,
     category: 'edu',
-    previewImage: 'https://picsum.photos/400/300?random=3',
+    preview_image: 'https://picsum.photos/400/300?random=3',
     aiModel: {
       name: 'Gemini',
       icon: '/image/icon_gemini.png'
@@ -79,7 +79,7 @@ export const mockPrompts: Prompt[] = [
     likes: 15,
     isLiked: false,
     category: 'image',
-    previewImage: 'https://picsum.photos/400/300?random=4',
+    preview_image: 'https://picsum.photos/400/300?random=4',
     aiModel: {
       name: 'Midjourney',
       icon: '/image/icon_midjourney.png'
@@ -100,7 +100,7 @@ export const mockPrompts: Prompt[] = [
     likes: 157,
     isLiked: true,
     category: 'dev',
-    previewImage: 'https://picsum.photos/400/300?random=5',
+    preview_image: 'https://picsum.photos/400/300?random=5',
     aiModel: {
       name: 'Cursor',
       icon: '/image/icon_cursor-ai.png'
@@ -121,7 +121,7 @@ export const mockPrompts: Prompt[] = [
     likes: 5,
     isLiked: false,
     category: 'image',
-    previewImage: 'https://picsum.photos/400/300?random=6',
+    preview_image: 'https://picsum.photos/400/300?random=6',
     aiModel: {
       name: 'DALL·E 3',
       icon: '/image/icon_dall_e_3.png'

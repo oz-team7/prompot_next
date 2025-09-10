@@ -32,6 +32,27 @@ export const getVideoThumbnail = (url: string): string | null => {
   return null;
 };
 
+// 대체 썸네일 URL 생성 (maxresdefault 실패 시 사용)
+export const getFallbackThumbnail = (url: string): string | null => {
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    
+    if (match && match[2].length === 11) {
+      return `https://img.youtube.com/vi/${match[2]}/hqdefault.jpg`;
+    }
+    
+    const shortsRegExp = /^.*(youtube\.com\/shorts\/|youtu\.be\/)([^#&?]*).*/;
+    const shortsMatch = url.match(shortsRegExp);
+    
+    if (shortsMatch && shortsMatch[2].length === 11) {
+      return `https://img.youtube.com/vi/${shortsMatch[2]}/hqdefault.jpg`;
+    }
+  }
+  
+  return null;
+};
+
 // 동영상 제목 가져오기 (선택사항)
 export const getVideoTitle = (url: string): string => {
   if (url.includes('youtube.com') || url.includes('youtu.be')) {

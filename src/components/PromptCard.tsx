@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
-import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
+import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail } from '@/utils/videoUtils';
 
 // 태그 표시 유틸리티 함수 - 더 정확한 너비 계산
 const getDisplayTags = (tags: string[], cardWidth: number = 280): { displayTags: string[]; remainingCount: number } => {
@@ -79,26 +79,35 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
     }
   };
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 h-[450px] flex flex-col w-full mb-2 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 h-[450px] flex flex-col w-full mb-2 overflow-hidden">
       {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
       <div className="flex-shrink-0 mb-4">
-        <h3 className="text-lg font-semibold mb-3 line-clamp-1" title={prompt.title}>
+        <h3 className="text-lg font-semibold mb-0 line-clamp-1" title={prompt.title}>
           {prompt.title}
         </h3>
         
-        {/* 미리보기 이미지 - 고정 높이 */}
-        <div className="h-32 mb-3">
-          {prompt.videoUrl && getVideoThumbnail(prompt.videoUrl) ? (
+        {/* 미리보기 이미지 - 최대 확장된 높이 */}
+        <div className="h-48 mb-3">
+          {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
             <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
               <Image
-                src={getVideoThumbnail(prompt.videoUrl)!}
-                alt={getVideoTitle(prompt.videoUrl)}
+                src={getVideoThumbnail(prompt.video_url)!}
+                alt={getVideoTitle(prompt.video_url)}
                 fill
                 className="object-cover"
-                unoptimized={true}
                 onError={(e) => {
-                  console.error('썸네일 로드 실패:', e);
-                  e.currentTarget.style.display = 'none';
+                  console.error('썸네일 로드 실패:', prompt.video_url, e);
+                  // 대체 썸네일 시도
+                  const fallbackUrl = prompt.video_url ? getFallbackThumbnail(prompt.video_url) : null;
+                  if (fallbackUrl) {
+                    e.currentTarget.src = fallbackUrl;
+                    console.log('대체 썸네일 시도:', fallbackUrl);
+                  } else {
+                    e.currentTarget.style.display = 'none';
+                  }
+                }}
+                onLoad={() => {
+                  console.log('썸네일 로드 성공:', prompt.video_url);
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
@@ -109,20 +118,37 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
                 </div>
               </div>
             </div>
-          ) : prompt.previewImage ? (
+          ) : prompt.preview_image ? (
             <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
               <Image
-                src={prompt.previewImage}
+                src={prompt.preview_image}
                 alt={prompt.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 onError={(e) => {
-                  console.error('이미지 로드 실패:', prompt.previewImage, e);
+                  console.error('이미지 로드 실패:', prompt.preview_image, e);
                   e.currentTarget.style.display = 'none';
                 }}
                 onLoad={() => {
-                  console.log('이미지 로드 성공:', prompt.previewImage);
+                  console.log('이미지 로드 성공:', prompt.preview_image);
+                }}
+              />
+            </div>
+          ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
+            <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+              <Image
+                src={prompt.additional_images[0]}
+                alt={prompt.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                onError={(e) => {
+                  console.error('추가 이미지 로드 실패:', prompt.additional_images?.[0], e);
+                  e.currentTarget.style.display = 'none';
+                }}
+                onLoad={() => {
+                  console.log('추가 이미지 로드 성공:', prompt.additional_images?.[0]);
                 }}
               />
             </div>
@@ -134,24 +160,23 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
                 width={64}
                 height={64}
                 className="w-16 h-16 object-contain opacity-70"
-                unoptimized={true}
               />
             </div>
           )}
         </div>
       </div>
 
-      {/* 중간 가변 영역: 설명 */}
-      <div className="flex-grow mb-4 min-h-[60px]">
-        <div className="h-full">
-          <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
+      {/* 중간 고정 영역: 설명 */}
+      <div className="flex-shrink-0 mb-3">
+        <div className="h-12">
+          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
             {prompt.description}
           </p>
         </div>
       </div>
 
       {/* 하단 고정 영역: 태그 + 카테고리/AI모델/작성자 */}
-      <div className="flex-shrink-0 space-y-3">
+      <div className="flex-shrink-0 space-y-2">
         {/* Tags - 고정 높이 */}
         <div className="h-6 flex items-center">
           {(() => {
@@ -212,7 +237,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
           
           {/* 두 번째 줄: 작성자와 북마크 */}
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-500 whitespace-nowrap">
+            <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">
               {prompt.author?.name || '익명'}
             </span>
             {/* 북마크 버튼 */}
