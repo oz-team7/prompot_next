@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
+
+// 태그 표시 유틸리티 함수
+const getDisplayTags = (tags: string[], maxCount: number = 3): { displayTags: string[]; remainingCount: number } => {
+  const displayTags = tags.slice(0, maxCount);
+  const remainingCount = Math.max(0, tags.length - maxCount);
+  return { displayTags, remainingCount };
+};
 
 interface PromptCardProps {
   prompt: Prompt;
@@ -82,19 +90,49 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
         </div>
       )}
       
-      <p className="text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
-        {prompt.description}
-      </p>
-      <div className="mb-3">
-        {prompt.tags.map((tag, index) => (
-          <span
-            key={index}
-            className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded mr-2 mb-1"
-          >
-            {tag}
-          </span>
-        ))}
+      <div className="relative mb-3">
+        <p className="text-sm text-gray-600 line-clamp-2">
+          {prompt.description}
+        </p>
       </div>
+      <div className="mb-3">
+        {(() => {
+          const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 3);
+          return (
+            <>
+              {displayTags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded mr-2 mb-1"
+                >
+                  {tag}
+                </span>
+              ))}
+              {remainingCount > 0 && (
+                <span className="inline-block bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded mr-2 mb-1">
+                  +{remainingCount}
+                </span>
+              )}
+            </>
+          );
+        })()}
+      </div>
+      
+      {/* AI Model */}
+      {prompt.aiModel && (
+        <div className="mb-3">
+          <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs px-3 py-1.5 rounded-lg font-medium border border-blue-200">
+            {prompt.aiModel.icon && (
+              <img 
+                src={prompt.aiModel.icon} 
+                alt={prompt.aiModel.name}
+                className="w-4 h-4 object-contain"
+              />
+            )}
+            {prompt.aiModel.name}
+          </span>
+        </div>
+      )}
       <div className="flex justify-end items-center text-sm">
         <div className="flex items-center gap-2">
           <span className="flex items-center">
@@ -103,28 +141,6 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
             </svg>
             <span className="ml-1">{prompt.rating.toFixed(1)}</span>
           </span>
-          <span className="text-gray-500">·</span>
-          <button
-            onClick={() => onLike(prompt.id)}
-            className="flex items-center hover:scale-110 transition-transform"
-          >
-            <svg
-              className={`w-4 h-4 ${
-                prompt.isLiked ? 'text-red-500 fill-current' : 'text-gray-500'
-              }`}
-              viewBox="0 0 20 20"
-              fill={prompt.isLiked ? 'currentColor' : 'none'}
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-              />
-            </svg>
-            <span className="ml-1">{prompt.likes}</span>
-          </button>
           {/* 북마크 버튼 추가 */}
           {onBookmark && (
             <>

@@ -11,7 +11,6 @@ import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import ImageModal from '@/components/ImageModal';
-import TranslationModal from '@/components/TranslationModal';
 
 // 추가 이미지 컴포넌트
 const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: string; index: number; onImageClick: (imageUrl: string, alt: string) => void }) => {
@@ -244,10 +243,6 @@ const PromptDetailPage = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState('');
   const [modalImageAlt, setModalImageAlt] = useState('');
-  const [showTranslationModal, setShowTranslationModal] = useState(false);
-  const [translatedText, setTranslatedText] = useState('');
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [translationError, setTranslationError] = useState('');
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -390,34 +385,6 @@ const PromptDetailPage = () => {
     }
   };
 
-  const handleTranslateContent = async (targetLanguage: string = 'en') => {
-    setIsTranslating(true);
-    setTranslationError('');
-    setShowTranslationModal(true);
-
-    try {
-      // Google Translate API를 사용한 번역 (무료 버전)
-      const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=${targetLanguage}&dt=t&q=${encodeURIComponent(prompt.content)}`);
-      
-      if (!response.ok) {
-        throw new Error('번역 서비스에 연결할 수 없습니다.');
-      }
-
-      const data = await response.json();
-      
-      if (data && data[0] && data[0][0] && data[0][0][0]) {
-        setTranslatedText(data[0][0][0]);
-      } else {
-        throw new Error('번역 결과를 처리할 수 없습니다.');
-      }
-    } catch (error: any) {
-      console.error('번역 실패:', error);
-      setTranslationError(error.message || '번역에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
   const handleDelete = () => {
     setShowDeleteModal(true);
   };
@@ -529,7 +496,7 @@ const PromptDetailPage = () => {
             </div>
 
             {/* Prompt content */}
-            <div className={`mt-6 ${!isAuthenticated ? 'blur-md pointer-events-none' : ''}`}>
+            <div className="mt-6">
               {/* 동영상 (우선 표시) */}
               {prompt.videoUrl && (
                 <div className="mb-6">
@@ -619,15 +586,6 @@ const PromptDetailPage = () => {
                     <h3 className="text-lg font-semibold">프롬프트 내용</h3>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleTranslateContent()}
-                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="프롬프트 내용 번역"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                        </svg>
-                      </button>
-                      <button
                         onClick={handleCopyContent}
                         className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                         title="프롬프트 내용 복사"
@@ -638,8 +596,24 @@ const PromptDetailPage = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200">
-                    {prompt.content}
+                  <div className="relative">
+                    <div className={`bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200 ${!isAuthenticated ? 'blur-sm select-none' : ''}`}>
+                      {prompt.content}
+                    </div>
+                    {!isAuthenticated && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg">
+                        <div className="text-center">
+                          <h3 className="text-lg font-semibold mb-2 text-gray-800">로그인이 필요합니다</h3>
+                          <p className="text-gray-600 mb-4">프롬프트 내용을 보려면 로그인하세요</p>
+                          <Link 
+                            href="/login" 
+                            className="inline-block px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                          >
+                            로그인하기
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -738,21 +712,6 @@ const PromptDetailPage = () => {
               <div className="mt-4">
                 <SharePrompt promptId={prompt.id.toString()} title={prompt.title} />
               </div>
-              
-              {!isAuthenticated && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-lg">
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold mb-2">로그인이 필요합니다</h3>
-                    <p className="text-gray-600 mb-4">프롬프트 내용을 보려면 로그인하세요</p>
-                    <button
-                      onClick={() => setShowLoginModal(true)}
-                      className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-                    >
-                      로그인하기
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Rating */}
@@ -859,17 +818,6 @@ const PromptDetailPage = () => {
         onClose={() => setShowImageModal(false)}
         imageUrl={modalImageUrl}
         alt={modalImageAlt}
-      />
-
-      {/* Translation Modal */}
-      <TranslationModal
-        isOpen={showTranslationModal}
-        onClose={() => setShowTranslationModal(false)}
-        originalText={prompt?.content || ''}
-        translatedText={translatedText}
-        isLoading={isTranslating}
-        error={translationError}
-        onTranslate={handleTranslateContent}
       />
     </div>
   );

@@ -1,0 +1,17 @@
+# Vercel 배포를 위한 환경 변수 템플릿
+# 이 파일을 복사하여 Vercel 대시보드에서 환경 변수로 설정하세요
+
+# Supabase 설정 (필수)
+NEXT_PUBLIC_SUPABASE_URL=https://tlytjitkokavfhwzedml.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRseXRqaXRrb2thdmZod3plZG1sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NzQ4MjcsImV4cCI6MjA3MTI1MDgyN30.BwZDjB7u1q9MJXmK1ufeIXHZ6-aiJ8BRPOszV0Kh0w8
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRseXRqaXRrb2thdmZod3plZG1sIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTY3NDgyNywiZXhwIjoyMDcxMjUwODI3fQ.bmIBEemcv6QR6pqbzKEqOB_KrCXUXJ-fbTRt7O7qV_c
+
+# Supabase CLI 액세스 토큰 (선택사항)
+SUPABASE_ACCESS_TOKEN=sbp_c1efde168325ad9dec24bf77836a7633286f8453
+
+# 사이트 URL 설정 (배포 후 실제 도메인으로 변경)
+NEXT_PUBLIC_SITE_URL=https://your-domain.vercel.app
+NEXT_PUBLIC_PRODUCTION_URL=https://your-domain.vercel.app
+
+# 환경 설정
+NODE_ENV=production
