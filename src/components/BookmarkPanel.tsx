@@ -63,9 +63,9 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
                   <div className="flex">
                     {/* Preview Image */}
                     <div className="relative w-24 h-24 flex-shrink-0">
-                      {prompt.previewImage ? (
+                      {prompt.preview_image ? (
                         <Image
-                          src={prompt.previewImage}
+                          src={prompt.preview_image}
                           alt={prompt.title}
                           fill
                           className="object-cover"

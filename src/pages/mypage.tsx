@@ -526,10 +526,10 @@ const MyPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {myPrompts.map(prompt => (
                       <div key={prompt.id} className="bg-white rounded-lg shadow-sm p-4">
-                        {prompt.previewImage && (
+                        {prompt.preview_image && (
                           <div className="relative w-full h-40 mb-3">
                             <Image
-                              src={prompt.previewImage}
+                              src={prompt.preview_image}
                               alt={prompt.title}
                               fill
                               className="object-cover rounded-lg"
@@ -660,10 +660,10 @@ const MyPage = () => {
                         )
                         .map(bookmark => (
                         <div key={bookmark.id} className="bg-white rounded-lg shadow-sm p-4">
-                          {bookmark.prompt.previewImage && (
+                          {bookmark.prompt.preview_image && (
                             <div className="relative w-full h-40 mb-3">
                               <Image
-                                src={bookmark.prompt.previewImage}
+                                src={bookmark.prompt.preview_image}
                                 alt={bookmark.prompt.title}
                                 fill
                                 className="object-cover rounded-lg"
