@@ -215,12 +215,12 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
               </div>
             </div>
           ) : prompt.preview_image ? (
-            <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+            <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
               <Image
                 src={prompt.preview_image}
                 alt={prompt.title}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform group-hover:scale-105"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 onError={(e) => {
                   console.error('이미지 로드 실패:', prompt.preview_image, e);
@@ -232,12 +232,12 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
               />
             </div>
           ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
-            <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
+            <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
               <Image
                 src={prompt.additional_images[0]}
                 alt={prompt.title}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform group-hover:scale-105"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 onError={(e) => {
                   console.error('추가 이미지 로드 실패:', prompt.additional_images?.[0], e);

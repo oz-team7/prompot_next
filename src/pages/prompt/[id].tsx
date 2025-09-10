@@ -49,7 +49,7 @@ const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: stri
           setImageError(true);
         }}
       />
-      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-0 transition-all duration-200 flex items-center justify-center">
         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
@@ -519,7 +519,7 @@ const PromptDetailPage = () => {
                             setImageError(true);
                           }}
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-0 transition-all duration-200 flex items-center justify-center">
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
@@ -562,11 +562,10 @@ const PromptDetailPage = () => {
                 {/* 설명 */}
                 {prompt.description && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-900">
                       설명
                     </h3>
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <div className="bg-orange-50 rounded-xl p-6 border border-orange-200">
                       <p className="text-gray-700 leading-relaxed">{prompt.description}</p>
                     </div>
                   </div>
@@ -575,14 +574,13 @@ const PromptDetailPage = () => {
                 {/* 프롬프트 내용 */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
+                    <h3 className="text-lg font-semibold text-gray-900">
                       프롬프트 내용
                     </h3>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={handleCopyContent}
-                        className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-orange-500 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
                         title="프롬프트 내용 복사"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -592,7 +590,7 @@ const PromptDetailPage = () => {
                     </div>
                   </div>
                   <div className="relative">
-                    <div className={`bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border border-gray-200 ${!isAuthenticated ? 'blur-sm select-none' : ''}`}>
+                    <div className={`bg-orange-50 rounded-lg p-4 whitespace-pre-wrap border border-orange-200 ${!isAuthenticated ? 'blur-sm select-none' : ''}`}>
                       {prompt.content}
                     </div>
                     {!isAuthenticated && (
@@ -614,76 +612,78 @@ const PromptDetailPage = () => {
 
                 {/* 카테고리, AI 모델, 공개 설정 */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
-                    정보
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {/* 카테고리 */}
-                    {prompt.category && (
-                      <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
-                        {prompt.category === 'work' && '⚡ 업무/마케팅'}
-                        {prompt.category === 'dev' && '⚙️ 개발/코드'}
-                        {prompt.category === 'design' && '✨ 디자인/브랜드'}
-                        {prompt.category === 'edu' && '🎯 교육/학습'}
-                        {prompt.category === 'image' && '🎬 이미지/동영상'}
-                        {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
-                      </span>
-                    )}
-                    
-                    {/* AI 모델 */}
-                    {prompt.aiModel && (
-                      <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
-                        <div className="flex items-center gap-2">
-                          {(() => {
-                            const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
-                            const model = aiModels.find(m => m.id === modelId);
-                            if (model?.icon === '🔧') {
-                              return <span>{model.icon}</span>;
-                            } else if (model?.icon) {
-                              return <img src={model.icon} alt={model.name} className="w-4 h-4 object-contain" />;
-                            } else {
-                              return <span>🤖</span>;
-                            }
-                          })()}
-                          <span>
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      정보
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {/* 카테고리 */}
+                      {prompt.category && (
+                        <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                          {prompt.category === 'work' && '⚡ 업무/마케팅'}
+                          {prompt.category === 'dev' && '⚙️ 개발/코드'}
+                          {prompt.category === 'design' && '✨ 디자인/브랜드'}
+                          {prompt.category === 'edu' && '🎯 교육/학습'}
+                          {prompt.category === 'image' && '🎬 이미지/동영상'}
+                          {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
+                        </span>
+                      )}
+                      
+                      {/* AI 모델 */}
+                      {prompt.aiModel && (
+                        <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                          <div className="flex items-center gap-2">
                             {(() => {
                               const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
                               const model = aiModels.find(m => m.id === modelId);
-                              return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
+                              if (model?.icon === '🔧') {
+                                return <span>{model.icon}</span>;
+                              } else if (model?.icon) {
+                                return <img src={model.icon} alt={model.name} className="w-4 h-4 object-contain" />;
+                              } else {
+                                return <span>🤖</span>;
+                              }
                             })()}
-                          </span>
-                        </div>
+                            <span>
+                              {(() => {
+                                const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
+                                const model = aiModels.find(m => m.id === modelId);
+                                return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
+                              })()}
+                            </span>
+                          </div>
+                        </span>
+                      )}
+                      
+                      {/* 공개 설정 */}
+                      <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium border ${
+                        prompt.isPublic 
+                          ? 'bg-white text-orange-400 border-orange-400' 
+                          : 'bg-gray-100 text-gray-400 border-gray-300'
+                      }`}>
+                        {prompt.isPublic ? '🌐 공개' : '🔐 비공개'}
                       </span>
-                    )}
-                    
-                    {/* 공개 설정 */}
-                    <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium ${
-                      prompt.isPublic 
-                        ? 'bg-orange-100 text-orange-400' 
-                        : 'bg-gray-100 text-gray-400'
-                    }`}>
-                      {prompt.isPublic ? '🌐 공개' : '🔐 비공개'}
-                    </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* 태그 */}
                 {prompt.tags && prompt.tags.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-3 text-gray-900 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-orange-400 rounded-full"></span>
-                      태그
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {prompt.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        태그
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {prompt.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
