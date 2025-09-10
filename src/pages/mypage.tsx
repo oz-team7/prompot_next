@@ -11,6 +11,7 @@ import Toast from '@/components/Toast';
 import AvatarUpload from '@/components/AvatarUpload';
 import ProfileImageModal from '@/components/ProfileImageModal';
 import BookmarkCategoryManager from '@/components/BookmarkCategoryManager';
+import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
@@ -23,7 +24,7 @@ const MyPage = () => {
   // useMemo를 사용하여 options 객체를 안정화
   const promptsOptions = useMemo(() => ({ author: true }), []);
   const { prompts: allPrompts, loading, error, refetch } = usePrompts(promptsOptions);
-  const { bookmarks, loading: bookmarksLoading, error: bookmarksError, removeBookmark, refetch: refetchBookmarks } = useBookmarks();
+  const { bookmarks, loading: bookmarksLoading, error: bookmarksError, removeBookmark, refetch: refetchBookmarks, addBookmark } = useBookmarks();
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
@@ -37,6 +38,10 @@ const MyPage = () => {
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  
+  // 북마크 관련 상태
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [selectedPromptForBookmark, setSelectedPromptForBookmark] = useState<Prompt | null>(null);
 
   // 사용자 프로필 정보 새로고침 함수
   const refreshUserProfile = async () => {
@@ -327,6 +332,72 @@ const MyPage = () => {
     }
   };
 
+  // 북마크 관련 함수들
+  const handleBookmarkClick = (prompt: Prompt) => {
+    if (!isAuthenticated) {
+      setToastMessage('로그인이 필요합니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    const isBookmarked = bookmarks.some(bookmark => 
+      bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
+    );
+
+    if (isBookmarked) {
+      // 북마크 제거
+      removeBookmark(prompt.id);
+      setToastMessage('북마크에서 제거되었습니다.');
+      setToastType('bookmark');
+      setShowToast(true);
+    } else {
+      // 북마크 추가 - 카테고리 선택기 열기
+      setSelectedPromptForBookmark(prompt);
+      setShowCategorySelector(true);
+    }
+  };
+
+  const handleCategorySelect = async (categoryId: string | null) => {
+    if (!selectedPromptForBookmark) return;
+
+    try {
+      await addBookmark(selectedPromptForBookmark.id, categoryId);
+      setToastMessage('북마크에 추가되었습니다.');
+      setToastType('bookmark');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Bookmark error:', error);
+      setToastMessage('북마크 추가 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setShowCategorySelector(false);
+      setSelectedPromptForBookmark(null);
+    }
+  };
+
+  const isPromptBookmarked = (prompt: Prompt) => {
+    return bookmarks.some(bookmark => 
+      bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
+    );
+  };
+
+  // 북마크 섹션용 북마크 제거 함수
+  const handleBookmarkRemove = (bookmarkId: number, promptId: number) => {
+    if (!isAuthenticated) {
+      setToastMessage('로그인이 필요합니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    removeBookmark(promptId);
+    setToastMessage('북마크에서 제거되었습니다.');
+    setToastType('bookmark');
+    setShowToast(true);
+  };
+
   // 인증 상태 확인 및 재로그인 함수
   const checkAuthAndRedirect = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -446,11 +517,6 @@ const MyPage = () => {
               <div>
                 <h1 className="text-2xl font-bold">{user?.name}</h1>
                 <p className="text-gray-600">{user?.email}</p>
-                <div className="flex gap-4 mt-2 text-sm text-gray-500">
-                  <span>프롬프트 {myPrompts.length}개</span>
-                  <span>•</span>
-                  <span>북마크 {bookmarks.length}개</span>
-                </div>
               </div>
             </div>
           </div>
@@ -542,6 +608,34 @@ const MyPage = () => {
                               <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0" title={prompt.title}>
                                 {prompt.title}
                               </h3>
+                              {/* 북마크 아이콘 */}
+                              {isAuthenticated && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleBookmarkClick(prompt);
+                                  }}
+                                  className="flex items-center hover:scale-110 transition-transform ml-2 flex-shrink-0"
+                                  title={isPromptBookmarked(prompt) ? '북마크 제거' : '북마크 추가'}
+                                >
+                                  <svg
+                                    className={`w-5 h-5 ${
+                                      isPromptBookmarked(prompt) ? 'text-primary fill-current' : 'text-gray-500'
+                                    }`}
+                                    viewBox="0 0 24 24"
+                                    fill={isPromptBookmarked(prompt) ? 'currentColor' : 'none'}
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                             
                             {/* 미리보기 이미지 - 최대 확장된 높이 */}
@@ -725,26 +819,17 @@ const MyPage = () => {
             {/* 북마크 탭 */}
             {activeTab === "bookmarks" && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-lg font-semibold">북마크</h2>
-                  <button
-                    onClick={() => setShowCategoryManager(true)}
-                    className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-orange-600 transition-colors"
-                  >
-                    카테고리 관리
-                  </button>
-                </div>
-
-                {/* 카테고리 필터 */}
-                {bookmarkCategories.length > 0 && (
-                  <div className="mb-4">
+                {/* 카테고리 필터와 관리 */}
+                <div className="flex justify-between items-center mb-4">
+                  {/* 카테고리 필터 */}
+                  {bookmarkCategories.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setSelectedCategory(null)}
-                        className={`px-3 py-1 text-sm rounded transition-colors ${
+                        className={`px-3 py-1 text-sm rounded transition-colors border ${
                           selectedCategory === null
-                            ? "bg-primary text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            ? "bg-primary text-white border-orange-500"
+                            : "bg-white text-gray-700 border-orange-300 hover:bg-orange-50"
                         }`}
                       >
                         전체
@@ -753,10 +838,10 @@ const MyPage = () => {
                         <button
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
-                          className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 ${
+                          className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 border ${
                             selectedCategory === category.id
-                              ? "bg-primary text-white"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              ? "bg-primary text-white border-orange-500"
+                              : "bg-white text-gray-700 border-orange-300 hover:bg-orange-50"
                           }`}
                         >
                           <div
@@ -768,8 +853,16 @@ const MyPage = () => {
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                  
+                  {/* 카테고리 관리 버튼 */}
+                  <button
+                    onClick={() => setShowCategoryManager(true)}
+                    className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-orange-600 transition-colors"
+                  >
+                    카테고리 관리
+                  </button>
+                </div>
 
                 {/* 북마크 목록 */}
                 <div>
@@ -801,6 +894,32 @@ const MyPage = () => {
                               <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0" title={bookmark.prompt.title}>
                                 {bookmark.prompt.title}
                               </h3>
+                              {/* 북마크 아이콘 */}
+                              {isAuthenticated && (
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleBookmarkRemove(bookmark.id, bookmark.prompt.id);
+                                  }}
+                                  className="flex items-center hover:scale-110 transition-transform ml-2 flex-shrink-0"
+                                  title="북마크 제거"
+                                >
+                                  <svg
+                                    className="w-5 h-5 text-primary fill-current"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
                             </div>
                             
                             {/* 미리보기 이미지 - 최대 확장된 높이 */}
@@ -1229,6 +1348,19 @@ const MyPage = () => {
           message={toastMessage}
           type={toastType}
           onClose={() => setShowToast(false)}
+        />
+      )}
+
+      {/* 북마크 카테고리 선택기 */}
+      {showCategorySelector && selectedPromptForBookmark && (
+        <BookmarkCategorySelector
+          isOpen={showCategorySelector}
+          onClose={() => {
+            setShowCategorySelector(false);
+            setSelectedPromptForBookmark(null);
+          }}
+          onSelect={handleCategorySelect}
+          selectedCategoryId={null}
         />
       )}
     </>

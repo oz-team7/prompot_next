@@ -33,7 +33,7 @@ export default function SharePrompt({ promptId, title }: SharePromptProps) {
         />
         <button
           onClick={handleCopyLink}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
         >
           {copied ? '복사됨!' : 'URL 복사'}
         </button>

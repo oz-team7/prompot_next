@@ -151,7 +151,7 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
           <button
             type="submit"
             disabled={!content.trim()}
-            className="mt-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+            className="mt-2 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 font-medium"
           >
             댓글 작성
           </button>
@@ -267,9 +267,8 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500">
-          아직 댓글이 없습니다.
           {!user && (
-            <p className="mt-2 text-sm">
+            <p className="text-sm">
               댓글을 작성하려면 로그인이 필요합니다.
             </p>
           )}
