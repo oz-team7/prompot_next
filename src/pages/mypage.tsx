@@ -16,6 +16,64 @@ import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 import PromptCardCompact from '@/components/PromptCardCompact';
 
+// AI 모델 이름에 따른 아이콘 경로 반환 함수
+const getAIModelIcon = (aiModelName: string): string => {
+  if (!aiModelName) return '';
+  
+  const iconMap: { [key: string]: string } = {
+    'ChatGPT': '/image/icon_chatgpt.png',
+    'Claude': '/image/icon_claude.png',
+    'Midjourney': '/image/icon_midjourney.png',
+    'DALL-E': '/image/icon_dall_e_3.png',
+    'Stable Diffusion': '/image/icon_Stable_Diffusion.png',
+    'Leonardo AI': '/image/icon_leonardo_ai.png',
+    'Runway': '/image/icon_runway.png',
+    'Pika Labs': '/image/icon_PikaLabs.png',
+    'Sora': '/image/icon_Sora.png',
+    'Kling': '/image/icon_kling.png',
+    'Gemini': '/image/icon_gemini.png',
+    'Perplexity': '/image/icon_perplexity.png',
+    'Jasper': '/image/icon_jasper.png',
+    'Copy.ai': '/image/icon_Copy-ai.png',
+    'ElevenLabs': '/image/icon_ElevenLabs.png',
+    'HeyGen': '/image/icon_heygen.png',
+    'Synthesia': '/image/icon_synthesia.png',
+    'Pictory': '/image/icon_pictory_logo.png',
+    'FlexClip': '/image/icon_flexclip.png',
+    'v0': '/image/icon_v0.png',
+    'Cursor AI': '/image/icon_cursor-ai.png',
+    'Replit': '/image/icon_Replit.png',
+    'Lovable': '/image/icon_lovable.png',
+    'Whisk': '/image/icon_whisk.png',
+    'Wrtn': '/image/icon_wrtn.png',
+    'Pollo AI': '/image/icon_pollo-ai.png',
+    'Clovax': '/image/icon_clovax.png',
+    'Mistral Large': '/image/icon_mistrallarge.png',
+    'GPT-4 Code': '/image/icon_gpt-4_code.png',
+    'Claude Artifacts': '/image/icon_claude_artifacts.png',
+    'ImageFX': '/image/icon_imageFX.png',
+    'ControlNet': '/image/icon_controlnet.png',
+    'Bolt': '/image/icon_bolt-new.png'
+  };
+  
+  // 정확한 매칭 시도
+  if (iconMap[aiModelName]) {
+    return iconMap[aiModelName];
+  }
+  
+  // 부분 매칭 시도 (대소문자 무시)
+  const lowerModelName = aiModelName.toLowerCase();
+  for (const [key, value] of Object.entries(iconMap)) {
+    if (key.toLowerCase().includes(lowerModelName) || lowerModelName.includes(key.toLowerCase())) {
+      console.log(`[DEBUG] AI Model partial match: "${aiModelName}" -> "${key}"`);
+      return value;
+    }
+  }
+  
+  console.log(`[DEBUG] AI Model not found: "${aiModelName}"`);
+  return '';
+};
+
 // 안전한 작성자 이름 추출 함수
 const getAuthorName = (author: any): string => {
   if (typeof author === 'string') return author;
@@ -158,6 +216,38 @@ const MyPage = () => {
     router.push(`/?tag=${tag}`);
   }, [router]);
 
+  // 내 프롬프트 데이터를 Prompt 형태로 변환하는 함수
+  const convertMyPromptToPrompt = useCallback((prompt: Prompt): Prompt => {
+    console.log('[DEBUG] Converting my prompt to prompt:', {
+      promptId: prompt.id,
+      authorName: prompt.author?.name,
+      authorAvatarUrl: prompt.author?.avatar_url,
+      authorId: prompt.author?.id,
+      videoUrl: prompt.video_url,
+      additionalImages: prompt.additional_images,
+      bookmarkCount: prompt.bookmarkCount,
+      commentCount: prompt.commentCount
+    });
+    
+    return {
+      ...prompt,
+      // 내 프롬프트는 항상 북마크 상태로 표시
+      isBookmarked: isBookmarked(prompt.id),
+      // 메인페이지와 동일한 데이터 구조 보장
+      bookmarkCount: prompt.bookmarkCount || 0,
+      commentCount: prompt.commentCount || 0,
+      totalRatings: prompt.totalRatings || 0,
+      averageRating: prompt.averageRating || 0,
+      // 작성자 정보가 누락된 경우 현재 사용자 정보로 보완
+      author: prompt.author || {
+        id: user?.id || '',
+        name: user?.name || '익명',
+        email: user?.email,
+        avatar_url: user?.avatar_url
+      }
+    };
+  }, [isBookmarked, user]);
+
   // 북마크 데이터를 Prompt 형태로 변환하는 함수
   const convertBookmarkToPrompt = useCallback((bookmark: any): Prompt => {
     console.log('[DEBUG] Converting bookmark to prompt:', {
@@ -166,7 +256,12 @@ const MyPage = () => {
       authorName: bookmark.prompt.author,
       authorAvatarUrl: bookmark.prompt.authorAvatarUrl,
       videoUrl: bookmark.prompt.videoUrl,
-      additionalImages: bookmark.prompt.additionalImages
+      additionalImages: bookmark.prompt.additionalImages,
+      aiModel: bookmark.prompt.aiModel,
+      aiModelType: typeof bookmark.prompt.aiModel,
+      aiModelIcon: typeof bookmark.prompt.aiModel === 'string' 
+        ? getAIModelIcon(bookmark.prompt.aiModel)
+        : bookmark.prompt.aiModel?.icon
     });
     
     return {
@@ -184,16 +279,24 @@ const MyPage = () => {
       created_at: bookmark.prompt.createdAt,
       tags: bookmark.prompt.tags || [],
       rating: 0,
+      totalRatings: 0,
       likes: 0,
       bookmarks: 0,
+      bookmarkCount: 0,
+      commentCount: 0,
+      averageRating: 0,
       category: bookmark.prompt.category as any,
       preview_image: bookmark.prompt.previewImage,
       video_url: bookmark.prompt.videoUrl || undefined,
       additional_images: bookmark.prompt.additionalImages || undefined,
       aiModel: typeof bookmark.prompt.aiModel === 'string' 
-        ? { name: bookmark.prompt.aiModel, icon: '' }
+        ? { 
+            name: bookmark.prompt.aiModel, 
+            icon: getAIModelIcon(bookmark.prompt.aiModel)
+          }
         : bookmark.prompt.aiModel,
-      isPublic: bookmark.prompt.isPublic
+      isPublic: bookmark.prompt.isPublic,
+      isBookmarked: true // 북마크된 프롬프트는 항상 북마크 상태
     };
   }, []);
 
@@ -264,6 +367,11 @@ const MyPage = () => {
       console.log('[DEBUG] First prompt category and aiModel:', {
         category: allPrompts[0]?.category,
         aiModel: allPrompts[0]?.aiModel
+      });
+      console.log('[DEBUG] First prompt author info:', {
+        author: allPrompts[0]?.author,
+        authorName: allPrompts[0]?.author?.name,
+        authorAvatarUrl: allPrompts[0]?.author?.avatar_url
       });
       setMyPrompts(allPrompts);
     } else {
@@ -823,7 +931,7 @@ const MyPage = () => {
           <div>
             {/* 내 프롬프트 탭 */}
             {activeTab === 'prompts' && (
-              <div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
                 {loading ? (
                   <div className="text-center py-16">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -837,23 +945,27 @@ const MyPage = () => {
                     </button>
                   </div>
                 ) : myPrompts.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-                    {myPrompts.map(prompt => (
-                      <div key={prompt.id} className="w-full mb-6">
-                        <PromptCardCompact
-                          prompt={prompt}
-                          onLike={handleLike}
-                          onBookmark={isAuthenticated ? handleBookmark : undefined}
-                          isBookmarked={isBookmarked(prompt.id)}
-                          onCategoryClick={handleCategoryClick}
-                          onAIModelClick={handleAIModelClick}
-                          onTagClick={handleTagClick}
-                        />
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+                    {myPrompts
+                      .map(prompt => {
+                        const convertedPrompt = convertMyPromptToPrompt(prompt);
+                        return (
+                          <div key={prompt.id} className="w-full">
+                            <PromptCardCompact
+                              prompt={convertedPrompt}
+                              onLike={handleLike}
+                              onBookmark={isAuthenticated ? handleBookmark : undefined}
+                              isBookmarked={convertedPrompt.isBookmarked}
+                              onCategoryClick={handleCategoryClick}
+                              onAIModelClick={handleAIModelClick}
+                              onTagClick={handleTagClick}
+                            />
+                          </div>
+                        );
+                      })}
                   </div>
                 ) : (
-                  <div className="text-center py-16 bg-white rounded-lg">
+                  <div className="text-center py-16">
                     <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
                         d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -867,7 +979,7 @@ const MyPage = () => {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      프롬프트 작성
+                      프롬프트 작성하기
                     </Link>
                   </div>
                 )}
@@ -936,21 +1048,21 @@ const MyPage = () => {
                       </button>
                     </div>
                   ) : bookmarks.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                       {bookmarks
                         .filter((bookmark: any) => 
                           selectedCategory === null || 
                           bookmark.categoryId === selectedCategory
                         )
                         .map(bookmark => {
-                          const prompt = convertBookmarkToPrompt(bookmark);
+                          const convertedPrompt = convertBookmarkToPrompt(bookmark);
                           return (
-                            <div key={bookmark.id} className="w-full mb-6">
+                            <div key={bookmark.id} className="w-full">
                               <PromptCardCompact
-                                prompt={prompt}
+                                prompt={convertedPrompt}
                                 onLike={handleLike}
                                 onBookmark={isAuthenticated ? () => handleBookmarkRemove(bookmark.id, bookmark.prompt.id) : undefined}
-                                isBookmarked={true}
+                                isBookmarked={convertedPrompt.isBookmarked}
                                 onCategoryClick={handleCategoryClick}
                                 onAIModelClick={handleAIModelClick}
                                 onTagClick={handleTagClick}

@@ -198,7 +198,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   return (
     <Link href={`/prompt/${prompt.id}`} className="block">
       <div 
-        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 h-[350px] flex flex-col w-full mb-2 overflow-hidden"
+        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 h-[350px] flex flex-col w-full overflow-hidden"
         onClick={(e) => {
           // 북마크 카테고리 선택기가 열려있을 때는 페이지 이동 방지
           if (showCategorySelector) {
@@ -364,12 +364,12 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
           {/* Footer - 카테고리/AI모델/작성자 */}
           <div className="space-y-2">
             {/* 첫 번째 줄: 카테고리와 AI 모델 */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 flex-wrap">
               {/* 카테고리 */}
               {prompt.category && (
                 <button
                   onClick={handleCategoryClick}
-                  className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer"
+                  className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-1.5 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer flex-shrink-0"
                 >
                   {prompt.category === 'work' && '⚡ 업무/마케팅'}
                   {prompt.category === 'dev' && '⚙️ 개발/코드'}
@@ -383,7 +383,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
               {prompt.aiModel && (
                 <button
                   onClick={handleAIModelClick}
-                  className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer"
+                  className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-1.5 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer flex-shrink-0"
                 >
                   <div className="flex items-center gap-1">
                     {prompt.aiModel.icon && (
@@ -391,9 +391,16 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                         src={prompt.aiModel.icon} 
                         alt={prompt.aiModel.name}
                         className="w-3 h-3 object-contain"
+                        onError={(e) => {
+                          console.log(`[DEBUG] AI Model icon failed to load: ${prompt.aiModel.icon} for ${prompt.aiModel.name}`);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        onLoad={() => {
+                          console.log(`[DEBUG] AI Model icon loaded successfully: ${prompt.aiModel.icon} for ${prompt.aiModel.name}`);
+                        }}
                       />
                     )}
-                    {prompt.aiModel.name}
+                    <span className="whitespace-nowrap">{prompt.aiModel.name}</span>
                   </div>
                 </button>
               )}
