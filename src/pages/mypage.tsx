@@ -14,6 +14,7 @@ import BookmarkCategoryManager from '@/components/BookmarkCategoryManager';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
+import PromptCardCompact from '@/components/PromptCardCompact';
 
 // 안전한 작성자 이름 추출 함수
 const getAuthorName = (author: any): string => {
@@ -31,7 +32,7 @@ const MyPage = () => {
   // useMemo를 사용하여 options 객체를 안정화
   const promptsOptions = useMemo(() => ({ author: true }), []);
   const { prompts: allPrompts, loading, error, refetch } = usePrompts(promptsOptions);
-  const { bookmarks, loading: bookmarksLoading, error: bookmarksError, removeBookmark, refetch: refetchBookmarks, addBookmark } = useBookmarks();
+  const { bookmarks, loading: bookmarksLoading, error: bookmarksError, removeBookmark, refetch: refetchBookmarks, addBookmark, isBookmarked } = useBookmarks();
   const [myPrompts, setMyPrompts] = useState<Prompt[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
@@ -63,6 +64,138 @@ const MyPage = () => {
   // 북마크 관련 상태
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [selectedPromptForBookmark, setSelectedPromptForBookmark] = useState<Prompt | null>(null);
+
+  // 북마크 섹션용 북마크 제거 함수
+  const handleBookmarkRemove = (bookmarkId: number, promptId: number) => {
+    if (!isAuthenticated) {
+      setToastMessage('로그인이 필요합니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    removeBookmark(promptId);
+    setToastMessage('북마크에서 제거되었습니다.');
+    setToastType('bookmark');
+    setShowToast(true);
+  };
+
+  // 북마크 관련 함수들
+  const handleBookmarkClick = (prompt: Prompt) => {
+    if (!isAuthenticated) {
+      setToastMessage('로그인이 필요합니다.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    if (isBookmarked(prompt.id)) {
+      // 북마크 제거
+      removeBookmark(prompt.id);
+      setToastMessage('북마크에서 제거되었습니다.');
+      setToastType('bookmark');
+      setShowToast(true);
+    } else {
+      // 북마크 추가 - 카테고리 선택기 열기
+      setSelectedPromptForBookmark(prompt);
+      setShowCategorySelector(true);
+    }
+  };
+
+  // 북마크 처리 함수 (메인 페이지와 동일)
+  const handleBookmark = async (id: string | number, categoryId?: string | null) => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      if (isBookmarked(id)) {
+        await removeBookmark(id);
+      } else {
+        await addBookmark(id, categoryId);
+      }
+    } catch (error) {
+      console.error('Bookmark error:', error);
+    }
+  };
+
+  // PromptCard용 핸들러 함수들
+  const handleLike = useCallback((promptId: number) => {
+    // 좋아요 기능은 현재 구현하지 않음
+    console.log('Like clicked for prompt:', promptId);
+  }, []);
+
+  const handleBookmarkToggle = useCallback((prompt: Prompt) => {
+    if (!isAuthenticated) return;
+    
+    if (isBookmarked(prompt.id)) {
+      // 북마크 제거
+      const bookmarkToRemove = bookmarks.find(bookmark => 
+        bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
+      );
+      if (bookmarkToRemove) {
+        handleBookmarkRemove(bookmarkToRemove.id, prompt.id);
+      }
+    } else {
+      // 북마크 추가
+      handleBookmarkClick(prompt);
+    }
+  }, [isAuthenticated, bookmarks, handleBookmarkRemove, handleBookmarkClick, isBookmarked]);
+
+  const handleCategoryClick = useCallback((category: string) => {
+    // 카테고리 클릭 시 홈으로 이동하여 필터 적용
+    router.push(`/?category=${category}`);
+  }, [router]);
+
+  const handleAIModelClick = useCallback((aiModel: string) => {
+    // AI 모델 클릭 시 홈으로 이동하여 필터 적용
+    router.push(`/?aiModel=${aiModel}`);
+  }, [router]);
+
+  const handleTagClick = useCallback((tag: string) => {
+    // 태그 클릭 시 홈으로 이동하여 필터 적용
+    router.push(`/?tag=${tag}`);
+  }, [router]);
+
+  // 북마크 데이터를 Prompt 형태로 변환하는 함수
+  const convertBookmarkToPrompt = useCallback((bookmark: any): Prompt => {
+    console.log('[DEBUG] Converting bookmark to prompt:', {
+      bookmarkId: bookmark.id,
+      promptId: bookmark.prompt.id,
+      authorName: bookmark.prompt.author,
+      authorAvatarUrl: bookmark.prompt.authorAvatarUrl,
+      videoUrl: bookmark.prompt.videoUrl,
+      additionalImages: bookmark.prompt.additionalImages
+    });
+    
+    return {
+      id: bookmark.prompt.id,
+      title: bookmark.prompt.title,
+      description: bookmark.prompt.description,
+      content: bookmark.prompt.content,
+      author: {
+        id: bookmark.prompt.authorId || '',
+        name: bookmark.prompt.author || '익명',
+        email: undefined, // Added for consistency with main page Prompt type
+        avatar_url: bookmark.prompt.authorAvatarUrl || undefined
+      },
+      date: bookmark.prompt.createdAt,
+      created_at: bookmark.prompt.createdAt,
+      tags: bookmark.prompt.tags || [],
+      rating: 0,
+      likes: 0,
+      bookmarks: 0,
+      category: bookmark.prompt.category as any,
+      preview_image: bookmark.prompt.previewImage,
+      video_url: bookmark.prompt.videoUrl || undefined,
+      additional_images: bookmark.prompt.additionalImages || undefined,
+      aiModel: typeof bookmark.prompt.aiModel === 'string' 
+        ? { name: bookmark.prompt.aiModel, icon: '' }
+        : bookmark.prompt.aiModel,
+      isPublic: bookmark.prompt.isPublic
+    };
+  }, []);
 
   // 사용자 프로필 정보 새로고침 함수
   const refreshUserProfile = async () => {
@@ -128,6 +261,10 @@ const MyPage = () => {
     
     if (allPrompts.length > 0) {
       console.log('[DEBUG] Setting prompts directly (already filtered by author=true):', allPrompts);
+      console.log('[DEBUG] First prompt category and aiModel:', {
+        category: allPrompts[0]?.category,
+        aiModel: allPrompts[0]?.aiModel
+      });
       setMyPrompts(allPrompts);
     } else {
       console.log('[DEBUG] No prompts available');
@@ -440,32 +577,6 @@ const MyPage = () => {
     }
   };
 
-  // 북마크 관련 함수들
-  const handleBookmarkClick = (prompt: Prompt) => {
-    if (!isAuthenticated) {
-      setToastMessage('로그인이 필요합니다.');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
-    const isBookmarked = bookmarks.some(bookmark => 
-      bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
-    );
-
-    if (isBookmarked) {
-      // 북마크 제거
-      removeBookmark(prompt.id);
-      setToastMessage('북마크에서 제거되었습니다.');
-      setToastType('bookmark');
-      setShowToast(true);
-    } else {
-      // 북마크 추가 - 카테고리 선택기 열기
-      setSelectedPromptForBookmark(prompt);
-      setShowCategorySelector(true);
-    }
-  };
-
   const handleCategorySelect = async (categoryIds: (string | null)[]) => {
     if (!selectedPromptForBookmark) return;
 
@@ -493,21 +604,6 @@ const MyPage = () => {
     return bookmarks.some(bookmark => 
       bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
     );
-  };
-
-  // 북마크 섹션용 북마크 제거 함수
-  const handleBookmarkRemove = (bookmarkId: number, promptId: number) => {
-    if (!isAuthenticated) {
-      setToastMessage('로그인이 필요합니다.');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
-    removeBookmark(promptId);
-    setToastMessage('북마크에서 제거되었습니다.');
-    setToastType('bookmark');
-    setShowToast(true);
   };
 
   // 인증 상태 확인 및 재로그인 함수
@@ -741,201 +837,19 @@ const MyPage = () => {
                     </button>
                   </div>
                 ) : myPrompts.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
                     {myPrompts.map(prompt => (
-                      <Link key={prompt.id} href={`/prompt/${prompt.id}`} className="block">
-                        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 h-[450px] flex flex-col w-full mb-2 overflow-hidden cursor-pointer">
-                          {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
-                          <div className="flex-shrink-0 mb-4">
-                            <div className="flex justify-between items-start mb-0">
-                              <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0" title={prompt.title}>
-                                {prompt.title}
-                              </h3>
-                              {/* 북마크 아이콘 */}
-                              {isAuthenticated && (
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleBookmarkClick(prompt);
-                                  }}
-                                  className="flex items-center hover:scale-110 transition-transform ml-2 flex-shrink-0"
-                                  title={isPromptBookmarked(prompt) ? '북마크 제거' : '북마크 추가'}
-                                >
-                                  <svg
-                                    className={`w-5 h-5 ${
-                                      isPromptBookmarked(prompt) ? 'text-primary fill-current' : 'text-gray-500'
-                                    }`}
-                                    viewBox="0 0 24 24"
-                                    fill={isPromptBookmarked(prompt) ? 'currentColor' : 'none'}
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                                    />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-                            
-                            {/* 미리보기 이미지 - 최대 확장된 높이 */}
-                            <div className="h-48 mb-3">
-                              {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
-                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-                                  <Image
-                                    src={getVideoThumbnail(prompt.video_url)!}
-                                    alt={getVideoTitle(prompt.video_url)}
-                                    fill
-                                    className="object-cover"
-                                    unoptimized={true}
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
-                                    <div className="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                                      <svg className="w-4 h-4 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M8 5v14l11-7z"/>
-                                      </svg>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : prompt.preview_image ? (
-                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-                                  <Image
-                                    src={prompt.preview_image}
-                                    alt={prompt.title}
-                                    fill
-                                    className="object-cover"
-                                    unoptimized={true}
-                                  />
-                                </div>
-                              ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
-                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-                                  <Image
-                                    src={prompt.additional_images[0]}
-                                    alt={prompt.title}
-                                    fill
-                                    className="object-cover"
-                                    unoptimized={true}
-                                  />
-                                </div>
-                              ) : (
-                                <div className="relative w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg overflow-hidden flex items-center justify-center">
-                                  <Image
-                                    src="/logo.png"
-                                    alt="Prompot"
-                                    width={64}
-                                    height={64}
-                                    className="w-16 h-16 object-contain opacity-70"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 중간 고정 영역: 설명 */}
-                          <div className="flex-shrink-0 mb-3">
-                            <div className="h-12">
-                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
-                                {prompt.description}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* 하단 고정 영역: 태그 + 카테고리/AI모델/작성자 */}
-                          <div className="flex-shrink-0 space-y-2">
-                            {/* Tags - 고정 높이 */}
-                            <div className="h-6 flex items-center">
-                              {(() => {
-                                const tags = prompt.tags || [];
-                                const displayTags = tags.slice(0, 3);
-                                const remainingCount = Math.max(0, tags.length - 3);
-                                return displayTags.length > 0 || remainingCount > 0 ? (
-                                  <div className="flex flex-nowrap gap-1 overflow-hidden">
-                                    {displayTags.map((tag, index) => (
-                                      <span
-                                        key={index}
-                                        className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
-                                      >
-                                        {tag}
-                                      </span>
-                                    ))}
-                                    {remainingCount > 0 && (
-                                      <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
-                                        +{remainingCount}
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="h-6"></div>
-                                );
-                              })()}
-                            </div>
-                            
-                            {/* Footer - 카테고리/AI모델/작성자 */}
-                            <div className="space-y-2">
-                              {/* 첫 번째 줄: 카테고리와 AI 모델 */}
-                              <div className="flex items-center gap-2">
-                                {/* 카테고리 */}
-                                {prompt.category && (
-                                  <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
-                                    {prompt.category === 'work' && '⚡ 업무/마케팅'}
-                                    {prompt.category === 'dev' && '⚙️ 개발/코드'}
-                                    {prompt.category === 'design' && '✨ 디자인/브랜드'}
-                                    {prompt.category === 'edu' && '🎯 교육/학습'}
-                                    {prompt.category === 'image' && '🎬 이미지/동영상'}
-                                    {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
-                                  </span>
-                                )}
-                                {/* AI 모델 */}
-                                {prompt.aiModel && (
-                                  <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
-                                    <div className="flex items-center gap-1">
-                                      {prompt.aiModel.icon && (
-                                        <img 
-                                          src={prompt.aiModel.icon} 
-                                          alt={prompt.aiModel.name}
-                                          className="w-3 h-3 object-contain"
-                                        />
-                                      )}
-                                      {prompt.aiModel.name}
-                                    </div>
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {/* 두 번째 줄: 작성자 */}
-                              <div className="flex justify-end">
-                                <div className="flex items-center gap-2">
-                                  {/* 작성자 프로필사진 */}
-                                  <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
-                                    {prompt.author?.avatar_url ? (
-                                      <Image
-                                        src={prompt.author.avatar_url}
-                                        alt={prompt.author.name || '작성자'}
-                                        width={20}
-                                        height={20}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                                        <span className="text-xs font-medium text-orange-600">
-                                          {getAuthorName(prompt.author).charAt(0).toUpperCase()}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                  {/* 작성자 이름 */}
-                                  <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">
-                                    {prompt.author?.name || '익명'}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
+                      <div key={prompt.id} className="w-full mb-6">
+                        <PromptCardCompact
+                          prompt={prompt}
+                          onLike={handleLike}
+                          onBookmark={isAuthenticated ? handleBookmark : undefined}
+                          isBookmarked={isBookmarked(prompt.id)}
+                          onCategoryClick={handleCategoryClick}
+                          onAIModelClick={handleAIModelClick}
+                          onTagClick={handleTagClick}
+                        />
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -1022,160 +936,28 @@ const MyPage = () => {
                       </button>
                     </div>
                   ) : bookmarks.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
                       {bookmarks
                         .filter((bookmark: any) => 
                           selectedCategory === null || 
                           bookmark.categoryId === selectedCategory
                         )
-                        .map(bookmark => (
-      <Link key={bookmark.id} href={`/prompt/${bookmark.prompt.id}`} className="block">
-        <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 h-[450px] flex flex-col w-full mb-2 overflow-hidden cursor-pointer">
-                          {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
-                          <div className="flex-shrink-0 mb-4">
-                            <div className="flex justify-between items-start mb-0">
-                              <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0" title={bookmark.prompt.title}>
-                                {bookmark.prompt.title}
-                              </h3>
-                              {/* 북마크 아이콘 */}
-                              {isAuthenticated && (
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleBookmarkRemove(bookmark.id, bookmark.prompt.id);
-                                  }}
-                                  className="flex items-center hover:scale-110 transition-transform ml-2 flex-shrink-0"
-                                  title="북마크 제거"
-                                >
-                                  <svg
-                                    className="w-5 h-5 text-primary fill-current"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                                    />
-                                  </svg>
-                                </button>
-                              )}
+                        .map(bookmark => {
+                          const prompt = convertBookmarkToPrompt(bookmark);
+                          return (
+                            <div key={bookmark.id} className="w-full mb-6">
+                              <PromptCardCompact
+                                prompt={prompt}
+                                onLike={handleLike}
+                                onBookmark={isAuthenticated ? () => handleBookmarkRemove(bookmark.id, bookmark.prompt.id) : undefined}
+                                isBookmarked={true}
+                                onCategoryClick={handleCategoryClick}
+                                onAIModelClick={handleAIModelClick}
+                                onTagClick={handleTagClick}
+                              />
                             </div>
-                            
-                            {/* 미리보기 이미지 - 최대 확장된 높이 */}
-                            <div className="h-48 mb-3">
-                              {bookmark.prompt.previewImage ? (
-                                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-                                  <Image
-                                    src={bookmark.prompt.previewImage}
-                                    alt={bookmark.prompt.title}
-                                    fill
-                                    className="object-cover"
-                                    unoptimized={true}
-                                  />
-                                </div>
-                              ) : (
-                                <div className="relative w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg overflow-hidden flex items-center justify-center">
-                                  <Image
-                                    src="/logo.png"
-                                    alt="Prompot"
-                                    width={64}
-                                    height={64}
-                                    className="w-16 h-16 object-contain opacity-70"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 중간 고정 영역: 설명 */}
-                          <div className="flex-shrink-0 mb-3">
-                            <div className="h-12">
-                              <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
-                                {bookmark.prompt.description}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* 하단 고정 영역: 태그 + 카테고리/AI모델/작성자 */}
-                          <div className="flex-shrink-0 space-y-2">
-                            {/* Tags - 고정 높이 */}
-                            <div className="h-6 flex items-center">
-                              {(() => {
-                                const tags = bookmark.prompt.tags || [];
-                                const displayTags = tags.slice(0, 3);
-                                const remainingCount = Math.max(0, tags.length - 3);
-                                return displayTags.length > 0 || remainingCount > 0 ? (
-                                  <div className="flex flex-nowrap gap-1 overflow-hidden">
-                                    {displayTags.map((tag, index) => (
-                                      <span
-                                        key={index}
-                                        className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
-                                      >
-                                        {tag}
-                                      </span>
-                                    ))}
-                                    {remainingCount > 0 && (
-                                      <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
-                                        +{remainingCount}
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="h-6"></div>
-                                );
-                              })()}
-                            </div>
-                            
-                            {/* Footer - 카테고리/AI모델/작성자 */}
-                            <div className="space-y-2">
-                              {/* 첫 번째 줄: 카테고리와 AI 모델 */}
-                              <div className="flex items-center gap-2">
-                                {/* 카테고리 */}
-                                {bookmark.prompt.category && (
-                                  <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
-                                    {bookmark.prompt.category === 'work' && '⚡ 업무/마케팅'}
-                                    {bookmark.prompt.category === 'dev' && '⚙️ 개발/코드'}
-                                    {bookmark.prompt.category === 'design' && '✨ 디자인/브랜드'}
-                                    {bookmark.prompt.category === 'edu' && '🎯 교육/학습'}
-                                    {bookmark.prompt.category === 'image' && '🎬 이미지/동영상'}
-                                    {!['work', 'dev', 'design', 'edu', 'image'].includes(bookmark.prompt.category) && bookmark.prompt.category}
-                                  </span>
-                                )}
-                                {/* AI 모델 */}
-                                {bookmark.prompt.aiModel && (
-                                  <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
-                                    {bookmark.prompt.aiModel}
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {/* 두 번째 줄: 작성자 */}
-                              <div className="flex justify-end">
-                                <div className="flex items-center gap-2">
-                                  {/* 작성자 프로필사진 */}
-                                  <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
-                                    <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                                      <span className="text-xs font-medium text-orange-600">
-                                        {getAuthorName(bookmark.prompt.author).charAt(0).toUpperCase()}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {/* 작성자 이름 */}
-                                  <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">
-                                    {getAuthorName(bookmark.prompt.author)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          </div>
-                        </Link>
-                      ))}
+                          );
+                        })}
                     </div>
                   ) : (
                     <div className="text-center py-16 bg-white rounded-lg">

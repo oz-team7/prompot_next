@@ -46,6 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               tags,
               ai_model,
               preview_image,
+              video_url,
+              additional_images,
               is_public,
               created_at,
               updated_at,
@@ -81,11 +83,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             tags: bookmark.prompts.tags,
             aiModel: bookmark.prompts.ai_model,
             previewImage: bookmark.prompts.preview_image,
+            videoUrl: bookmark.prompts.video_url,
+            additionalImages: bookmark.prompts.additional_images,
             isPublic: bookmark.prompts.is_public,
             createdAt: bookmark.prompts.created_at,
             updatedAt: bookmark.prompts.updated_at,
             author: bookmark.prompts.profiles?.name || 'Unknown',
-            authorId: bookmark.prompts.author_id
+            authorId: bookmark.prompts.author_id,
+            authorAvatarUrl: bookmark.prompts.profiles?.avatar_url || undefined
           }
         })) || [];
 
@@ -146,6 +151,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               tags,
               ai_model,
               preview_image,
+              video_url,
+              additional_images,
               is_public,
               created_at,
               updated_at,
@@ -166,8 +173,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         console.log('[DEBUG] Bookmark upsert result:', { bookmark });
 
+        // 응답 데이터 변환
+        const transformedBookmark = {
+          id: bookmark.id,
+          createdAt: bookmark.created_at,
+          categoryId: bookmark.category_id,
+          prompt: {
+            id: bookmark.prompts.id,
+            title: bookmark.prompts.title,
+            description: bookmark.prompts.description,
+            content: bookmark.prompts.content,
+            category: bookmark.prompts.category,
+            tags: bookmark.prompts.tags,
+            aiModel: bookmark.prompts.ai_model,
+            previewImage: bookmark.prompts.preview_image,
+            videoUrl: bookmark.prompts.video_url,
+            additionalImages: bookmark.prompts.additional_images,
+            isPublic: bookmark.prompts.is_public,
+            createdAt: bookmark.prompts.created_at,
+            updatedAt: bookmark.prompts.updated_at,
+            author: bookmark.prompts.profiles?.name || 'Unknown',
+            authorId: bookmark.prompts.author_id,
+            authorAvatarUrl: bookmark.prompts.profiles?.avatar_url || undefined
+          }
+        };
+
         res.status(200).json({ 
-          bookmark,
+          bookmark: transformedBookmark,
           success: true 
         });
       } catch (error) {

@@ -205,7 +205,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   return (
     <Link href={`/prompt/${prompt.id}`} className="block">
       <div 
-        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 h-[450px] flex flex-col w-full mb-2 overflow-hidden"
+        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 h-[400px] flex flex-col w-full mb-2 overflow-hidden"
         onClick={(e) => {
           // 북마크 카테고리 선택기가 열려있을 때는 페이지 이동 방지
           if (showCategorySelector) {
