@@ -27,14 +27,12 @@ interface BookmarkPanelProps {
     createdAt: string;
     categoryId?: string | null;
   }>;
-  onRemoveBookmark: (id: number) => void;
 }
 
 const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
   isOpen,
   onClose,
   bookmarks,
-  onRemoveBookmark,
 }) => {
   const { categories } = useBookmarkCategories();
 
@@ -62,10 +60,10 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
         }`}
       >
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold">내 북마크</h2>
+          <h2 className="text-xl font-bold text-orange-500">최근 북마크</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-orange-100 rounded-lg transition-colors text-orange-500"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -82,7 +80,7 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
                 <Link 
                   key={bookmark.id} 
                   href={`/prompt/${bookmark.prompt.id}`}
-                  className="block bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                  className="block bg-orange-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
                   onClick={onClose}
                 >
                   <div className="flex">
@@ -111,18 +109,8 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
                     <div className="flex-1 p-3">
                       <h3 className="font-semibold text-sm mb-1 line-clamp-1">{bookmark.prompt.title}</h3>
                       <p className="text-xs text-gray-600 mb-2 line-clamp-2">{bookmark.prompt.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-500">{getCategoryName(bookmark.categoryId)}</span>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onRemoveBookmark(bookmark.prompt.id);
-                          }}
-                          className="text-xs text-red-500 hover:text-red-700"
-                        >
-                          제거
-                        </button>
+                      <div className="flex justify-end items-center">
+                        <span className="text-xs text-orange-400">{getCategoryName(bookmark.categoryId)}</span>
                       </div>
                     </div>
                   </div>

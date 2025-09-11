@@ -422,7 +422,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               isOpen={showBookmarks}
               onClose={() => setShowBookmarks(false)}
               bookmarks={bookmarks || []}
-              onRemoveBookmark={handleBookmark}
             />
           )}
         </div>
