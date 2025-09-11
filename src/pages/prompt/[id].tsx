@@ -226,9 +226,9 @@ const VideoPreview = ({ url }: { url: string }) => {
 const PromptDetailPage = () => {
   const router = useRouter();
   const { id } = router.query;
+  const { setAuthorFilter, setSearchQuery } = useSearch();
   const { isAuthenticated, user } = useAuth();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
-  const { setSearchQuery } = useSearch();
 
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -457,7 +457,14 @@ const PromptDetailPage = () => {
                 
                 {/* 작성자 정보 */}
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const authorName = prompt.author?.name || '익명';
+                      setAuthorFilter(authorName);
+                      router.push('/');
+                    }}
+                    className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
+                  >
                     {prompt.author.avatar_url ? (
                       <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0">
                         <Image
@@ -481,8 +488,8 @@ const PromptDetailPage = () => {
                         />
                       </div>
                     )}
-                    <span className="font-medium">{prompt.author.name}</span>
-                  </div>
+                    <span className="font-medium group-hover:text-orange-600 transition-colors">{prompt.author.name}</span>
+                  </button>
                   <span className="text-gray-400">•</span>
                   <time dateTime={prompt.createdAt} className="text-gray-500">{prompt.date}</time>
                 </div>
