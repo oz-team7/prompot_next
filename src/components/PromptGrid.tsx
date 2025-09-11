@@ -260,7 +260,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                 
                 {activeCategory !== 'all' && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
-                    태그: {categories.find(cat => cat.value === activeCategory)?.label}
+                    카테고리: {categories.find(cat => cat.value === activeCategory)?.label}
                     <button
                       onClick={() => setActiveCategory('all')}
                       className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
