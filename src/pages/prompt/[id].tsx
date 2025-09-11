@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useSearch } from '@/contexts/SearchContext';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import CommentSection from '@/components/CommentSection';
@@ -227,6 +228,7 @@ const PromptDetailPage = () => {
   const { id } = router.query;
   const { isAuthenticated, user } = useAuth();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+  const { setSearchQuery } = useSearch();
 
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -333,6 +335,40 @@ const PromptDetailPage = () => {
       setToastType('error');
       setShowToast(true);
     }
+  };
+
+  // 카테고리 클릭 핸들러
+  const handleCategoryClick = () => {
+    if (!prompt) return;
+    const categoryLabel = getCategoryLabel(prompt.category);
+    setSearchQuery(categoryLabel);
+    router.push('/prompts');
+  };
+
+  // AI 모델 클릭 핸들러
+  const handleAIModelClick = () => {
+    if (!prompt) return;
+    const aiModelName = typeof prompt.aiModel === 'object' ? prompt.aiModel.name : prompt.aiModel;
+    setSearchQuery(aiModelName);
+    router.push('/prompts');
+  };
+
+  // 태그 클릭 핸들러
+  const handleTagClick = (tag: string) => {
+    setSearchQuery(tag);
+    router.push('/prompts');
+  };
+
+  // 카테고리 라벨 가져오기
+  const getCategoryLabel = (category: string) => {
+    const categoryLabels: { [key: string]: string } = {
+      'work': '업무/마케팅',
+      'dev': '개발/코드',
+      'design': '디자인/브랜드',
+      'edu': '교육/학습',
+      'image': '이미지/동영상',
+    };
+    return categoryLabels[category] || category;
   };
 
   const handleCategorySelect = async (categoryId: string | null) => {
@@ -619,19 +655,25 @@ const PromptDetailPage = () => {
                     <div className="flex flex-wrap gap-2">
                       {/* 카테고리 */}
                       {prompt.category && (
-                        <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                        <button
+                          onClick={handleCategoryClick}
+                          className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer"
+                        >
                           {prompt.category === 'work' && '⚡ 업무/마케팅'}
                           {prompt.category === 'dev' && '⚙️ 개발/코드'}
                           {prompt.category === 'design' && '✨ 디자인/브랜드'}
                           {prompt.category === 'edu' && '🎯 교육/학습'}
                           {prompt.category === 'image' && '🎬 이미지/동영상'}
                           {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
-                        </span>
+                        </button>
                       )}
                       
                       {/* AI 모델 */}
                       {prompt.aiModel && (
-                        <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+                        <button
+                          onClick={handleAIModelClick}
+                          className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer"
+                        >
                           <div className="flex items-center gap-2">
                             {(() => {
                               const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
@@ -652,7 +694,7 @@ const PromptDetailPage = () => {
                               })()}
                             </span>
                           </div>
-                        </span>
+                        </button>
                       )}
                       
                       {/* 공개 설정 */}
@@ -676,12 +718,13 @@ const PromptDetailPage = () => {
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {prompt.tags.map((tag, index) => (
-                          <span
+                          <button
                             key={index}
-                            className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
+                            onClick={() => handleTagClick(tag)}
+                            className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer"
                           >
                             #{tag}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </div>

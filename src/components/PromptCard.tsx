@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
 import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail } from '@/utils/videoUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useSearch } from '@/contexts/SearchContext';
 import Toast from '@/components/Toast';
 
 // 태그 표시 유틸리티 함수 - 더 정확한 너비 계산
@@ -62,8 +64,10 @@ interface PromptCardProps {
 }
 
 const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isBookmarked = false }) => {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
+  const { setSearchQuery } = useSearch();
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -133,6 +137,43 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
       setShowToast(true);
     }
     setShowCategorySelector(false);
+  };
+
+  // 카테고리 클릭 핸들러
+  const handleCategoryClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const categoryLabel = getCategoryLabel(prompt.category);
+    setSearchQuery(categoryLabel);
+    router.push('/prompts');
+  };
+
+  // AI 모델 클릭 핸들러
+  const handleAIModelClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSearchQuery(prompt.aiModel?.name || '');
+    router.push('/prompts');
+  };
+
+  // 태그 클릭 핸들러
+  const handleTagClick = (e: React.MouseEvent, tag: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSearchQuery(tag);
+    router.push('/prompts');
+  };
+
+  // 카테고리 라벨 가져오기
+  const getCategoryLabel = (category: string) => {
+    const categoryLabels: { [key: string]: string } = {
+      'work': '업무/마케팅',
+      'dev': '개발/코드',
+      'design': '디자인/브랜드',
+      'edu': '교육/학습',
+      'image': '이미지/동영상',
+    };
+    return categoryLabels[category] || category;
   };
   return (
     <Link href={`/prompt/${prompt.id}`} className="block">
@@ -280,12 +321,13 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
             return displayTags.length > 0 || remainingCount > 0 ? (
               <div className="flex flex-nowrap gap-1 overflow-hidden">
                 {displayTags.map((tag, index) => (
-                  <span
+                  <button
                     key={index}
-                    className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
+                    onClick={(e) => handleTagClick(e, tag)}
+                    className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0 hover:bg-orange-200 transition-colors cursor-pointer"
                   >
                     {tag}
-                  </span>
+                  </button>
                 ))}
                 {remainingCount > 0 && (
                   <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
@@ -305,18 +347,24 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
           <div className="flex items-center gap-2">
             {/* 카테고리 */}
             {prompt.category && (
-              <span className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+              <button
+                onClick={handleCategoryClick}
+                className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer"
+              >
                 {prompt.category === 'work' && '⚡ 업무/마케팅'}
                 {prompt.category === 'dev' && '⚙️ 개발/코드'}
                 {prompt.category === 'design' && '✨ 디자인/브랜드'}
                 {prompt.category === 'edu' && '🎯 교육/학습'}
                 {prompt.category === 'image' && '🎬 이미지/동영상'}
                 {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
-              </span>
+              </button>
             )}
             {/* AI 모델 */}
             {prompt.aiModel && (
-              <span className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium">
+              <button
+                onClick={handleAIModelClick}
+                className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer"
+              >
                 <div className="flex items-center gap-1">
                   {prompt.aiModel.icon && (
                     <img 
@@ -327,7 +375,7 @@ const PromptCard: React.FC<PromptCardProps> = ({ prompt, onLike, onBookmark, isB
                   )}
                   {prompt.aiModel.name}
                 </div>
-              </span>
+              </button>
             )}
           </div>
           
