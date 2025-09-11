@@ -40,6 +40,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [activeAIModel, setActiveAIModel] = useState<string>('all');
+  const [activeTag, setActiveTag] = useState<string>('all');
   
   // 정렬 옵션 정의
   const sortOptions = [
@@ -153,6 +155,21 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       filtered = filtered.filter(prompt => prompt.category === activeCategory);
     }
 
+    // AI Model filter
+    if (activeAIModel !== 'all') {
+      filtered = filtered.filter(prompt => {
+        const aiModelName = typeof prompt.aiModel === 'object' ? prompt.aiModel?.name : prompt.aiModel;
+        return aiModelName === activeAIModel;
+      });
+    }
+
+    // Tag filter
+    if (activeTag !== 'all') {
+      filtered = filtered.filter(prompt => 
+        prompt.tags.some(tag => tag === activeTag)
+      );
+    }
+
 
     // Sorting
     switch (sortBy) {
@@ -179,7 +196,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
 
     setFilteredPrompts(filtered);
-  }, [prompts, activeCategory, sortBy, searchQuery]);
+  }, [prompts, activeCategory, sortBy, searchQuery, activeAIModel, activeTag]);
 
   const handleCreatePrompt = () => {
     if (isAuthenticated) {
@@ -187,6 +204,27 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     } else {
       router.push('/login');
     }
+  };
+
+  // 카테고리 클릭 핸들러
+  const handleCategoryClick = (category: string) => {
+    setActiveCategory(category as CategoryType);
+    setActiveAIModel('all'); // 다른 필터 초기화
+    setActiveTag('all');
+  };
+
+  // AI모델 클릭 핸들러
+  const handleAIModelClick = (aiModel: string) => {
+    setActiveAIModel(aiModel);
+    setActiveCategory('all'); // 다른 필터 초기화
+    setActiveTag('all');
+  };
+
+  // 태그 클릭 핸들러
+  const handleTagClick = (tag: string) => {
+    setActiveTag(tag);
+    setActiveCategory('all'); // 다른 필터 초기화
+    setActiveAIModel('all');
   };
 
   return (
@@ -345,6 +383,9 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                     onLike={handleLike}
                     onBookmark={isAuthenticated ? handleBookmark : undefined}
                     isBookmarked={bookmarkedPromptIds ? bookmarkedPromptIds.includes(prompt.id) : false}
+                    onCategoryClick={handleCategoryClick}
+                    onAIModelClick={handleAIModelClick}
+                    onTagClick={handleTagClick}
                   />
                 </div>
               ))}
