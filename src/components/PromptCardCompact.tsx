@@ -79,7 +79,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   const { isAuthenticated } = useAuth();
   // 최적화된 북마크 훅 사용
   const { bookmarks, addBookmark, removeBookmark, isBookmarked: checkIsBookmarked } = useBookmarks();
-  const { setSearchQuery } = useSearch();
+  const { setSearchQuery, setAuthorFilter } = useSearch();
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -401,7 +401,16 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
             
             {/* 두 번째 줄: 작성자 */}
             <div className="flex justify-end">
-              <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const authorName = prompt.author?.name || '익명';
+                  setAuthorFilter(authorName);
+                  router.push('/');
+                }}
+                className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
+              >
                 {/* 작성자 프로필사진 */}
                 <div className="w-4 h-4 rounded-full overflow-hidden bg-white flex-shrink-0">
                   {prompt.author?.avatar_url ? (
@@ -421,8 +430,10 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   )}
                 </div>
                 {/* 작성자 이름 */}
-                <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">{prompt.author?.name}</span>
-              </div>
+                <span className="text-xs text-gray-500 group-hover:text-orange-600 whitespace-nowrap min-w-0 flex-shrink-0 transition-colors">
+                  {prompt.author?.name || '익명'}
+                </span>
+              </button>
             </div>
           </div>
         </div>

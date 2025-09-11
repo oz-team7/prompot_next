@@ -27,7 +27,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   useAPI = true 
 }) => {
   const router = useRouter();
-  const { searchQuery } = useSearch();
+  const { searchQuery, authorFilter, setAuthorFilter, clearFilters } = useSearch();
   const { isAuthenticated } = useAuth();
   
   // Hook을 항상 호출하되, 인증되지 않은 경우 빈 배열 사용
@@ -49,10 +49,11 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       setActiveCategory('all');
       setActiveAIModel('all');
       setActiveTag('all');
+      clearFilters(); // 작성자 필터도 초기화
       // URL에서 reset 파라미터 제거
       router.replace('/', undefined, { shallow: true });
     }
-  }, [router.pathname, router.query.reset]);
+  }, [router.pathname, router.query.reset, clearFilters]);
   
   // 정렬 옵션 정의
   const sortOptions = [
@@ -181,6 +182,13 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       );
     }
 
+    // Author filter
+    if (authorFilter) {
+      filtered = filtered.filter(prompt => 
+        (prompt.author?.name || '익명') === authorFilter
+      );
+    }
+
 
     // Sorting
     switch (sortBy) {
@@ -207,7 +215,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
 
     setFilteredPrompts(filtered);
-  }, [prompts, activeCategory, sortBy, searchQuery, activeAIModel, activeTag]);
+  }, [prompts, activeCategory, sortBy, searchQuery, activeAIModel, activeTag, authorFilter]);
 
   const handleCreatePrompt = () => {
     if (isAuthenticated) {
@@ -264,7 +272,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           )}
 
           {/* 활성 필터 표시 - 상단 별도 영역 */}
-          {(activeCategory !== 'all' || activeAIModel !== 'all' || activeTag !== 'all') && (
+          {(activeCategory !== 'all' || activeAIModel !== 'all' || activeTag !== 'all' || authorFilter) && (
             <div className="mb-4">
               <div className="flex items-center gap-2 flex-wrap bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <span className="text-sm font-medium text-orange-600">활성 필터:</span>
@@ -304,6 +312,30 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                     </button>
                   </span>
                 )}
+                
+                {authorFilter && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
+                    작성자: {authorFilter}
+                    <button
+                      onClick={() => setAuthorFilter(null)}
+                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                
+                <button
+                  onClick={() => {
+                    setActiveCategory('all');
+                    setActiveAIModel('all');
+                    setActiveTag('all');
+                    clearFilters();
+                  }}
+                  className="ml-2 px-3 py-1 bg-orange-200 text-orange-800 rounded-full text-sm hover:bg-orange-300 transition-colors"
+                >
+                  모든 필터 제거
+                </button>
               </div>
             </div>
           )}
