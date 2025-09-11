@@ -26,7 +26,7 @@ export async function getAuthUser(req: NextApiRequest) {
       console.log('Development mode: No token, returning current user');
       return {
         id: '7b03565d-b472-477c-9321-75bb442ae60e',
-        email: 'prompot7@gmail.com',
+        email: 'prompot@gmail.com',
         user_metadata: { name: 'prompot' }
       };
     }
@@ -45,7 +45,7 @@ export async function getAuthUser(req: NextApiRequest) {
         console.log('Development mode: Auth failed, returning current user');
         return {
           id: '7b03565d-b472-477c-9321-75bb442ae60e',
-          email: 'prompot7@gmail.com',
+          email: 'prompot@gmail.com',
           user_metadata: { name: 'prompot' }
         };
       }
@@ -60,7 +60,7 @@ export async function getAuthUser(req: NextApiRequest) {
       console.log('Development mode: Auth error, returning current user');
       return {
         id: '7b03565d-b472-477c-9321-75bb442ae60e',
-        email: 'prompot7@gmail.com',
+        email: 'prompot@gmail.com',
         user_metadata: { name: 'prompot' }
       };
     }

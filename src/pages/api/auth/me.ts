@@ -19,7 +19,7 @@ export default async function handler(
       return res.status(200).json({
         user: {
           id: '7b03565d-b472-477c-9321-75bb442ae60e',
-          email: 'prompot7@gmail.com',
+          email: 'prompot@gmail.com',
           name: 'prompot',
           avatar_url: 'https://tlytjitkokavfhwzedml.supabase.co/storage/v1/object/public/avatars/7b03565d-b472-477c-9321-75bb442ae60e/1756788385475.jpg'
         }
@@ -41,7 +41,7 @@ export default async function handler(
         return res.status(200).json({
           user: {
             id: '7b03565d-b472-477c-9321-75bb442ae60e',
-            email: 'prompot7@gmail.com',
+            email: 'prompot@gmail.com',
             name: 'prompot',
             avatar_url: 'https://tlytjitkokavfhwzedml.supabase.co/storage/v1/object/public/avatars/7b03565d-b472-477c-9321-75bb442ae60e/1756788385475.jpg'
           }
@@ -65,6 +65,7 @@ export default async function handler(
     }
 
     console.log('Profile found:', profile); // 디버깅 로그 추가
+    console.log('[DEBUG] API /auth/me - Returning user email:', profile.email);
     res.status(200).json({ user: profile });
   } catch (error) {
     console.error('Get user error:', error);

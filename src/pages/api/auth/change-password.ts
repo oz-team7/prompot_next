@@ -32,8 +32,7 @@ export default async function handler(
   try {
     const supabase = createSupabaseServiceClient();
     
-    // 현재 비밀번호로 재인증 (Supabase Auth는 비밀번호 변경 시 현재 비밀번호 확인을 요구하지 않음)
-    // 대신 이메일로 사용자를 조회하여 현재 비밀번호 검증
+    // 현재 사용자의 이메일 조회
     const { data: profile } = await supabase
       .from('profiles')
       .select('email')
@@ -44,26 +43,40 @@ export default async function handler(
       return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
     }
 
+    console.log('Attempting password verification for email:', profile.email);
+    
+    // 현재 비밀번호 검증을 위해 별도의 Supabase 클라이언트 사용
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseForAuth = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
     // 현재 비밀번호로 로그인 시도하여 검증
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabaseForAuth.auth.signInWithPassword({
       email: profile.email,
       password: currentPassword,
     });
 
     if (signInError) {
+      console.log('Password verification failed:', signInError.message);
       return res.status(400).json({ message: '현재 비밀번호가 올바르지 않습니다.' });
     }
+    
+    console.log('Password verification successful');
 
-    // 새 비밀번호로 업데이트
+    // 원래 사용자의 세션으로 새 비밀번호 업데이트
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword
     });
 
     if (updateError) {
+      console.log('Password update failed:', updateError.message);
       return res.status(500).json({ message: '비밀번호 변경에 실패했습니다.' });
     }
 
-    res.status(200).json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
+    console.log('Password update successful');
+    res.status(200).json({ ok: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({ message: '비밀번호 변경 중 오류가 발생했습니다.' });

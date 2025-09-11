@@ -46,6 +46,20 @@ const MyPage = () => {
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   
+  // 이름 수정 관련 상태
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
+  
+  // 비밀번호 변경 관련 상태
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<{[key: string]: string}>({});
+  
   // 북마크 관련 상태
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [selectedPromptForBookmark, setSelectedPromptForBookmark] = useState<Prompt | null>(null);
@@ -179,78 +193,6 @@ const MyPage = () => {
     }
   };
 
-  const handlePasswordChange = async () => {
-    const currentPasswordInput = document.getElementById('currentPassword') as HTMLInputElement;
-    const newPasswordInput = document.getElementById('newPassword') as HTMLInputElement;
-    const confirmPasswordInput = document.getElementById('confirmPassword') as HTMLInputElement;
-
-    const currentPassword = currentPasswordInput.value;
-    const newPassword = newPasswordInput.value;
-    const confirmPassword = confirmPasswordInput.value;
-
-    // 유효성 검사
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setToastMessage('모든 비밀번호 필드를 입력해주세요.');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setToastMessage('새 비밀번호는 6자 이상이어야 합니다.');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setToastMessage('새 비밀번호가 일치하지 않습니다.');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
-    try {
-      // localStorage에서 토큰 가져오기
-      const token = localStorage.getItem('token');
-      console.log('Password change - Token from localStorage:', token); // 디버깅 로그
-      
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // 인증 헤더 추가
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
-
-      console.log('Password change - Response status:', res.status); // 디버깅 로그
-      
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || '비밀번호 변경에 실패했습니다.');
-      }
-
-      // 성공 처리
-      setToastMessage('비밀번호가 성공적으로 변경되었습니다.');
-      setToastType('success');
-      setShowToast(true);
-
-      // 입력 필드 초기화
-      currentPasswordInput.value = '';
-      newPasswordInput.value = '';
-      confirmPasswordInput.value = '';
-    } catch (error: any) {
-      setToastMessage(error.message || '비밀번호 변경 중 오류가 발생했습니다.');
-      setToastType('error');
-      setShowToast(true);
-    }
-  };
 
   const handleAvatarChange = async (avatarUrl: string) => {
     try {
@@ -275,6 +217,174 @@ const MyPage = () => {
       setToastMessage('프로필 사진 업데이트에 실패했습니다.');
       setToastType('error');
       setShowToast(true);
+    }
+  };
+
+  // 이름 수정 관련 함수들
+  const handleStartEditName = () => {
+    setEditedName(user?.name || '');
+    setIsEditingName(true);
+  };
+
+  const handleCancelEditName = () => {
+    setEditedName('');
+    setIsEditingName(false);
+  };
+
+  const handleUpdateName = async () => {
+    if (!editedName.trim()) {
+      setToastMessage('이름을 입력해주세요.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    if (editedName.trim() === user?.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsUpdatingName(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/profile/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editedName.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (data.ok) {
+        // 프로필 정보 새로고침
+        await refreshUserProfile();
+        await refreshUser();
+        
+        setToastMessage('이름이 성공적으로 변경되었습니다.');
+        setToastType('success');
+        setShowToast(true);
+        setIsEditingName(false);
+      } else {
+        throw new Error(data.error || '이름 변경에 실패했습니다.');
+      }
+    } catch (error: any) {
+      console.error('Name update error:', error);
+      setToastMessage(error.message || '이름 변경에 실패했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setIsUpdatingName(false);
+    }
+  };
+
+  // 비밀번호 변경 관련 함수들
+  const handlePasswordInputChange = (field: string, value: string) => {
+    setPasswordData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // 에러 메시지 초기화
+    if (passwordErrors[field]) {
+      setPasswordErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const validatePasswordChange = () => {
+    const errors: {[key: string]: string} = {};
+
+    if (!passwordData.currentPassword.trim()) {
+      errors.currentPassword = '현재 비밀번호를 입력해주세요.';
+    }
+
+    if (!passwordData.newPassword.trim()) {
+      errors.newPassword = '새 비밀번호를 입력해주세요.';
+    } else if (passwordData.newPassword.length < 6) {
+      errors.newPassword = '새 비밀번호는 6자 이상이어야 합니다.';
+    }
+
+    if (!passwordData.confirmPassword.trim()) {
+      errors.confirmPassword = '새 비밀번호 확인을 입력해주세요.';
+    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
+      errors.confirmPassword = '새 비밀번호와 확인 비밀번호가 일치하지 않습니다.';
+    }
+
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      errors.newPassword = '새 비밀번호는 현재 비밀번호와 달라야 합니다.';
+    }
+
+    setPasswordErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePasswordChange = async () => {
+    if (!validatePasswordChange()) {
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+      console.log('Password change response:', { status: res.status, data });
+      
+      if (data.ok) {
+        // 비밀번호 변경 성공
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+        setPasswordErrors({});
+        
+        setToastMessage('비밀번호가 성공적으로 변경되었습니다.');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        // 서버에서 반환한 에러 메시지 처리
+        const errorMessage = data.message || '비밀번호 변경에 실패했습니다.';
+        
+        // 현재 비밀번호 관련 에러인 경우 특별 처리
+        if (errorMessage.includes('현재 비밀번호가 올바르지 않습니다')) {
+          setPasswordErrors({
+            currentPassword: '현재 비밀번호가 올바르지 않습니다.',
+            newPassword: '',
+            confirmPassword: ''
+          });
+        } else {
+          // 기타 에러는 토스트로 표시
+          setToastMessage(errorMessage);
+          setToastType('error');
+          setShowToast(true);
+        }
+      }
+    } catch (error: any) {
+      console.error('Password change error:', error);
+      setToastMessage('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -567,14 +677,14 @@ const MyPage = () => {
                       setActiveTab(tab.id as any);
                     }
                   }}
-                  className={`px-4 py-2 font-medium transition-colors relative flex items-center gap-1 ${
+                  className={`px-4 py-2 transition-colors relative flex items-center gap-1 ${
                     activeTab === tab.id
                       ? tab.id === 'bookmarks'
-                        ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50'
-                        : 'text-primary border-b-2 border-primary'
+                        ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50 font-semibold'
+                        : 'text-primary border-b-2 border-primary font-semibold'
                       : tab.id === 'bookmarks'
-                        ? 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? 'text-gray-600 hover:text-orange-600 hover:bg-orange-50 font-normal'
+                        : 'text-gray-600 hover:text-gray-900 font-normal'
                   }`}
                 >
                   {tab.id === 'bookmarks' && (
@@ -1113,7 +1223,7 @@ const MyPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                   {/* 왼쪽: 프로필 사진 업로드 섹션 */}
                   <div className="border-b pb-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-4">프로필 사진</h4>
+                    <h4 className="text-md font-medium text-gray-800 mb-4">프로필 사진</h4>
                     <div className="flex items-start gap-6">
                       <AvatarUpload
                         currentAvatarUrl={userProfile?.avatar_url || user?.avatar_url}
@@ -1136,37 +1246,70 @@ const MyPage = () => {
 
                   {/* 오른쪽: 이름과 이메일 섹션 */}
                   <div className="border-b pb-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-4">기본 정보</h4>
+                    <h4 className="text-md font-medium text-gray-800 mb-4">기본 정보</h4>
                     <div className="space-y-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">이름</label>
-                          <input
-                            type="text"
-                            value={user.name}
-                            readOnly
-                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
-                          />
-                          <button
-                            onClick={() => {
-                              setToastMessage('이름 수정 기능은 준비 중입니다.');
-                              setToastType('info');
-                              setShowToast(true);
-                            }}
-                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
-                          >
-                            이름 수정
-                          </button>
+                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12">이름</label>
+                          {isEditingName ? (
+                            <>
+                              <input
+                                type="text"
+                                value={editedName}
+                                onChange={(e) => setEditedName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && editedName.trim() && !isUpdatingName) {
+                                    handleUpdateName();
+                                  } else if (e.key === 'Escape') {
+                                    handleCancelEditName();
+                                  }
+                                }}
+                                className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                                placeholder="이름을 입력하세요"
+                                disabled={isUpdatingName}
+                              />
+                              <button
+                                onClick={handleUpdateName}
+                                disabled={isUpdatingName || !editedName.trim()}
+                                className="px-2 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm whitespace-nowrap disabled:opacity-50"
+                              >
+                                {isUpdatingName ? '저장 중...' : '저장'}
+                              </button>
+                              <button
+                                onClick={handleCancelEditName}
+                                disabled={isUpdatingName}
+                                className="px-2 py-1.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm whitespace-nowrap disabled:opacity-50"
+                              >
+                                취소
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                type="text"
+                                value={user.name}
+                                readOnly
+                                className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                              />
+                              <button
+                                onClick={handleStartEditName}
+                                className="w-20 px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                              >
+                                이름 수정
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">이메일</label>
+                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12">이메일</label>
                           <input
                             type="email"
                             value={user.email}
                             readOnly
-                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                            className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                            onFocus={() => console.log('[DEBUG] mypage.tsx - Email value:', user.email)}
                           />
                           <button
                             onClick={() => {
@@ -1174,7 +1317,7 @@ const MyPage = () => {
                               setToastType('info');
                               setShowToast(true);
                             }}
-                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                            className="w-20 px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
                           >
                             이메일 인증
                           </button>
@@ -1198,34 +1341,62 @@ const MyPage = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
                             <input
                               type="password"
-                              id="currentPassword"
-                              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                              value={passwordData.currentPassword}
+                              onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
+                              className={`w-full px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                                passwordErrors.currentPassword 
+                                  ? 'border-red-300 focus:ring-red-500' 
+                                  : 'border-gray-300 focus:ring-primary'
+                              }`}
                               placeholder="현재 비밀번호를 입력하세요"
+                              disabled={isChangingPassword}
                             />
+                            {passwordErrors.currentPassword && (
+                              <p className="mt-1 text-xs text-red-600">{passwordErrors.currentPassword}</p>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
                             <input
                               type="password"
-                              id="newPassword"
-                              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                              value={passwordData.newPassword}
+                              onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
+                              className={`w-full px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                                passwordErrors.newPassword 
+                                  ? 'border-red-300 focus:ring-red-500' 
+                                  : 'border-gray-300 focus:ring-primary'
+                              }`}
                               placeholder="새 비밀번호를 입력하세요 (6자 이상)"
+                              disabled={isChangingPassword}
                             />
+                            {passwordErrors.newPassword && (
+                              <p className="mt-1 text-xs text-red-600">{passwordErrors.newPassword}</p>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
                             <input
                               type="password"
-                              id="confirmPassword"
-                              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                              value={passwordData.confirmPassword}
+                              onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
+                              className={`w-full px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                                passwordErrors.confirmPassword 
+                                  ? 'border-red-300 focus:ring-red-500' 
+                                  : 'border-gray-300 focus:ring-primary'
+                              }`}
                               placeholder="새 비밀번호를 다시 입력하세요"
+                              disabled={isChangingPassword}
                             />
+                            {passwordErrors.confirmPassword && (
+                              <p className="mt-1 text-xs text-red-600">{passwordErrors.confirmPassword}</p>
+                            )}
                           </div>
                           <button
                             onClick={handlePasswordChange}
-                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                            disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            비밀번호 변경
+                            {isChangingPassword ? '변경 중...' : '비밀번호 변경'}
                           </button>
                         </div>
                       </div>
