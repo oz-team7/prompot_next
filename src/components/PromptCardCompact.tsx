@@ -386,21 +386,21 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-1.5 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer flex-shrink-0"
                 >
                   <div className="flex items-center gap-1">
-                    {prompt.aiModel.icon && (
+                    {prompt.aiModel?.icon && (
                       <img 
                         src={prompt.aiModel.icon} 
                         alt={prompt.aiModel.name}
                         className="w-3 h-3 object-contain"
                         onError={(e) => {
-                          console.log(`[DEBUG] AI Model icon failed to load: ${prompt.aiModel.icon} for ${prompt.aiModel.name}`);
+                          console.log(`[DEBUG] AI Model icon failed to load: ${prompt.aiModel?.icon} for ${prompt.aiModel?.name}`);
                           e.currentTarget.style.display = 'none';
                         }}
                         onLoad={() => {
-                          console.log(`[DEBUG] AI Model icon loaded successfully: ${prompt.aiModel.icon} for ${prompt.aiModel.name}`);
+                          console.log(`[DEBUG] AI Model icon loaded successfully: ${prompt.aiModel?.icon} for ${prompt.aiModel?.name}`);
                         }}
                       />
                     )}
-                    <span className="whitespace-nowrap">{prompt.aiModel.name}</span>
+                    <span className="whitespace-nowrap">{prompt.aiModel?.name}</span>
                   </div>
                 </button>
               )}
