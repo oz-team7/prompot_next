@@ -61,9 +61,20 @@ interface PromptCardCompactProps {
   onLike: (id: number) => void;
   onBookmark?: (id: number, categoryId?: string | null) => void;
   isBookmarked?: boolean;
+  onCategoryClick?: (category: string) => void;
+  onAIModelClick?: (aiModel: string) => void;
+  onTagClick?: (tag: string) => void;
 }
 
-const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, onBookmark, isBookmarked = false }) => {
+const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ 
+  prompt, 
+  onLike, 
+  onBookmark, 
+  isBookmarked = false,
+  onCategoryClick,
+  onAIModelClick,
+  onTagClick
+}) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
@@ -158,25 +169,38 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
     e.preventDefault();
     e.stopPropagation();
     if (!prompt.category) return;
-    const categoryLabel = getCategoryLabel(prompt.category);
-    setSearchQuery(categoryLabel);
-    router.push('/prompts');
+    if (onCategoryClick) {
+      onCategoryClick(prompt.category);
+    } else {
+      const categoryLabel = getCategoryLabel(prompt.category);
+      setSearchQuery(categoryLabel);
+      router.push('/prompts');
+    }
   };
 
   // AI 모델 클릭 핸들러
   const handleAIModelClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setSearchQuery(prompt.aiModel?.name || '');
-    router.push('/prompts');
+    const aiModelName = prompt.aiModel?.name || '';
+    if (onAIModelClick) {
+      onAIModelClick(aiModelName);
+    } else {
+      setSearchQuery(aiModelName);
+      router.push('/prompts');
+    }
   };
 
   // 태그 클릭 핸들러
   const handleTagClick = (e: React.MouseEvent, tag: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setSearchQuery(tag);
-    router.push('/prompts');
+    if (onTagClick) {
+      onTagClick(tag);
+    } else {
+      setSearchQuery(tag);
+      router.push('/prompts');
+    }
   };
   return (
     <Link href={`/prompt/${prompt.id}`} className="block">
