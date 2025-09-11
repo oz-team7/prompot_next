@@ -207,10 +207,10 @@ const PromptGrid: React.FC<PromptGridProps> = ({
         });
         break;
       case 'popular':
-        filtered.sort((a, b) => (a.likes || 0) - (b.likes || 0));
+        filtered.sort((a, b) => (a.bookmarkCount || a.bookmarks || 0) - (b.bookmarkCount || b.bookmarks || 0));
         break;
       case 'popular-desc':
-        filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        filtered.sort((a, b) => (b.bookmarkCount || b.bookmarks || 0) - (a.bookmarkCount || a.bookmarks || 0));
         break;
     }
 
@@ -227,23 +227,32 @@ const PromptGrid: React.FC<PromptGridProps> = ({
 
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (category: string) => {
-    setActiveCategory(category as CategoryType);
-    setActiveAIModel('all'); // 다른 필터 초기화
-    setActiveTag('all');
+    if (activeCategory === category) {
+      // 같은 카테고리를 다시 클릭하면 필터 해제
+      setActiveCategory('all');
+    } else {
+      setActiveCategory(category as CategoryType);
+    }
   };
 
   // AI모델 클릭 핸들러
   const handleAIModelClick = (aiModel: string) => {
-    setActiveAIModel(aiModel);
-    setActiveCategory('all'); // 다른 필터 초기화
-    setActiveTag('all');
+    if (activeAIModel === aiModel) {
+      // 같은 AI 모델을 다시 클릭하면 필터 해제
+      setActiveAIModel('all');
+    } else {
+      setActiveAIModel(aiModel);
+    }
   };
 
   // 태그 클릭 핸들러
   const handleTagClick = (tag: string) => {
-    setActiveTag(tag);
-    setActiveCategory('all'); // 다른 필터 초기화
-    setActiveAIModel('all');
+    if (activeTag === tag) {
+      // 같은 태그를 다시 클릭하면 필터 해제
+      setActiveTag('all');
+    } else {
+      setActiveTag(tag);
+    }
   };
 
   return (
@@ -382,7 +391,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                 <div className="sort-dropdown-container relative">
                   <button
                     onClick={() => setShowSortDropdown(!showSortDropdown)}
-                    className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[120px] h-[40px]"
+                    className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[100px] h-[40px]"
                   >
                     <span className="text-gray-700">{selectedSortOption.label}</span>
                     <span className="text-gray-700 ml-2">{selectedSortOption.icon}</span>
