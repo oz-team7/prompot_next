@@ -37,32 +37,50 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       // 메인 API 시도
       let res;
       try {
+        console.log('[DEBUG] usePrompts attempting main API call to:', `/api/prompts${query}`);
         res = await fetch(`/api/prompts${query}`, {
           headers,
         });
         
-        console.log('[DEBUG] usePrompts response status:', res.status);
-        console.log('[DEBUG] usePrompts response headers:', Object.fromEntries(res.headers.entries()));
+        console.log('[DEBUG] usePrompts main API response status:', res.status);
+        console.log('[DEBUG] usePrompts main API response ok:', res.ok);
+        console.log('[DEBUG] usePrompts main API response headers:', Object.fromEntries(res.headers.entries()));
         
         if (!res.ok) {
+          const errorText = await res.text();
+          console.error('[DEBUG] usePrompts main API error response:', errorText);
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
       } catch (mainApiError: any) {
         console.warn('[DEBUG] Main API failed, trying fallback:', mainApiError.message);
+        console.error('[DEBUG] Main API error details:', {
+          name: mainApiError.name,
+          message: mainApiError.message,
+          stack: mainApiError.stack
+        });
         
         // 대체 API 시도
         try {
+          console.log('[DEBUG] usePrompts attempting fallback API call to:', `/api/prompts-fallback${query}`);
           res = await fetch(`/api/prompts-fallback${query}`, {
             headers,
           });
           
           console.log('[DEBUG] Fallback API response status:', res.status);
+          console.log('[DEBUG] Fallback API response ok:', res.ok);
           
           if (!res.ok) {
+            const errorText = await res.text();
+            console.error('[DEBUG] usePrompts fallback API error response:', errorText);
             throw new Error(`Fallback API failed: HTTP ${res.status}`);
           }
         } catch (fallbackError: any) {
           console.error('[DEBUG] Both APIs failed:', fallbackError.message);
+          console.error('[DEBUG] Fallback API error details:', {
+            name: fallbackError.name,
+            message: fallbackError.message,
+            stack: fallbackError.stack
+          });
           throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
         }
       }
@@ -107,10 +125,17 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       
       // 네트워크 오류나 기타 예외 상황 처리
       if (err instanceof TypeError && err.message.includes('fetch')) {
+        console.error('[DEBUG] Network fetch error detected');
         setError('네트워크 연결을 확인해주세요.');
       } else if (err instanceof Error) {
+        console.error('[DEBUG] Error details:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        });
         setError(err.message);
       } else {
+        console.error('[DEBUG] Unknown error type:', typeof err, err);
         setError('알 수 없는 오류가 발생했습니다.');
       }
     } finally {
