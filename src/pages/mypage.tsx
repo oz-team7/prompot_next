@@ -1371,7 +1371,7 @@ const MyPage = () => {
             setSelectedPromptForBookmark(null);
           }}
           onSelect={handleCategorySelect}
-          selectedCategoryId={null}
+          selectedCategoryIds={[]}
         />
       )}
     </>

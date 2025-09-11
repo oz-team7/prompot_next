@@ -534,37 +534,18 @@ const EditPromptPage = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* 헤더 */}
-          <div className="mb-8">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">프롬프트 수정</h1>
-                <p className="text-gray-600">프롬프트를 수정하고 개선해보세요!</p>
-              </div>
-              <button
-                onClick={() => router.push(`/prompt/${id}`)}
-                className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                프롬프트 보기
-              </button>
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 relative">
+            {/* 헤더 */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-orange-500 mb-2">프롬프트 수정</h1>
+              <p className="text-orange-500">프롬프트를 수정하고 개선해보세요!</p>
             </div>
-          </div>
-
-          {/* 폼 */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              
+
               {/* 이미지 업로드 섹션 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 미리보기 이미지 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    미리보기 이미지
-                  </label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <input
                       type="file"
@@ -597,7 +578,16 @@ const EditPromptPage = () => {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="text-4xl text-gray-400">📷</div>
+                          <div className="w-16 h-16 mx-auto">
+                            <Image
+                              src="/logo.png"
+                              alt="프롬팟 로고"
+                              width={64}
+                              height={64}
+                              className="w-full h-full object-contain opacity-40"
+                              unoptimized={true}
+                            />
+                          </div>
                           <p className="text-sm text-gray-600">미리보기 이미지를 업로드하려면 클릭하세요</p>
                           <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 2MB)</p>
                         </div>
@@ -608,9 +598,6 @@ const EditPromptPage = () => {
 
                 {/* 추가 이미지 업로드 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    추가 이미지 (최대 5개)
-                  </label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                     <input
                       type="file"
@@ -622,7 +609,16 @@ const EditPromptPage = () => {
                     />
                     <label htmlFor="additional-images-upload" className="cursor-pointer">
                       <div className="space-y-2">
-                        <div className="text-4xl text-gray-400">🖼️</div>
+                        <div className="w-16 h-16 mx-auto">
+                          <Image
+                            src="/logo.png"
+                            alt="프롬팟 로고"
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-contain opacity-40"
+                            unoptimized={true}
+                          />
+                        </div>
                         <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하세요</p>
                         <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 2MB, 최대 5개)</p>
                       </div>
@@ -633,7 +629,7 @@ const EditPromptPage = () => {
               
               {/* 추가 이미지 미리보기 */}
               {additionalPreviewUrls.length > 0 && (
-                <div>
+                <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">업로드된 추가 이미지 ({additionalPreviewUrls.length}/5)</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {additionalPreviewUrls.map((url, index) => (
@@ -663,9 +659,7 @@ const EditPromptPage = () => {
 
               {/* 제목 */}
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  제목 *
-                </label>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">제목</h3>
                 <input
                   type="text"
                   id="title"
@@ -680,44 +674,121 @@ const EditPromptPage = () => {
 
               {/* 설명 */}
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
                   설명
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="프롬프트에 대한 간단한 설명을 입력하세요"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
+                </h3>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="프롬프트에 대한 간단한 설명을 입력하세요"
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
               </div>
 
               {/* 프롬프트 내용 */}
               <div>
-                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                  프롬프트 내용 *
-                </label>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                  프롬프트 내용
+                </h3>
                 <textarea
                   id="content"
                   name="content"
                   value={formData.content}
                   onChange={handleChange}
-                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요..."
+                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요"
                   rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                 />
+              </div>
+
+
+              {/* 태그 */}
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">
+                  태그
+                </h3>
+                <input
+                  type="text"
+                  id="tags"
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleChange}
+                  placeholder="태그를 쉼표로 구분하여 입력하세요. 최대 5개의 태그를 추가할 수 있습니다. (예: AI, 생산성, 팁)"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.tags.split(',').map((tag, index) => (
+                    tag.trim() && (
+                      <span
+                        key={index}
+                        className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
+                      >
+                        #{tag.trim()}
+                      </span>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* 동영상 URL */}
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">
+                  동영상 URL (선택사항)
+                </h3>
+                <input
+                  type="url"
+                  id="videoUrl"
+                  name="videoUrl"
+                  value={formData.videoUrl}
+                  onChange={handleChange}
+                  placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                
+                {/* 동영상 썸네일 미리보기 */}
+                {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">동영상 미리보기</p>
+                    <div className="relative w-full max-w-md mx-auto">
+                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                        <Image
+                          src={getVideoThumbnail(formData.videoUrl)!}
+                          alt={getVideoTitle(formData.videoUrl)}
+                          fill
+                          className="object-cover"
+                          unoptimized={true}
+                          onError={(e) => {
+                            console.error('썸네일 로드 실패:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                          <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-600 text-center">
+                        {getVideoTitle(formData.videoUrl)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 카테고리 & AI 모델 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 카테고리 */}
                 <div className="dropdown-container">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    카테고리 *
-                  </label>
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    카테고리
+                  </h3>
                   <div className="relative">
                     <button
                       type="button"
@@ -760,9 +831,9 @@ const EditPromptPage = () => {
 
                 {/* AI 모델 */}
                 <div className="dropdown-container">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    AI 모델 *
-                  </label>
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    AI 모델
+                  </h3>
                   <div className="relative">
                     <button
                       type="button"
@@ -827,86 +898,16 @@ const EditPromptPage = () => {
                 </div>
               </div>
 
-              {/* 태그 */}
-              <div>
-                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                  태그 (쉼표로 구분)
-                </label>
-                <input
-                  type="text"
-                  id="tags"
-                  name="tags"
-                  value={formData.tags}
-                  onChange={handleChange}
-                  placeholder="태그를 쉼표로 구분하여 입력하세요 (예: AI, 생산성, 팁)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-
-              {/* 동영상 URL */}
-              <div>
-                <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-2">
-                  동영상 URL (선택사항)
-                </label>
-                <input
-                  type="url"
-                  id="videoUrl"
-                  name="videoUrl"
-                  value={formData.videoUrl}
-                  onChange={handleChange}
-                  placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  지원 형식: YouTube, Vimeo, 기타 동영상 플랫폼 URL
-                </p>
-                
-                {/* 동영상 썸네일 미리보기 */}
-                {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
-                  <div className="mt-3">
-                    <p className="text-sm font-medium text-gray-700 mb-2">동영상 미리보기</p>
-                    <div className="relative w-full max-w-md mx-auto">
-                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                        <Image
-                          src={getVideoThumbnail(formData.videoUrl)!}
-                          alt={getVideoTitle(formData.videoUrl)}
-                          fill
-                          className="object-cover"
-                          unoptimized={true}
-                          onError={(e) => {
-                            console.error('썸네일 로드 실패:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                          <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-xs text-gray-600 text-center">
-                        {getVideoTitle(formData.videoUrl)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-
               {/* 공개 설정 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-medium text-gray-900">공개 설정</h3>
-                  <p className="text-sm text-gray-600">
-                    {formData.isPublic 
-                      ? '다른 사용자들이 이 프롬프트를 볼 수 있습니다.' 
-                      : '나만 이 프롬프트를 볼 수 있습니다.'
-                    }
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+              <div className="flex items-center gap-4">
+                <h3 className="font-medium text-gray-900">공개 설정</h3>
+                <p className="text-sm text-gray-600">
+                  {formData.isPublic 
+                    ? '다른 사용자들이 이 프롬프트를 볼 수 있습니다.' 
+                    : '나만 이 프롬프트를 볼 수 있습니다.'
+                  }
+                </p>
+                <label className="relative inline-flex items-center cursor-pointer ml-auto">
                   <input
                     type="checkbox"
                     checked={formData.isPublic}

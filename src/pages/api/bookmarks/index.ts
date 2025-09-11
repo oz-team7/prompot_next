@@ -3,17 +3,27 @@ import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import { getUserIdFromRequest } from '@/lib/auth-utils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('[DEBUG] Bookmarks API called:', req.method);
-  
-  const userId = await getUserIdFromRequest(req);
-  console.log('[DEBUG] User ID:', userId);
-  
-  if (!userId) {
-    console.log('[DEBUG] No user ID found');
-    return res.status(401).json({ message: '인증이 필요합니다.' });
-  }
+  try {
+    // CORS 헤더 설정
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  const supabase = createSupabaseServiceClient();
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
+    console.log('[DEBUG] Bookmarks API called:', req.method);
+    
+    const userId = await getUserIdFromRequest(req);
+    console.log('[DEBUG] User ID:', userId);
+    
+    if (!userId) {
+      console.log('[DEBUG] No user ID found');
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+
+    const supabase = createSupabaseServiceClient();
 
   switch (req.method) {
     case 'GET':
@@ -202,5 +212,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     default:
       res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
       res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+    }
+  } catch (error) {
+    console.error('[ERROR] Bookmarks API error:', error);
+    res.status(500).json({ 
+      message: '서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.',
+      success: false 
+    });
   }
 }

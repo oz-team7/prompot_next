@@ -626,23 +626,19 @@ const CreatePromptPage = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* 헤더 */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">새 프롬프트 생성</h1>
-            <p className="text-gray-600">창의적인 프롬프트를 만들어 다른 사용자와 공유해보세요!</p>
-          </div>
-
           {/* 폼 */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6">
+            {/* 헤더 */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-orange-500 mb-2">새 프롬프트 생성</h1>
+              <p className="text-orange-500">창의적인 프롬프트를 만들어 다른 사용자와 공유해보세요!</p>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               
               {/* 이미지 업로드 섹션 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 미리보기 이미지 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    미리보기 이미지
-                  </label>
                   <div 
                     className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                       isDragOver 
@@ -676,7 +672,16 @@ const CreatePromptPage = () => {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="text-4xl text-gray-400">🖼️</div>
+                          <div className="w-16 h-16 mx-auto">
+                            <Image
+                              src="/logo.png"
+                              alt="프롬팟 로고"
+                              width={64}
+                              height={64}
+                              className="w-full h-full object-contain opacity-40"
+                              unoptimized={true}
+                            />
+                          </div>
                           <p className="text-sm text-gray-600">미리보기 이미지를 업로드하려면 클릭하거나 드래그하세요</p>
                           <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB)</p>
                         </div>
@@ -687,9 +692,6 @@ const CreatePromptPage = () => {
 
                 {/* 추가 이미지 업로드 */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    추가 이미지 (최대 5개)
-                  </label>
                   <div 
                     className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                       isAdditionalDragOver 
@@ -710,7 +712,16 @@ const CreatePromptPage = () => {
                     />
                     <label htmlFor="additional-images-upload" className="cursor-pointer">
                       <div className="space-y-2">
-                        <div className="text-4xl text-gray-400">🖼️</div>
+                        <div className="w-16 h-16 mx-auto">
+                          <Image
+                            src="/logo.png"
+                            alt="프롬팟 로고"
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-contain opacity-40"
+                            unoptimized={true}
+                          />
+                        </div>
                         <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하거나 드래그하세요</p>
                         <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB, 최대 5개)</p>
                       </div>
@@ -752,9 +763,9 @@ const CreatePromptPage = () => {
 
               {/* 제목 */}
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  제목 *
-                </label>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                  제목
+                </h3>
                 <input
                   type="text"
                   id="title"
@@ -768,9 +779,9 @@ const CreatePromptPage = () => {
 
               {/* 설명 */}
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
                   설명
-                </label>
+                </h3>
                 <textarea
                   id="description"
                   value={formData.description}
@@ -783,16 +794,16 @@ const CreatePromptPage = () => {
 
               {/* 프롬프트 내용 */}
               <div>
-                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                  프롬프트 내용 *
-                </label>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                  프롬프트 내용
+                </h3>
                 <textarea
                   id="content"
                   value={formData.content}
                   onChange={(e) => handleInputChange('content', e.target.value)}
-                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요..."
+                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요"
                   rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                 />
               </div>
@@ -801,9 +812,9 @@ const CreatePromptPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 카테고리 */}
                 <div className="dropdown-container">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    카테고리 *
-                  </label>
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    카테고리
+                  </h3>
                   <div className="relative">
                     <button
                       type="button"
@@ -846,9 +857,9 @@ const CreatePromptPage = () => {
 
                 {/* AI 모델 */}
                 <div className="dropdown-container">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    AI 모델 *
-                  </label>
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    AI 모델
+                  </h3>
                   <div className="relative">
                     <button
                       type="button"
@@ -915,44 +926,35 @@ const CreatePromptPage = () => {
 
               {/* 태그 */}
               <div>
-                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
-                  태그 (최대 5개)
-                </label>
+                <h3 className="font-medium text-gray-900 mb-2">
+                  태그
+                </h3>
                 <input
                   type="text"
                   id="tags"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagInputKeyDown}
-                  placeholder="태그를 입력하고 Enter를 누르세요 (예: AI, 생산성, 팁)"
+                  placeholder="태그를 입력하고 Enter를 누르세요. 최대 5개의 태그를 추가할 수 있습니다. (예: AI, 생산성, 팁)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
-                {formData.tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {formData.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => removeTag(tag)}
-                          className="text-primary hover:text-primary/70"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               {/* 동영상 URL */}
               <div>
-                <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-2">
+                <h3 className="font-medium text-gray-900 mb-2">
                   동영상 URL (선택사항)
-                </label>
+                </h3>
                 <input
                   type="url"
                   id="videoUrl"
@@ -961,9 +963,6 @@ const CreatePromptPage = () => {
                   placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  지원 형식: YouTube, Vimeo, 기타 동영상 플랫폼 URL
-                </p>
                 
                 {/* 동영상 썸네일 미리보기 */}
                 {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
@@ -999,18 +998,17 @@ const CreatePromptPage = () => {
               </div>
 
 
+
               {/* 공개 설정 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-medium text-gray-900">공개 설정</h3>
-                  <p className="text-sm text-gray-600">
-                    {formData.isPublic 
-                      ? '다른 사용자들이 이 프롬프트를 볼 수 있습니다.' 
-                      : '나만 이 프롬프트를 볼 수 있습니다.'
-                    }
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+              <div className="flex items-center gap-4">
+                <h3 className="font-medium text-gray-900">공개 설정</h3>
+                <p className="text-sm text-gray-600">
+                  {formData.isPublic 
+                    ? '다른 사용자들이 이 프롬프트를 볼 수 있습니다.' 
+                    : '나만 이 프롬프트를 볼 수 있습니다.'
+                  }
+                </p>
+                <label className="relative inline-flex items-center cursor-pointer ml-auto">
                   <input
                     type="checkbox"
                     checked={formData.isPublic}

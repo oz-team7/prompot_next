@@ -56,10 +56,10 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   // 정렬 옵션 정의
   const sortOptions = [
-    { value: 'latest', label: '최신순', icon: '⌃' },
-    { value: 'latest-desc', label: '오래된순', icon: '⌄' },
-    { value: 'popular-desc', label: '인기순', icon: '⌃' },
-    { value: 'popular', label: '인기순', icon: '⌄' },
+    { value: 'latest', label: '최신순', icon: '△' },
+    { value: 'latest-desc', label: '오래된순', icon: '▽' },
+    { value: 'popular-desc', label: '인기순', icon: '△' },
+    { value: 'popular', label: '인기순', icon: '▽' },
   ];
   
   const categories: { value: CategoryType; label: string }[] = [
@@ -353,7 +353,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                     className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[120px] h-[40px]"
                   >
                     <span className="text-gray-700">{selectedSortOption.label}</span>
-                    <span className="text-gray-700">{selectedSortOption.icon}</span>
+                    <span className="text-gray-700 ml-2">{selectedSortOption.icon}</span>
                   </button>
 
                   {showSortDropdown && (
@@ -384,7 +384,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               {showCreateButton && (
                 <button
                   onClick={handleCreatePrompt}
-                  className="px-4 py-2 text-sm h-10 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md justify-center"
+                  className="inline-flex items-center gap-2 px-4 py-2 h-10 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

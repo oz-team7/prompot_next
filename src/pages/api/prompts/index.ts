@@ -241,27 +241,29 @@ export default async function handler(
     return sendSuccess(res, response, '프롬프트 목록을 성공적으로 조회했습니다.');
 
   } catch (error: any) {
-    // 프로덕션 환경에서는 상세한 에러 로그 최소화
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[DEBUG] Main API error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-        code: error.code
-      });
-      
-      // Supabase 관련 오류인지 확인
-      if (error.message?.includes('Supabase') || error.message?.includes('environment')) {
-        console.error('[DEBUG] Supabase/Environment error detected');
-      }
-      
-      // 데이터베이스 관련 오류인지 확인
-      if (error.message?.includes('relation') || error.message?.includes('table')) {
-        console.error('[DEBUG] Database schema error detected');
-      }
-    } else {
-      // 프로덕션 환경에서는 간단한 에러 로그만
-      console.error('[ERROR] API Error:', error.message);
+    // 상세한 에러 로깅 (개발 환경에서만)
+    console.error('[ERROR] Prompts API error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
+    
+    // Supabase 관련 오류인지 확인
+    if (error.message?.includes('Supabase') || error.message?.includes('environment')) {
+      console.error('[ERROR] Supabase/Environment error detected');
+    }
+    
+    // 데이터베이스 관련 오류인지 확인
+    if (error.message?.includes('relation') || error.message?.includes('table')) {
+      console.error('[ERROR] Database schema error detected');
+    }
+    
+    // 네트워크 관련 오류인지 확인
+    if (error.message?.includes('fetch') || error.message?.includes('network')) {
+      console.error('[ERROR] Network error detected');
     }
     
     return handleError(res, error, '프롬프트 목록을 불러오는데 실패했습니다.');

@@ -93,11 +93,15 @@ export const useBookmarks = () => {
         return;
       }
 
+      console.log('[DEBUG] Fetching bookmarks from API...');
+      
       const res = await fetch('/api/bookmarks', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+
+      console.log('[DEBUG] Bookmarks API response status:', res.status);
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -123,13 +127,28 @@ export const useBookmarks = () => {
       }
     } catch (err: unknown) {
       console.error('[DEBUG] useBookmarks error:', err);
-      if (err instanceof Error && err.message.includes('인증')) {
-        setBookmarks([]);
-        saveCachedBookmarks([]);
-        return;
+      
+      // 네트워크 오류 처리
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        console.error('[DEBUG] Network fetch error detected');
+        setError('네트워크 연결을 확인해주세요. 서버가 실행 중인지 확인해주세요.');
+      } else if (err instanceof Error) {
+        // "Failed to fetch" 오류 처리
+        if (err.message.includes('Failed to fetch')) {
+          console.error('[DEBUG] Failed to fetch error detected');
+          setError('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        console.error('[DEBUG] Unknown error type:', typeof err, err);
+        setError('알 수 없는 오류가 발생했습니다.');
       }
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
-      setBookmarks([]);
+      
+      // 인증 관련 오류가 아닌 경우에만 북마크 초기화
+      if (!(err instanceof Error && err.message.includes('인증'))) {
+        setBookmarks([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -188,6 +207,7 @@ export const useBookmarks = () => {
       });
 
       // API 호출
+      console.log('[DEBUG] Adding bookmark via API...');
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -196,6 +216,8 @@ export const useBookmarks = () => {
         },
         body: JSON.stringify({ promptId, categoryId }),
       });
+      
+      console.log('[DEBUG] Add bookmark API response status:', res.status);
       
       if (!res.ok) {
         // 실패 시 롤백
@@ -249,7 +271,20 @@ export const useBookmarks = () => {
       return result;
     } catch (err: unknown) {
       console.error('Add bookmark error:', err);
-      throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
+      
+      // 네트워크 오류 처리
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        console.error('[DEBUG] Network fetch error in addBookmark');
+        throw new Error('네트워크 연결을 확인해주세요.');
+      } else if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch')) {
+          console.error('[DEBUG] Failed to fetch error in addBookmark');
+          throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+        }
+        throw err;
+      } else {
+        throw new Error('알 수 없는 오류가 발생했습니다.');
+      }
     }
   }, [bookmarks, saveCachedBookmarks, triggerSync]);
 
@@ -296,12 +331,15 @@ export const useBookmarks = () => {
       });
 
       // API 호출
+      console.log('[DEBUG] Removing bookmark via API...');
       const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+      
+      console.log('[DEBUG] Remove bookmark API response status:', res.status);
 
       if (!res.ok) {
         // 실패 시 롤백 (백업된 북마크가 있는 경우에만)
@@ -333,12 +371,31 @@ export const useBookmarks = () => {
       return await res.json();
     } catch (err: unknown) {
       console.error('Remove bookmark error:', err);
-      throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
+      
+      // 네트워크 오류 처리
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        console.error('[DEBUG] Network fetch error in removeBookmark');
+        throw new Error('네트워크 연결을 확인해주세요.');
+      } else if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch')) {
+          console.error('[DEBUG] Failed to fetch error in removeBookmark');
+          throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+        }
+        throw err;
+      } else {
+        throw new Error('알 수 없는 오류가 발생했습니다.');
+      }
     }
   }, [bookmarks, saveCachedBookmarks, triggerSync]);
 
   const refetch = useCallback(async () => {
-    return fetchBookmarks(false); // 강제로 서버에서 새로고침
+    try {
+      return await fetchBookmarks(false); // 강제로 서버에서 새로고침
+    } catch (err) {
+      console.error('[DEBUG] Refetch error:', err);
+      // refetch 실패 시에도 앱이 멈추지 않도록 처리
+      throw err;
+    }
   }, [fetchBookmarks]);
 
   // 북마크 존재 여부 확인 (타입 안전한 비교)
@@ -399,15 +456,25 @@ export const useBookmarks = () => {
     // 브라우저 포커스 이벤트 (탭 전환 시 동기화)
     const handleFocus = () => {
       console.log('[SYNC] Window focused, refreshing bookmarks');
-      fetchBookmarks(false);
+      try {
+        fetchBookmarks(false);
+      } catch (err) {
+        console.error('[SYNC] Error during focus refresh:', err);
+        // 에러가 발생해도 앱이 멈추지 않도록 처리
+      }
     };
 
     // 이벤트 리스너 등록
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('focus', handleFocus);
 
-    // 초기 로드
-    fetchBookmarks();
+    // 초기 로드 (에러 처리 포함)
+    try {
+      fetchBookmarks();
+    } catch (err) {
+      console.error('[DEBUG] Initial bookmark load error:', err);
+      // 초기 로드 실패 시에도 앱이 멈추지 않도록 처리
+    }
 
     return () => {
       // 정리
