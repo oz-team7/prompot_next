@@ -92,13 +92,22 @@ export const useBookmarks = () => {
         throw new Error('인증이 필요합니다.');
       }
 
-      // 즉시 UI 업데이트 (낙관적 업데이트)
+      const numericPromptId = Number(promptId);
+      
+      // 이미 북마크되어 있는지 확인
+      const existingBookmark = bookmarks.find(b => b.prompt.id === numericPromptId);
+      if (existingBookmark) {
+        console.log('[DEBUG] Bookmark already exists for prompt:', numericPromptId);
+        return existingBookmark;
+      }
+
+      // 즉시 UI 업데이트 (낙관적 업데이트) - 프롬프트 ID 기반으로 관리
       const tempBookmark = {
-        id: Date.now(), // 임시 ID
+        id: -1, // 임시 ID (음수로 구분)
         createdAt: new Date().toISOString(),
         categoryId,
         prompt: promptData || {
-          id: Number(promptId),
+          id: numericPromptId,
           title: '로딩 중...',
           description: '',
           content: '',
@@ -114,7 +123,11 @@ export const useBookmarks = () => {
         }
       };
 
-      setBookmarks(prev => [...prev, tempBookmark]);
+      // 중복 방지를 위해 프롬프트 ID로 필터링
+      setBookmarks(prev => {
+        const filtered = prev.filter(b => b.prompt.id !== numericPromptId);
+        return [...filtered, tempBookmark];
+      });
 
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
@@ -126,17 +139,17 @@ export const useBookmarks = () => {
       });
       
       if (!res.ok) {
-        // 실패 시 롤백
-        setBookmarks(prev => prev.filter(b => b.id !== tempBookmark.id));
+        // 실패 시 롤백 - 프롬프트 ID로 필터링
+        setBookmarks(prev => prev.filter(b => b.prompt.id !== numericPromptId));
         const errorData = await res.json();
         throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
       }
 
       const result = await res.json();
       
-      // 실제 데이터로 교체
+      // 실제 데이터로 교체 - 프롬프트 ID로 필터링
       setBookmarks(prev => {
-        const filtered = prev.filter(b => b.id !== tempBookmark.id);
+        const filtered = prev.filter(b => b.prompt.id !== numericPromptId);
         if (result.bookmark && result.bookmark.prompts) {
           return [...filtered, {
             id: result.bookmark.id,
@@ -176,9 +189,11 @@ export const useBookmarks = () => {
         throw new Error('인증이 필요합니다.');
       }
 
+      const numericPromptId = Number(promptId);
+
       // 즉시 UI 업데이트 (낙관적 업데이트)
-      const bookmarkToRemove = bookmarks.find(b => b && b.prompt && b.prompt.id === Number(promptId));
-      setBookmarks(prev => prev.filter(b => b && b.prompt && b.prompt.id !== Number(promptId)));
+      const bookmarkToRemove = bookmarks.find(b => b.prompt.id === numericPromptId);
+      setBookmarks(prev => prev.filter(b => b.prompt.id !== numericPromptId));
 
       const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',

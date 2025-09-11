@@ -84,8 +84,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
 
-  // 실제 북마크 상태 확인 (프롬프트 보기 페이지와 동일)
-  // 북마크 상태를 실시간으로 확인 (useBookmarks 훅의 상태 사용)
+  // 북마크 상태를 실시간으로 확인 (프롬프트 ID 기반 안전한 확인)
   const actualIsBookmarked = bookmarks.some(bookmark => 
     bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
   );
