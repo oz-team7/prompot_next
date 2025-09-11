@@ -56,7 +56,7 @@ const Toast: React.FC<ToastProps> = ({
   }[type];
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in">
+    <div className="fixed top-20 right-4 z-50 animate-slide-in">
       <div className={`${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 max-w-sm`}>
         {icon}
         <span className="font-medium">{message}</span>

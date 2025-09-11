@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -84,6 +84,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
+  const bookmarkButtonRef = useRef<HTMLButtonElement>(null);
+  const [popupPosition, setPopupPosition] = useState<{ top: number; left: number } | undefined>();
   
   // 단순화된 북마크 상태 (실시간 반영)
   const actualIsBookmarked = useMemo(() => {
@@ -109,6 +111,13 @@ const PromptCard: React.FC<PromptCardProps> = ({
         setShowToast(true);
       } else {
         // 북마크 추가 시 카테고리 선택 모달 표시
+        if (bookmarkButtonRef.current) {
+          const rect = bookmarkButtonRef.current.getBoundingClientRect();
+          setPopupPosition({
+            top: rect.top + window.scrollY,
+            left: rect.right + 10 // 아이콘 오른쪽으로 10px 간격
+          });
+        }
         setShowCategorySelector(true);
       }
     } catch (error: any) {
@@ -214,6 +223,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           {/* 북마크 아이콘 */}
           {isAuthenticated && (
             <button
+              ref={bookmarkButtonRef}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -432,6 +442,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         isOpen={showCategorySelector}
         onClose={() => setShowCategorySelector(false)}
         onSelect={handleCategorySelect}
+        position={popupPosition}
       />
 
       {/* Toast */}
