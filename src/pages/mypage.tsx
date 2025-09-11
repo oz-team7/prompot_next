@@ -15,6 +15,13 @@ import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
+// 안전한 작성자 이름 추출 함수
+const getAuthorName = (author: any): string => {
+  if (typeof author === 'string') return author;
+  if (typeof author === 'object' && author?.name) return author.name;
+  return '익명';
+};
+
 const MyPage = () => {
   const router = useRouter();
   const { user, isAuthenticated, refreshUser } = useAuth();
@@ -782,7 +789,7 @@ const MyPage = () => {
                                     ) : (
                                       <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
                                         <span className="text-xs font-medium text-orange-600">
-                                          {(prompt.author?.name || '익명').charAt(0).toUpperCase()}
+                                          {getAuthorName(prompt.author).charAt(0).toUpperCase()}
                                         </span>
                                       </div>
                                     )}
@@ -1021,13 +1028,13 @@ const MyPage = () => {
                                   <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
                                     <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
                                       <span className="text-xs font-medium text-orange-600">
-                                        {(bookmark.prompt.author || '익명').charAt(0).toUpperCase()}
+                                        {getAuthorName(bookmark.prompt.author).charAt(0).toUpperCase()}
                                       </span>
                                     </div>
                                   </div>
                                   {/* 작성자 이름 */}
                                   <span className="text-xs text-gray-500 whitespace-nowrap min-w-0 flex-shrink-0">
-                                    {bookmark.prompt.author || '익명'}
+                                    {getAuthorName(bookmark.prompt.author)}
                                   </span>
                                 </div>
                               </div>

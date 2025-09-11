@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Prompt } from '@/types/prompt';
 
 interface Bookmark {
@@ -22,20 +22,74 @@ interface Bookmark {
   categoryId?: string | null;
 }
 
+// 실시간 동기화를 위한 이벤트 키
+const BOOKMARK_SYNC_KEY = 'prompot_bookmarks_sync';
+const BOOKMARK_STORAGE_KEY = 'prompot_bookmarks_cache';
+
 export const useBookmarks = () => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncRef = useRef<number>(0);
 
-  const fetchBookmarks = async () => {
+  // 실시간 동기화 트리거 함수
+  const triggerSync = useCallback((action: 'add' | 'remove' | 'refresh', promptId?: number) => {
+    const now = Date.now();
+    const syncData = { action, promptId, timestamp: now };
+    
+    // localStorage 이벤트로 다른 탭에 알림
+    localStorage.setItem(BOOKMARK_SYNC_KEY, JSON.stringify(syncData));
+    lastSyncRef.current = now;
+    
+    console.log('[SYNC] Triggered sync event:', syncData);
+  }, []);
+
+  // 캐시된 북마크 로드
+  const loadCachedBookmarks = useCallback(() => {
     try {
+      const cached = localStorage.getItem(BOOKMARK_STORAGE_KEY);
+      if (cached) {
+        const data = JSON.parse(cached);
+        if (data.bookmarks && Array.isArray(data.bookmarks) && data.timestamp > Date.now() - 5 * 60 * 1000) {
+          setBookmarks(data.bookmarks);
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn('[CACHE] Failed to load cached bookmarks:', err);
+    }
+    return false;
+  }, []);
+
+  // 북마크 캐시 저장
+  const saveCachedBookmarks = useCallback((bookmarksData: Bookmark[]) => {
+    try {
+      const cacheData = {
+        bookmarks: bookmarksData,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(BOOKMARK_STORAGE_KEY, JSON.stringify(cacheData));
+    } catch (err) {
+      console.warn('[CACHE] Failed to save cached bookmarks:', err);
+    }
+  }, []);
+
+  const fetchBookmarks = useCallback(async (useCache = true) => {
+    try {
+      // 캐시 우선 로드 (성능 최적화)
+      if (useCache && loadCachedBookmarks()) {
+        console.log('[CACHE] Loaded bookmarks from cache');
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
-        // 토큰이 없으면 빈 배열로 설정하고 조용히 리턴
         setBookmarks([]);
+        saveCachedBookmarks([]);
         return;
       }
 
@@ -47,10 +101,10 @@ export const useBookmarks = () => {
 
       if (!res.ok) {
         const errorData = await res.json();
-        // 인증 오류인 경우 조용히 처리
         if (res.status === 401 || res.status === 403) {
           console.log('[DEBUG] Authentication required for bookmarks');
           setBookmarks([]);
+          saveCachedBookmarks([]);
           return;
         }
         throw new Error(errorData.message || '북마크를 가져오는데 실패했습니다.');
@@ -58,28 +112,30 @@ export const useBookmarks = () => {
 
       const data = await res.json();
       
-      // 안전한 데이터 설정
       if (data && Array.isArray(data.bookmarks)) {
         setBookmarks(data.bookmarks);
+        saveCachedBookmarks(data.bookmarks);
+        console.log('[API] Loaded bookmarks from server:', data.bookmarks.length);
       } else {
         console.warn('[DEBUG] Invalid bookmarks data:', data);
         setBookmarks([]);
+        saveCachedBookmarks([]);
       }
     } catch (err: unknown) {
       console.error('[DEBUG] useBookmarks error:', err);
-      // 인증 관련 오류는 조용히 처리
       if (err instanceof Error && err.message.includes('인증')) {
         setBookmarks([]);
+        saveCachedBookmarks([]);
         return;
       }
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
-      setBookmarks([]); // 에러 시 빈 배열로 설정
+      setBookmarks([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadCachedBookmarks, saveCachedBookmarks]);
 
-  const addBookmark = async (promptId: string | number, categoryId?: string | null, promptData?: any) => {
+  const addBookmark = useCallback(async (promptId: string | number, categoryId?: string | null, promptData?: any) => {
     try {
       // ID 유효성 검증
       if (!promptId || (typeof promptId === 'number' && (isNaN(promptId) || promptId <= 0)) || 
@@ -101,9 +157,9 @@ export const useBookmarks = () => {
         return existingBookmark;
       }
 
-      // 즉시 UI 업데이트 (낙관적 업데이트) - 프롬프트 ID 기반으로 관리
-      const tempBookmark = {
-        id: -1, // 임시 ID (음수로 구분)
+      // 즉시 UI 업데이트 (낙관적 업데이트)
+      const tempBookmark: Bookmark = {
+        id: Date.now(), // 임시 ID (타임스탬프 사용)
         createdAt: new Date().toISOString(),
         categoryId,
         prompt: promptData || {
@@ -123,12 +179,15 @@ export const useBookmarks = () => {
         }
       };
 
-      // 중복 방지를 위해 프롬프트 ID로 필터링
+      // 즉시 UI 반영
       setBookmarks(prev => {
         const filtered = prev.filter(b => b.prompt.id !== numericPromptId);
-        return [...filtered, tempBookmark];
+        const newBookmarks = [...filtered, tempBookmark];
+        saveCachedBookmarks(newBookmarks);
+        return newBookmarks;
       });
 
+      // API 호출
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -139,19 +198,25 @@ export const useBookmarks = () => {
       });
       
       if (!res.ok) {
-        // 실패 시 롤백 - 프롬프트 ID로 필터링
-        setBookmarks(prev => prev.filter(b => b.prompt.id !== numericPromptId));
+        // 실패 시 롤백
+        setBookmarks(prev => {
+          const rolledBack = prev.filter(b => b.prompt.id !== numericPromptId);
+          saveCachedBookmarks(rolledBack);
+          return rolledBack;
+        });
         const errorData = await res.json();
         throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
       }
 
       const result = await res.json();
       
-      // 실제 데이터로 교체 - 프롬프트 ID로 필터링
+      // 실제 데이터로 교체
       setBookmarks(prev => {
         const filtered = prev.filter(b => b.prompt.id !== numericPromptId);
+        let newBookmarks = filtered;
+        
         if (result.bookmark && result.bookmark.prompts) {
-          return [...filtered, {
+          const realBookmark: Bookmark = {
             id: result.bookmark.id,
             createdAt: result.bookmark.created_at,
             categoryId: result.bookmark.category_id,
@@ -170,19 +235,25 @@ export const useBookmarks = () => {
               author: result.bookmark.prompts.profiles?.name || 'Unknown',
               authorId: result.bookmark.prompts.author_id
             }
-          }];
+          };
+          newBookmarks = [...filtered, realBookmark];
         }
-        return filtered;
+        
+        saveCachedBookmarks(newBookmarks);
+        return newBookmarks;
       });
+      
+      // 다른 탭에 동기화 신호 전송
+      triggerSync('add', numericPromptId);
       
       return result;
     } catch (err: unknown) {
       console.error('Add bookmark error:', err);
       throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
     }
-  };
+  }, [bookmarks, saveCachedBookmarks, triggerSync]);
 
-  const removeBookmark = async (promptId: string | number) => {
+  const removeBookmark = useCallback(async (promptId: string | number) => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
@@ -191,24 +262,40 @@ export const useBookmarks = () => {
 
       const numericPromptId = Number(promptId);
       
-      // 더 명확한 디버그 로그
       console.log('[DEBUG] removeBookmark - removing promptId:', numericPromptId);
-      console.log('[DEBUG] removeBookmark - bookmarks before:', bookmarks.map(b => b.prompt.id));
+      console.log('[DEBUG] removeBookmark - current bookmarks:', bookmarks.map(b => ({ id: b.prompt.id, title: b.prompt.title })));
 
-      // 즉시 UI 업데이트 (낙관적 업데이트) - 더 명확한 상태 업데이트
-      const bookmarkToRemove = bookmarks.find(b => b.prompt.id === numericPromptId);
+      // 제거할 북마크 백업 (더 안전한 찾기)
+      const bookmarkToRemove = bookmarks.find(b => {
+        // 타입 안전한 비교 (문자열과 숫자 모두 고려)
+        return b.prompt.id === numericPromptId || b.prompt.id === promptId || String(b.prompt.id) === String(promptId);
+      });
       
+      if (!bookmarkToRemove) {
+        console.log('[DEBUG] removeBookmark - bookmark not found for ID:', promptId, 'type:', typeof promptId);
+        console.log('[DEBUG] removeBookmark - available bookmark IDs:', bookmarks.map(b => `${b.prompt.id} (${typeof b.prompt.id})`));
+        // 북마크가 없어도 계속 진행 (이미 제거된 경우)
+      }
+      
+      // 즉시 UI 업데이트 (낙관적 업데이트) - 타입 안전한 필터링
       setBookmarks(prev => {
-        const newBookmarks = prev.filter(b => b.prompt.id !== numericPromptId);
-        console.log('[DEBUG] removeBookmark - bookmarks after filtering:', {
+        const newBookmarks = prev.filter(b => {
+          // 다양한 타입으로 비교하여 확실히 제거
+          return !(b.prompt.id === numericPromptId || 
+                   b.prompt.id === promptId || 
+                   String(b.prompt.id) === String(promptId));
+        });
+        saveCachedBookmarks(newBookmarks);
+        console.log('[DEBUG] removeBookmark - UI updated:', {
           before: prev.length,
           after: newBookmarks.length,
-          removedId: numericPromptId,
-          newIds: newBookmarks.map(b => b.prompt.id)
+          removedId: `${promptId} (${typeof promptId})`,
+          filteredOut: prev.length - newBookmarks.length
         });
         return newBookmarks;
       });
 
+      // API 호출
       const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',
         headers: {
@@ -217,14 +304,30 @@ export const useBookmarks = () => {
       });
 
       if (!res.ok) {
-        // 실패 시 롤백
+        // 실패 시 롤백 (백업된 북마크가 있는 경우에만)
         console.log('[DEBUG] removeBookmark - API failed, rolling back');
         if (bookmarkToRemove) {
-          setBookmarks(prev => [...prev, bookmarkToRemove]);
+          setBookmarks(prev => {
+            // 중복 방지: 이미 있는지 확인 후 추가
+            const exists = prev.some(b => 
+              b.prompt.id === bookmarkToRemove.prompt.id || 
+              String(b.prompt.id) === String(bookmarkToRemove.prompt.id)
+            );
+            const rolledBack = exists ? prev : [...prev, bookmarkToRemove];
+            saveCachedBookmarks(rolledBack);
+            console.log('[DEBUG] removeBookmark - rollback completed:', {
+              restored: !exists,
+              newCount: rolledBack.length
+            });
+            return rolledBack;
+          });
         }
         const errorData = await res.json();
         throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
       }
+      
+      // 다른 탭에 동기화 신호 전송
+      triggerSync('remove', numericPromptId);
       
       console.log('[DEBUG] removeBookmark - API success');
       return await res.json();
@@ -232,15 +335,89 @@ export const useBookmarks = () => {
       console.error('Remove bookmark error:', err);
       throw err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
     }
-  };
+  }, [bookmarks, saveCachedBookmarks, triggerSync]);
 
-  const refetch = async () => {
-    return fetchBookmarks();
-  };
+  const refetch = useCallback(async () => {
+    return fetchBookmarks(false); // 강제로 서버에서 새로고침
+  }, [fetchBookmarks]);
 
+  // 북마크 존재 여부 확인 (타입 안전한 비교)
+  const isBookmarked = useCallback((promptId: number | string) => {
+    const numericId = Number(promptId);
+    const result = bookmarks.some(b => {
+      return b.prompt.id === numericId || 
+             b.prompt.id === promptId || 
+             String(b.prompt.id) === String(promptId);
+    });
+    console.log('[DEBUG] isBookmarked check:', {
+      promptId,
+      type: typeof promptId,
+      numericId,
+      found: result,
+      bookmarkCount: bookmarks.length
+    });
+    return result;
+  }, [bookmarks]);
+
+  // 카테고리별 북마크 필터링
+  const getBookmarksByCategory = useCallback((categoryId: string | null) => {
+    if (categoryId === null) return bookmarks;
+    return bookmarks.filter(b => b.categoryId === categoryId);
+  }, [bookmarks]);
+
+  // 실시간 동기화 이벤트 리스너
   useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === BOOKMARK_SYNC_KEY && event.newValue) {
+        try {
+          const syncData = JSON.parse(event.newValue);
+          const { timestamp, action, promptId } = syncData;
+          
+          // 자신이 보낸 이벤트는 무시 (중복 방지)
+          if (timestamp <= lastSyncRef.current + 1000) {
+            return;
+          }
+          
+          console.log('[SYNC] Received sync event:', syncData);
+          
+          // 디바운스를 통한 중복 요청 방지
+          if (syncTimeoutRef.current) {
+            clearTimeout(syncTimeoutRef.current);
+          }
+          
+          syncTimeoutRef.current = setTimeout(() => {
+            console.log('[SYNC] Processing sync event:', action);
+            fetchBookmarks(false); // 캐시 무시하고 서버에서 새로고침
+          }, 500);
+          
+        } catch (err) {
+          console.warn('[SYNC] Failed to parse sync event:', err);
+        }
+      }
+    };
+
+    // 브라우저 포커스 이벤트 (탭 전환 시 동기화)
+    const handleFocus = () => {
+      console.log('[SYNC] Window focused, refreshing bookmarks');
+      fetchBookmarks(false);
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+
+    // 초기 로드
     fetchBookmarks();
-  }, []);
+
+    return () => {
+      // 정리
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, [fetchBookmarks]);
 
   return {
     bookmarks,
@@ -249,5 +426,7 @@ export const useBookmarks = () => {
     addBookmark,
     removeBookmark,
     refetch,
+    isBookmarked,
+    getBookmarksByCategory,
   };
 };
