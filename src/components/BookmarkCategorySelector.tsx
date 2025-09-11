@@ -5,37 +5,51 @@ import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 interface BookmarkCategorySelectorProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (categoryId: string | null) => void;
-  selectedCategoryId?: string | null;
+  onSelect: (categoryIds: (string | null)[]) => void;
+  selectedCategoryIds?: (string | null)[];
 }
 
 const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
   isOpen,
   onClose,
   onSelect,
-  selectedCategoryId,
+  selectedCategoryIds = [],
 }) => {
   const { categories, loading } = useBookmarkCategories();
-  const [selectedId, setSelectedId] = useState<string | null>(selectedCategoryId || null);
+  const [selectedIds, setSelectedIds] = useState<(string | null)[]>(selectedCategoryIds);
 
   useEffect(() => {
-    setSelectedId(selectedCategoryId || null);
-  }, [selectedCategoryId]);
+    setSelectedIds(selectedCategoryIds);
+  }, [selectedCategoryIds]);
 
-  const handleSelect = (categoryId: string | null) => {
-    console.log('[DEBUG] BookmarkCategorySelector - handleSelect called with:', categoryId);
-    console.log('[DEBUG] Current selectedId:', selectedId);
-    setSelectedId(categoryId);
-    console.log('[DEBUG] New selectedId will be:', categoryId);
+  const handleToggle = (categoryId: string | null) => {
+    console.log('[DEBUG] BookmarkCategorySelector - handleToggle called with:', categoryId);
+    console.log('[DEBUG] Current selectedIds:', selectedIds);
+    
+    setSelectedIds(prev => {
+      const isSelected = prev.includes(categoryId);
+      if (isSelected) {
+        // 이미 선택된 경우 제거
+        const newIds = prev.filter(id => id !== categoryId);
+        console.log('[DEBUG] Removing category, new selectedIds:', newIds);
+        return newIds;
+      } else {
+        // 선택되지 않은 경우 추가
+        const newIds = [...prev, categoryId];
+        console.log('[DEBUG] Adding category, new selectedIds:', newIds);
+        return newIds;
+      }
+    });
   };
 
   const handleConfirm = () => {
-    onSelect(selectedId);
+    console.log('[DEBUG] Confirming selection:', selectedIds);
+    onSelect(selectedIds);
     onClose();
   };
 
   const handleCancel = () => {
-    setSelectedId(selectedCategoryId || null);
+    setSelectedIds(selectedCategoryIds);
     onClose();
   };
 
@@ -58,7 +72,7 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
         }}
       >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">북마크 카테고리 선택</h3>
+          <h3 className="text-lg font-semibold">북마크 카테고리 선택 (다중 선택 가능)</h3>
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -90,25 +104,23 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('[DEBUG] 카테고리 없음 label clicked');
-                    handleSelect(null);
+                    handleToggle(null);
                   }}
                 >
                   <input
-                    type="radio"
-                    name="category"
-                    value=""
-                    checked={selectedId === null}
+                    type="checkbox"
+                    checked={selectedIds.includes(null)}
                     onChange={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       console.log('[DEBUG] 카테고리 없음 onChange triggered');
-                      handleSelect(null);
+                      handleToggle(null);
                     }}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       console.log('[DEBUG] 카테고리 없음 onClick triggered');
-                      handleSelect(null);
+                      handleToggle(null);
                     }}
                     className="mr-3"
                   />
@@ -126,23 +138,24 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      handleSelect(category.id);
+                      console.log('[DEBUG] Category label clicked:', category.id);
+                      handleToggle(category.id);
                     }}
                   >
                     <input
-                      type="radio"
-                      name="category"
-                      value={category.id}
-                      checked={selectedId === category.id}
+                      type="checkbox"
+                      checked={selectedIds.includes(category.id)}
                       onChange={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleSelect(category.id);
+                        console.log('[DEBUG] Category onChange triggered:', category.id);
+                        handleToggle(category.id);
                       }}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleSelect(category.id);
+                        console.log('[DEBUG] Category onClick triggered:', category.id);
+                        handleToggle(category.id);
                       }}
                       className="mr-3"
                     />
