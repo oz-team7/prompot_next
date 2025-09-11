@@ -190,10 +190,24 @@ export const useBookmarks = () => {
       }
 
       const numericPromptId = Number(promptId);
+      
+      // 더 명확한 디버그 로그
+      console.log('[DEBUG] removeBookmark - removing promptId:', numericPromptId);
+      console.log('[DEBUG] removeBookmark - bookmarks before:', bookmarks.map(b => b.prompt.id));
 
-      // 즉시 UI 업데이트 (낙관적 업데이트)
+      // 즉시 UI 업데이트 (낙관적 업데이트) - 더 명확한 상태 업데이트
       const bookmarkToRemove = bookmarks.find(b => b.prompt.id === numericPromptId);
-      setBookmarks(prev => prev.filter(b => b.prompt.id !== numericPromptId));
+      
+      setBookmarks(prev => {
+        const newBookmarks = prev.filter(b => b.prompt.id !== numericPromptId);
+        console.log('[DEBUG] removeBookmark - bookmarks after filtering:', {
+          before: prev.length,
+          after: newBookmarks.length,
+          removedId: numericPromptId,
+          newIds: newBookmarks.map(b => b.prompt.id)
+        });
+        return newBookmarks;
+      });
 
       const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',
@@ -204,6 +218,7 @@ export const useBookmarks = () => {
 
       if (!res.ok) {
         // 실패 시 롤백
+        console.log('[DEBUG] removeBookmark - API failed, rolling back');
         if (bookmarkToRemove) {
           setBookmarks(prev => [...prev, bookmarkToRemove]);
         }
@@ -211,6 +226,7 @@ export const useBookmarks = () => {
         throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
       }
       
+      console.log('[DEBUG] removeBookmark - API success');
       return await res.json();
     } catch (err: unknown) {
       console.error('Remove bookmark error:', err);
