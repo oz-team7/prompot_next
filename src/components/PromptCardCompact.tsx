@@ -157,6 +157,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ prompt, onLike, o
   const handleCategoryClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!prompt.category) return;
     const categoryLabel = getCategoryLabel(prompt.category);
     setSearchQuery(categoryLabel);
     router.push('/prompts');
