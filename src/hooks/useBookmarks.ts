@@ -406,13 +406,16 @@ export const useBookmarks = () => {
              b.prompt.id === promptId || 
              String(b.prompt.id) === String(promptId);
     });
-    console.log('[DEBUG] isBookmarked check:', {
-      promptId,
-      type: typeof promptId,
-      numericId,
-      found: result,
-      bookmarkCount: bookmarks.length
-    });
+    
+    // 디버깅 로그를 조건부로만 출력 (북마크가 있을 때만)
+    if (result && bookmarks.length > 0) {
+      console.log('[DEBUG] Bookmark found:', {
+        promptId,
+        bookmarkCount: bookmarks.length,
+        found: result
+      });
+    }
+    
     return result;
   }, [bookmarks]);
 
