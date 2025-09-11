@@ -142,13 +142,16 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
     }
   };
 
-  const handleCategorySelect = async (categoryId: string | null) => {
+  const handleCategorySelect = async (categoryIds: (string | null)[]) => {
     try {
-      console.log('[DEBUG] Adding bookmark with category ID:', categoryId);
+      console.log('[DEBUG] Adding bookmark with category IDs:', categoryIds);
       console.log('[DEBUG] Prompt ID:', prompt.id, 'type:', typeof prompt.id);
       
+      // 다중 카테고리 선택 시 첫 번째 카테고리만 사용 (기존 API 호환성 유지)
+      const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null;
+      
       // 실제 프롬프트 데이터를 전달하여 더 정확한 낙관적 업데이트
-      await addBookmark(prompt.id, categoryId, prompt);
+      await addBookmark(prompt.id, primaryCategoryId, prompt);
       
       console.log('[DEBUG] Bookmark added successfully, updating local state');
       setToastMessage('북마크에 추가되었습니다!');
