@@ -175,6 +175,20 @@ export default async function handler(
       return sendSuccess(res, [], '프롬프트가 없습니다.');
     }
 
+    // 프롬프트별 북마크 수 계산
+    const promptIds = prompts.map(p => p.id);
+    const { data: bookmarkCounts } = await supabase
+      .from('prompt_bookmarks')
+      .select('prompt_id')
+      .in('prompt_id', promptIds);
+
+    // 프롬프트별 북마크 수 집계
+    const bookmarkCountMap = bookmarkCounts?.reduce((acc: Record<number, number>, bookmark: any) => {
+      const promptId = bookmark.prompt_id;
+      acc[promptId] = (acc[promptId] || 0) + 1;
+      return acc;
+    }, {}) || {};
+
     // 데이터 처리 및 최적화
     const processedPrompts = prompts.map(prompt => {
       // 평점 계산
@@ -186,22 +200,26 @@ export default async function handler(
       // 댓글 수 계산
       const commentCount = prompt.comments ? prompt.comments.length : 0;
 
+      // 북마크 수 계산
+      const bookmarkCount = bookmarkCountMap[prompt.id] || 0;
+
       return {
         ...prompt,
         averageRating: Math.round(averageRating * 10) / 10, // 소수점 둘째 자리까지
         commentCount,
+        bookmarkCount,
         // 클라이언트에서 필요한 데이터만 포함
         comments: undefined, // 댓글 내용은 제거하고 개수만 유지
         ratings: undefined, // 평점 내용은 제거하고 평균만 유지
       };
     });
 
-    // 인기순 정렬을 위한 추가 처리
+    // 인기순 정렬을 위한 추가 처리 (북마크 수 기준)
     if (sort === 'popular' || sort === 'popular-desc') {
       processedPrompts.sort((a, b) => {
-        const aComments = a.commentCount || 0;
-        const bComments = b.commentCount || 0;
-        return sort === 'popular' ? aComments - bComments : bComments - aComments;
+        const aBookmarks = a.bookmarkCount || 0;
+        const bBookmarks = b.bookmarkCount || 0;
+        return sort === 'popular' ? aBookmarks - bBookmarks : bBookmarks - aBookmarks;
       });
     }
 

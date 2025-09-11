@@ -16,6 +16,7 @@ export interface Prompt {
   totalRatings?: number;
   likes: number;
   bookmarks?: number;
+  bookmarkCount?: number;
   isLiked?: boolean;
   isBookmarked?: boolean;
   category?: "work" | "dev" | "design" | "edu" | "image";
