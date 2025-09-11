@@ -444,7 +444,7 @@ const MyPage = () => {
       console.log('[DEBUG] Avatar changed to:', avatarUrl);
       
       // 업로드된 아바타 URL로 사용자 프로필 상태 업데이트
-      setUserProfile(prev => ({
+      setUserProfile((prev: any) => ({
         ...prev,
         avatar_url: avatarUrl
       }));
