@@ -252,6 +252,51 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             </div>
           )}
 
+          {/* 활성 필터 표시 - 상단 별도 영역 */}
+          {(activeCategory !== 'all' || activeAIModel !== 'all' || activeTag !== 'all') && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 flex-wrap bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <span className="text-sm font-medium text-orange-600">활성 필터:</span>
+                
+                {activeCategory !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
+                    태그: {categories.find(cat => cat.value === activeCategory)?.label}
+                    <button
+                      onClick={() => setActiveCategory('all')}
+                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                
+                {activeAIModel !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
+                    AI모델: {activeAIModel}
+                    <button
+                      onClick={() => setActiveAIModel('all')}
+                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                
+                {activeTag !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
+                    태그: {activeTag}
+                    <button
+                      onClick={() => setActiveTag('all')}
+                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Category, Sort, and Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 mb-4 sm:mb-6">
             {/* Left side: Category and Sort Selectors */}
@@ -328,7 +373,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               {showCreateButton && (
                 <button
                   onClick={handleCreatePrompt}
-                  className="px-4 py-2 text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md justify-center"
+                  className="px-4 py-2 text-sm h-10 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -346,12 +391,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                   }
                   setShowBookmarks(!showBookmarks);
                 }}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md justify-center"
+                className="px-4 py-2 text-sm h-10 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md justify-center"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
-                북마크
+                최근 북마크
               </button>
             </div>
           </div>
