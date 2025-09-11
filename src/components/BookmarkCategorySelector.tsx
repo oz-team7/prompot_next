@@ -24,21 +24,14 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
 
   const handleToggle = (categoryId: string | null) => {
     console.log('[DEBUG] BookmarkCategorySelector - handleToggle called with:', categoryId);
-    console.log('[DEBUG] Current selectedIds:', selectedIds);
     
     setSelectedIds(prev => {
       const isSelected = prev.includes(categoryId);
-      if (isSelected) {
-        // 이미 선택된 경우 제거
-        const newIds = prev.filter(id => id !== categoryId);
-        console.log('[DEBUG] Removing category, new selectedIds:', newIds);
-        return newIds;
-      } else {
-        // 선택되지 않은 경우 추가
-        const newIds = [...prev, categoryId];
-        console.log('[DEBUG] Adding category, new selectedIds:', newIds);
-        return newIds;
-      }
+      const newIds = isSelected 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId];
+      console.log('[DEBUG] Updated selectedIds:', newIds);
+      return newIds;
     });
   };
 
@@ -58,28 +51,17 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
-      }}
+      onClick={onClose}
     >
       <div 
         className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">북마크 카테고리 선택 (다중 선택 가능)</h3>
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose();
-            }}
-            className="text-gray-500 hover:text-gray-700"
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -99,29 +81,12 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
               <div className="space-y-2">
                 {/* 기본 카테고리 (카테고리 없음) */}
                 <label 
-                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('[DEBUG] 카테고리 없음 label clicked');
-                    handleToggle(null);
-                  }}
+                  className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(null)}
-                    onChange={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('[DEBUG] 카테고리 없음 onChange triggered');
-                      handleToggle(null);
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('[DEBUG] 카테고리 없음 onClick triggered');
-                      handleToggle(null);
-                    }}
+                    onChange={() => handleToggle(null)}
                     className="mr-3"
                   />
                   <div className="flex items-center">
@@ -134,29 +99,12 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
                 {categories.map((category) => (
                   <label
                     key={category.id}
-                    className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('[DEBUG] Category label clicked:', category.id);
-                      handleToggle(category.id);
-                    }}
+                    className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                   >
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(category.id)}
-                      onChange={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('[DEBUG] Category onChange triggered:', category.id);
-                        handleToggle(category.id);
-                      }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('[DEBUG] Category onClick triggered:', category.id);
-                        handleToggle(category.id);
-                      }}
+                      onChange={() => handleToggle(category.id)}
                       className="mr-3"
                     />
                     <div className="flex items-center">
@@ -174,22 +122,14 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
             {/* 버튼 */}
             <div className="flex gap-3">
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleCancel();
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                onClick={handleCancel}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 취소
               </button>
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleConfirm();
-                }}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600"
+                onClick={handleConfirm}
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
               >
                 선택
               </button>

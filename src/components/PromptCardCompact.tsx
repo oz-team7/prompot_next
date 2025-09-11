@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -83,11 +83,34 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
+  
+  // 로컬 북마크 상태 추가 (실시간 동기화용)
+  const [localBookmarkState, setLocalBookmarkState] = useState<boolean>(false);
+  const [bookmarkActionInProgress, setBookmarkActionInProgress] = useState<boolean>(false);
 
-  // 북마크 상태를 실시간으로 확인 (프롬프트 ID 기반 안전한 확인)
-  const actualIsBookmarked = bookmarks.some(bookmark => 
-    bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
-  );
+  // useMemo로 계산된 글로벌 북마크 상태
+  const globalIsBookmarked = useMemo(() => {
+    const result = bookmarks.some(bookmark => 
+      bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
+    );
+    console.log('[DEBUG] globalIsBookmarked calculation:', {
+      promptId: prompt.id,
+      bookmarks: bookmarks.map(b => b.prompt.id),
+      result
+    });
+    return result;
+  }, [bookmarks, prompt.id]);
+  
+  // 글로벌 상태와 로컬 상태 동기화
+  useEffect(() => {
+    if (!bookmarkActionInProgress) {
+      setLocalBookmarkState(globalIsBookmarked);
+      console.log('[DEBUG] Syncing local state with global:', globalIsBookmarked);
+    }
+  }, [globalIsBookmarked, bookmarkActionInProgress]);
+  
+  // 최종 북마크 상태 (액션 진행 중이면 로컬 상태 사용, 아니면 글로벌 상태 사용)
+  const actualIsBookmarked = bookmarkActionInProgress ? localBookmarkState : globalIsBookmarked;
 
   const getCategoryLabel = (category: string) => {
     const categoryLabels: { [key: string]: string } = {
@@ -111,43 +134,60 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
       return;
     }
 
-    console.log('[DEBUG] Bookmark toggle - prompt ID:', prompt.id, 'type:', typeof prompt.id);
-    console.log('[DEBUG] Bookmark toggle - isBookmarked:', actualIsBookmarked);
-    console.log('[DEBUG] Bookmark toggle - current bookmarks:', bookmarks);
+    console.log('[DEBUG] Bookmark toggle - prompt ID:', prompt.id);
+    console.log('[DEBUG] Bookmark toggle - currentState:', actualIsBookmarked);
+    console.log('[DEBUG] Bookmark toggle - globalState:', globalIsBookmarked);
+    console.log('[DEBUG] Bookmark toggle - localState:', localBookmarkState);
 
     try {
+      setBookmarkActionInProgress(true);
+      
       if (actualIsBookmarked) {
         console.log('[DEBUG] Removing bookmark for prompt ID:', prompt.id);
+        
+        // 즉시 로컬 상태 업데이트 (UI 즉시 반영)
+        setLocalBookmarkState(false);
+        
         await removeBookmark(prompt.id);
         setToastMessage('북마크가 제거되었습니다.');
         setToastType('bookmark');
         setShowToast(true);
       } else {
         console.log('[DEBUG] Adding bookmark for prompt ID:', prompt.id);
-        console.log('[DEBUG] Prompt ID type:', typeof prompt.id);
-        console.log('[DEBUG] Prompt ID value:', prompt.id);
         
         // 북마크 추가 시 카테고리 선택 모달 표시
         setShowCategorySelector(true);
         return;
       }
-      setToastType('success');
-      setShowToast(true);
     } catch (error: any) {
       console.error('[DEBUG] Bookmark toggle error:', error);
+      
+      // 에러 시 로컬 상태를 글로벌 상태로 롤백
+      setLocalBookmarkState(globalIsBookmarked);
+      
       setToastMessage(error.message || '북마크 처리 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
+    } finally {
+      // 액션 완료 후 동기화 허용
+      setTimeout(() => {
+        setBookmarkActionInProgress(false);
+      }, 100);
     }
   };
 
   const handleCategorySelect = async (categoryIds: (string | null)[]) => {
     try {
+      setBookmarkActionInProgress(true);
+      
       console.log('[DEBUG] Adding bookmark with category IDs:', categoryIds);
       console.log('[DEBUG] Prompt ID:', prompt.id, 'type:', typeof prompt.id);
       
       // 다중 카테고리 선택 시 첫 번째 카테고리만 사용 (기존 API 호환성 유지)
       const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null;
+      
+      // 즉시 로컬 상태 업데이트
+      setLocalBookmarkState(true);
       
       // 실제 프롬프트 데이터를 전달하여 더 정확한 낙관적 업데이트
       await addBookmark(prompt.id, primaryCategoryId, prompt);
@@ -163,11 +203,19 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
       }, 1000);
     } catch (error: any) {
       console.error('[DEBUG] Add bookmark with category error:', error);
+      
+      // 에러 시 로컬 상태 롤백
+      setLocalBookmarkState(globalIsBookmarked);
+      
       setToastMessage(error.message || '북마크 추가 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
+    } finally {
+      setShowCategorySelector(false);
+      setTimeout(() => {
+        setBookmarkActionInProgress(false);
+      }, 100);
     }
-    setShowCategorySelector(false);
   };
 
   // 카테고리 클릭 핸들러
