@@ -85,7 +85,10 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
 
   // 실제 북마크 상태 확인 (프롬프트 보기 페이지와 동일)
-  const actualIsBookmarked = bookmarks.some(bookmark => bookmark.prompt.id === prompt.id);
+  // 북마크 상태를 실시간으로 확인 (useBookmarks 훅의 상태 사용)
+  const actualIsBookmarked = bookmarks.some(bookmark => 
+    bookmark && bookmark.prompt && bookmark.prompt.id === prompt.id
+  );
 
   const handleBookmarkClick = async () => {
     if (!isAuthenticated) {
@@ -130,7 +133,8 @@ const PromptCard: React.FC<PromptCardProps> = ({
       console.log('[DEBUG] Adding bookmark with category ID:', categoryId);
       console.log('[DEBUG] Prompt ID:', prompt.id, 'type:', typeof prompt.id);
       
-      await addBookmark(prompt.id, categoryId);
+      // 실제 프롬프트 데이터를 전달하여 더 정확한 낙관적 업데이트
+      await addBookmark(prompt.id, categoryId, prompt);
       
       console.log('[DEBUG] Bookmark added successfully, updating local state');
       setToastMessage('북마크에 추가되었습니다!');

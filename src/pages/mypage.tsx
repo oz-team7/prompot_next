@@ -362,7 +362,8 @@ const MyPage = () => {
     if (!selectedPromptForBookmark) return;
 
     try {
-      await addBookmark(selectedPromptForBookmark.id, categoryId);
+      // 실제 프롬프트 데이터를 전달하여 더 정확한 낙관적 업데이트
+      await addBookmark(selectedPromptForBookmark.id, categoryId, selectedPromptForBookmark);
       setToastMessage('북마크에 추가되었습니다.');
       setToastType('bookmark');
       setShowToast(true);
