@@ -24,7 +24,9 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
 
   const handleSelect = (categoryId: string | null) => {
     console.log('[DEBUG] BookmarkCategorySelector - handleSelect called with:', categoryId);
+    console.log('[DEBUG] Current selectedId:', selectedId);
     setSelectedId(categoryId);
+    console.log('[DEBUG] New selectedId will be:', categoryId);
   };
 
   const handleConfirm = () => {
@@ -87,22 +89,25 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    console.log('[DEBUG] 카테고리 없음 label clicked');
                     handleSelect(null);
                   }}
                 >
                   <input
                     type="radio"
                     name="category"
-                    value="none"
+                    value=""
                     checked={selectedId === null}
                     onChange={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      console.log('[DEBUG] 카테고리 없음 onChange triggered');
                       handleSelect(null);
                     }}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      console.log('[DEBUG] 카테고리 없음 onClick triggered');
                       handleSelect(null);
                     }}
                     className="mr-3"
