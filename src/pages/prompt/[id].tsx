@@ -373,7 +373,8 @@ const PromptDetailPage = () => {
 
   const handleCategorySelect = async (categoryId: string | null) => {
     try {
-      await addBookmark(prompt.id, categoryId);
+      // 실제 프롬프트 데이터를 전달하여 더 정확한 낙관적 업데이트
+      await addBookmark(prompt.id, categoryId, prompt);
       
       setToastMessage('북마크에 추가되었습니다!');
       setToastType('bookmark');

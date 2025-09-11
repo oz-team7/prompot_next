@@ -79,7 +79,7 @@ export const useBookmarks = () => {
     }
   };
 
-  const addBookmark = async (promptId: string | number, categoryId?: string | null) => {
+  const addBookmark = async (promptId: string | number, categoryId?: string | null, promptData?: any) => {
     try {
       // ID 유효성 검증
       if (!promptId || (typeof promptId === 'number' && (isNaN(promptId) || promptId <= 0)) || 
@@ -97,7 +97,7 @@ export const useBookmarks = () => {
         id: Date.now(), // 임시 ID
         createdAt: new Date().toISOString(),
         categoryId,
-        prompt: {
+        prompt: promptData || {
           id: Number(promptId),
           title: '로딩 중...',
           description: '',
