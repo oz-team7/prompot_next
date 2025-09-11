@@ -29,7 +29,7 @@ export default function SharePrompt({ promptId, title }: SharePromptProps) {
           type="text" 
           value={url} 
           readOnly 
-          className="flex-1 p-2 border border-orange-200 rounded text-sm bg-orange-50"
+          className="flex-1 p-3 border rounded-lg text-sm"
         />
         <button
           onClick={handleCopyLink}

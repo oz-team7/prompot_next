@@ -20,7 +20,7 @@ const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: stri
     return (
       <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl text-gray-400 mb-1">🖼️</div>
+          <div className="text-2xl text-gray-400 mb-1">🎬</div>
           <p className="text-xs text-gray-500">이미지 로드 실패</p>
           <button
             onClick={() => setImageError(false)}
@@ -500,7 +500,7 @@ const PromptDetailPage = () => {
                   <>
                     <button
                       onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
-                      className="px-3 py-2 text-sm bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
+                      className="px-3 py-2 text-sm bg-white text-orange-600 border border-orange-500 rounded-lg hover:bg-orange-50 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
                       title="수정"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -509,7 +509,7 @@ const PromptDetailPage = () => {
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="px-3 py-2 text-sm bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
+                      className="px-3 py-2 text-sm bg-white text-red-600 border border-red-500 rounded-lg hover:bg-red-50 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
                       title="삭제"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -583,7 +583,7 @@ const PromptDetailPage = () => {
                     ) : (
                       <div className="flex items-center justify-center h-full">
                         <div className="text-center">
-                          <div className="text-4xl text-gray-400 mb-2">🖼️</div>
+                          <div className="text-4xl text-gray-400 mb-2">🎬</div>
                           <p className="text-sm text-gray-500">이미지를 불러올 수 없습니다</p>
                           <button
                             onClick={() => setImageError(false)}
@@ -618,7 +618,7 @@ const PromptDetailPage = () => {
                     <h3 className="text-lg font-semibold mb-3 text-gray-900">
                       설명
                     </h3>
-                    <div className="bg-orange-50 rounded-xl p-6 border border-orange-200">
+                    <div className="w-full p-3 border rounded-lg">
                       <p className="text-gray-700 leading-relaxed">{prompt.description}</p>
                     </div>
                   </div>
@@ -643,7 +643,7 @@ const PromptDetailPage = () => {
                     </div>
                   </div>
                   <div className="relative">
-                    <div className={`bg-orange-50 rounded-lg p-4 whitespace-pre-wrap border border-orange-200 ${!isAuthenticated ? 'blur-sm select-none' : ''}`}>
+                    <div className={`w-full p-3 border rounded-lg whitespace-pre-wrap ${!isAuthenticated ? 'blur-sm select-none' : ''}`}>
                       {prompt.content}
                     </div>
                     {!isAuthenticated && (
@@ -663,7 +663,7 @@ const PromptDetailPage = () => {
                   </div>
                 </div>
 
-                {/* 카테고리, AI 모델, 공개 설정 */}
+                {/* 카테고리, AI 모델, 공개 설정 및 태그 */}
                 <div>
                   <div className="flex items-center gap-3 mb-3">
                     <h3 className="text-lg font-semibold text-gray-900">
@@ -722,31 +722,25 @@ const PromptDetailPage = () => {
                       }`}>
                         {prompt.isPublic ? '🌐 공개' : '🔐 비공개'}
                       </span>
+
+                      {/* 태그 */}
+                      {prompt.tags && prompt.tags.length > 0 && (
+                        <>
+                          <span className="text-gray-400 text-xs">|</span>
+                          {prompt.tags.map((tag, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleTagClick(tag)}
+                              className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer"
+                            >
+                              #{tag}
+                            </button>
+                          ))}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
-
-                {/* 태그 */}
-                {prompt.tags && prompt.tags.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        태그
-                      </h3>
-                      <div className="flex flex-wrap gap-2">
-                        {prompt.tags.map((tag, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleTagClick(tag)}
-                            className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer"
-                          >
-                            #{tag}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="mt-4">

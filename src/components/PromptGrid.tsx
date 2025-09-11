@@ -206,14 +206,14 @@ const PromptGrid: React.FC<PromptGridProps> = ({
         filtered.sort((a, b) => {
           const dateA = a.created_at || a.date || '';
           const dateB = b.created_at || b.date || '';
-          return new Date(dateA).getTime() - new Date(dateB).getTime();
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
         });
         break;
       case 'latest-desc':
         filtered.sort((a, b) => {
           const dateA = a.created_at || a.date || '';
           const dateB = b.created_at || b.date || '';
-          return new Date(dateB).getTime() - new Date(dateA).getTime();
+          return new Date(dateA).getTime() - new Date(dateB).getTime();
         });
         break;
       case 'popular':

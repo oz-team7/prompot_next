@@ -49,7 +49,7 @@ const categories = [
   { value: 'dev', label: '개발/코드', icon: '💻' },
   { value: 'design', label: '디자인/브랜드', icon: '🎨' },
   { value: 'edu', label: '교육/학습', icon: '📚' },
-    { value: 'image', label: '이미지/동영상', icon: '🖼️' },
+    { value: 'image', label: '이미지/동영상', icon: '🎬' },
 ];
 
 const CreatePromptPage = () => {
@@ -808,8 +808,55 @@ const CreatePromptPage = () => {
                 />
               </div>
 
-              {/* 카테고리 & AI 모델 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* 동영상 URL */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                  동영상 URL (선택사항)
+                </h3>
+                <input
+                  type="url"
+                  id="videoUrl"
+                  value={formData.videoUrl}
+                  onChange={(e) => handleInputChange('videoUrl', e.target.value)}
+                  placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+                
+                {/* 동영상 썸네일 미리보기 */}
+                {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
+                  <div className="mt-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">동영상 미리보기</p>
+                    <div className="relative w-full max-w-md mx-auto">
+                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                        <Image
+                          src={getVideoThumbnail(formData.videoUrl)!}
+                          alt={getVideoTitle(formData.videoUrl)}
+                          fill
+                          className="object-cover"
+                          unoptimized={true}
+                          onError={(e) => {
+                            console.error('썸네일 로드 실패:', e);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                          <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                            <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-600 text-center">
+                        {getVideoTitle(formData.videoUrl)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 카테고리, AI 모델 & 공개 설정 */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* 카테고리 */}
                 <div className="dropdown-container">
                   <h3 className="font-medium text-gray-900 mb-2">
@@ -819,12 +866,14 @@ const CreatePromptPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                      className="w-full flex items-center justify-between p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">
-                          {categories.find(cat => cat.value === formData.category)?.icon}
-                        </span>
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <span className="text-lg">
+                            {categories.find(cat => cat.value === formData.category)?.icon}
+                          </span>
+                        </div>
                         <span className="text-sm font-medium">
                           {categories.find(cat => cat.value === formData.category)?.label}
                         </span>
@@ -844,9 +893,11 @@ const CreatePromptPage = () => {
                               handleInputChange('category', cat.value);
                               setShowCategoryDropdown(false);
                             }}
-                            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
                           >
-                            <span className="text-xl">{cat.icon}</span>
+                            <div className="w-6 h-6 flex items-center justify-center">
+                              <span className="text-lg">{cat.icon}</span>
+                            </div>
                             <span className="text-sm font-medium">{cat.label}</span>
                           </button>
                         ))}
@@ -864,7 +915,7 @@ const CreatePromptPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowAIModelDropdown(!showAIModelDropdown)}
-                      className="w-full flex items-center justify-between p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-6 h-6">
@@ -902,7 +953,7 @@ const CreatePromptPage = () => {
                               handleInputChange('aiModel', model.id);
                               setShowAIModelDropdown(false);
                             }}
-                            className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
+                            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
                           >
                             <div className="w-6 h-6">
                               {model.icon === '🔧' ? (
@@ -922,11 +973,35 @@ const CreatePromptPage = () => {
                     )}
                   </div>
                 </div>
+
+                {/* 공개 설정 */}
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    공개 설정
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm text-gray-600">
+                      {formData.isPublic 
+                        ? '모두에게 프롬프트가 보여집니다.' 
+                        : '나만 이 프롬프트를 볼 수 있습니다.'
+                      }
+                    </p>
+                    <label className="relative inline-flex items-center cursor-pointer ml-auto">
+                      <input
+                        type="checkbox"
+                        checked={formData.isPublic}
+                        onChange={(e) => handleInputChange('isPublic', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               {/* 태그 */}
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
                   태그
                 </h3>
                 <input
@@ -950,74 +1025,8 @@ const CreatePromptPage = () => {
                 </div>
               </div>
 
-              {/* 동영상 URL */}
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">
-                  동영상 URL (선택사항)
-                </h3>
-                <input
-                  type="url"
-                  id="videoUrl"
-                  value={formData.videoUrl}
-                  onChange={(e) => handleInputChange('videoUrl', e.target.value)}
-                  placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                
-                {/* 동영상 썸네일 미리보기 */}
-                {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
-                  <div className="mt-3">
-                    <p className="text-sm font-medium text-gray-700 mb-2">동영상 미리보기</p>
-                    <div className="relative w-full max-w-md mx-auto">
-                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                        <Image
-                          src={getVideoThumbnail(formData.videoUrl)!}
-                          alt={getVideoTitle(formData.videoUrl)}
-                          fill
-                          className="object-cover"
-                          unoptimized={true}
-                          onError={(e) => {
-                            console.error('썸네일 로드 실패:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                          <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-xs text-gray-600 text-center">
-                        {getVideoTitle(formData.videoUrl)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
 
 
-
-              {/* 공개 설정 */}
-              <div className="flex items-center gap-4">
-                <h3 className="font-medium text-gray-900">공개 설정</h3>
-                <p className="text-sm text-gray-600">
-                  {formData.isPublic 
-                    ? '다른 사용자들이 이 프롬프트를 볼 수 있습니다.' 
-                    : '나만 이 프롬프트를 볼 수 있습니다.'
-                  }
-                </p>
-                <label className="relative inline-flex items-center cursor-pointer ml-auto">
-                  <input
-                    type="checkbox"
-                    checked={formData.isPublic}
-                    onChange={(e) => handleInputChange('isPublic', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
-              </div>
 
               {/* 제출 버튼 */}
               <div className="flex gap-4 pt-6">
