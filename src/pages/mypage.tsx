@@ -254,34 +254,25 @@ const MyPage = () => {
 
   const handleAvatarChange = async (avatarUrl: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/profile/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: user?.name,
-          avatar_url: avatarUrl,
-        }),
-      });
-
-      const data = await res.json();
+      console.log('[DEBUG] Avatar changed to:', avatarUrl);
       
-      if (data.ok) {
-        // 프로필 사진 업로드 후 사용자 정보 새로고침
-        await refreshUserProfile();
-        await refreshUser(); // AuthContext의 사용자 정보도 새로고침
-        setToastMessage('프로필 사진이 업데이트되었습니다.');
-        setToastType('success');
-        setShowToast(true);
-      } else {
-        throw new Error(data.error || '프로필 업데이트에 실패했습니다.');
+      // 업로드된 아바타 URL로 사용자 프로필 상태 업데이트
+      setUserProfile(prev => ({
+        ...prev,
+        avatar_url: avatarUrl
+      }));
+      
+      // AuthContext의 사용자 정보도 업데이트
+      if (refreshUser) {
+        await refreshUser();
       }
+      
+      setToastMessage('프로필 사진이 업데이트되었습니다.');
+      setToastType('success');
+      setShowToast(true);
     } catch (error) {
-      console.error('Profile update error:', error);
-      setToastMessage('프로필 업데이트에 실패했습니다.');
+      console.error('Profile refresh error:', error);
+      setToastMessage('프로필 사진 업데이트에 실패했습니다.');
       setToastType('error');
       setShowToast(true);
     }
@@ -483,6 +474,37 @@ const MyPage = () => {
 
   return (
     <>
+      {/* Custom Checkbox Styles */}
+      <style jsx>{`
+        .custom-checkbox:checked {
+          background-color: white !important;
+          border-color: #fed7aa !important;
+        }
+        .custom-checkbox:checked:before {
+          content: '✓';
+          color: #f97316;
+          font-size: 12px;
+          font-weight: bold;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+        .custom-checkbox {
+          position: relative;
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          border: 1.5px solid #fed7aa !important;
+          background-color: white !important;
+        }
+        .custom-checkbox:focus {
+          outline: none !important;
+          box-shadow: none !important;
+          border-color: #fed7aa !important;
+        }
+      `}</style>
+      
       <Header />
       <main className="min-h-screen bg-orange-50/20">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -1086,7 +1108,6 @@ const MyPage = () => {
             {/* 프로필 수정 탭 */}
             {activeTab === 'settings' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold mb-6">프로필 수정</h2>
                 
                 {/* 상단: 프로필 사진과 기본 정보 가로 배치 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -1118,22 +1139,34 @@ const MyPage = () => {
                     <h4 className="text-sm font-medium text-gray-700 mb-4">기본 정보</h4>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
-                        <input
-                          type="text"
-                          value={user.name}
-                          readOnly
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                        />
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">이름</label>
+                          <input
+                            type="text"
+                            value={user.name}
+                            readOnly
+                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              setToastMessage('이름 수정 기능은 준비 중입니다.');
+                              setToastType('info');
+                              setShowToast(true);
+                            }}
+                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                          >
+                            이름 수정
+                          </button>
+                        </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
                         <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">이메일</label>
                           <input
                             type="email"
                             value={user.email}
                             readOnly
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
                           />
                           <button
                             onClick={() => {
@@ -1141,7 +1174,7 @@ const MyPage = () => {
                               setToastType('info');
                               setShowToast(true);
                             }}
-                            className="px-3 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
                           >
                             이메일 인증
                           </button>
@@ -1160,14 +1193,13 @@ const MyPage = () => {
                       
                       {/* 비밀번호 변경 섹션 */}
                       <div className="border-b pb-6">
-                        <h4 className="text-sm font-medium text-gray-700 mb-4">비밀번호 변경</h4>
                         <div className="space-y-3">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
                             <input
                               type="password"
                               id="currentPassword"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                               placeholder="현재 비밀번호를 입력하세요"
                             />
                           </div>
@@ -1176,7 +1208,7 @@ const MyPage = () => {
                             <input
                               type="password"
                               id="newPassword"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                               placeholder="새 비밀번호를 입력하세요 (6자 이상)"
                             />
                           </div>
@@ -1185,13 +1217,13 @@ const MyPage = () => {
                             <input
                               type="password"
                               id="confirmPassword"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                              className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                               placeholder="새 비밀번호를 다시 입력하세요"
                             />
                           </div>
                           <button
                             onClick={handlePasswordChange}
-                            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
                           >
                             비밀번호 변경
                           </button>
@@ -1223,17 +1255,16 @@ const MyPage = () => {
                       
                       {/* 알림 설정 섹션 */}
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-4">알림 옵션</h4>
                         <div className="space-y-3">
                           <label className="flex items-center gap-2">
-                            <input type="checkbox" className="rounded" defaultChecked />
+                            <input type="checkbox" className="w-4 h-4 border-orange-300 rounded focus:outline-none relative z-20 cursor-pointer custom-checkbox" defaultChecked />
                             <span className="text-sm text-gray-600">내 프롬프트에 좋아요를 받으면 알림</span>
                           </label>
                           <label className="flex items-center gap-2">
-                            <input type="checkbox" className="rounded" defaultChecked />
+                            <input type="checkbox" className="w-4 h-4 border-orange-300 rounded focus:outline-none relative z-20 cursor-pointer custom-checkbox" defaultChecked />
                             <span className="text-sm text-gray-600">내 프롬프트에 댓글이 달리면 알림</span>
                           </label>
-                          <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
+                          <button className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap">
                             알림 설정 저장
                           </button>
                         </div>
@@ -1325,7 +1356,7 @@ const MyPage = () => {
                 type="password"
                 value={deleteAccountPassword}
                 onChange={(e) => setDeleteAccountPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
                 placeholder="현재 비밀번호를 입력하세요"
               />
             </div>
