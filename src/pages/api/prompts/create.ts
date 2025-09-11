@@ -33,7 +33,7 @@ export default async function handler(
       // 현재 사용자 ID 사용 (브라우저에서 확인된 사용자)
       authUser = {
         id: "7b03565d-b472-477c-9321-75bb442ae60e",
-        email: "prompot7@gmail.com",
+        email: "prompot@gmail.com",
         user_metadata: { name: "prompot" }
       };
     } else {

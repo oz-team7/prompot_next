@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (res.ok) {
         const data = await res.json();
+        console.log('[DEBUG] AuthContext refreshUser - User data received:', data.user);
         setUser(data.user);
         if (typeof window !== 'undefined') {
           localStorage.setItem('user', JSON.stringify(data.user));
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (res.ok) {
           const data = await res.json();
+          console.log('[DEBUG] AuthContext - User data received:', data.user);
           setUser(data.user);
           if (typeof window !== 'undefined') {
             localStorage.setItem('user', JSON.stringify(data.user));
