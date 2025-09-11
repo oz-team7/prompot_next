@@ -5,15 +5,24 @@ import Logo from './Logo';
 import SearchBar from './SearchBar';
 import Sidebar from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSearch } from '@/contexts/SearchContext';
 
 const Header: React.FC = () => {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
+  const { setSearchQuery } = useSearch();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     router.push('/');
+  };
+
+  const handleLogoClick = () => {
+    // 검색 쿼리 초기화
+    setSearchQuery('');
+    // 홈으로 이동하면서 필터 초기화 신호 전달
+    router.push('/?reset=true');
   };
 
   return (
@@ -33,10 +42,13 @@ const Header: React.FC = () => {
             </button>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <button 
+              onClick={handleLogoClick}
+              className="flex items-center gap-2 flex-shrink-0 cursor-pointer"
+            >
               <Logo className="hover:scale-105 transition-transform w-8 h-8 sm:w-10 sm:h-10" />
               <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-primary">PROMPOT</h1>
-            </Link>
+            </button>
 
             {/* Search Bar */}
             <div className="flex-1 flex justify-center px-2 sm:px-4">

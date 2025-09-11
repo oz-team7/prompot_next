@@ -43,6 +43,17 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [activeAIModel, setActiveAIModel] = useState<string>('all');
   const [activeTag, setActiveTag] = useState<string>('all');
   
+  // 페이지 경로 변경 시 필터 초기화 (홈으로 이동 시)
+  useEffect(() => {
+    if (router.pathname === '/' && router.query.reset === 'true') {
+      setActiveCategory('all');
+      setActiveAIModel('all');
+      setActiveTag('all');
+      // URL에서 reset 파라미터 제거
+      router.replace('/', undefined, { shallow: true });
+    }
+  }, [router.pathname, router.query.reset]);
+  
   // 정렬 옵션 정의
   const sortOptions = [
     { value: 'latest', label: '최신순', icon: '⌃' },
