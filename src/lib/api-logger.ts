@@ -126,11 +126,13 @@ export const fetchWithLogging = async (
   
   // 토큰이 있으면 자동으로 Authorization 헤더 추가
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  if (token && !options.headers?.['Authorization']) {
-    options.headers = {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`
-    };
+  if (token) {
+    // headers를 Record<string, string> 타입으로 변환
+    const headers = new Headers(options.headers);
+    if (!headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    options.headers = headers;
   }
   
   let response: Response;
