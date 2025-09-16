@@ -41,6 +41,15 @@ export default async function handler(
 
         if (error) {
           console.error('Error fetching announcements:', error);
+          // 테이블이 없을 경우 빈 배열 반환
+          if (error.code === '42P01') {
+            return res.status(200).json({
+              announcements: [],
+              totalPages: 0,
+              currentPage: pageNum,
+              totalCount: 0
+            });
+          }
           throw error;
         }
 

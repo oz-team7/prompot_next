@@ -202,7 +202,7 @@ const AdminPage = () => {
     } else if (activeSection === 'notifications') {
       fetchAdminEmails();
     }
-  }, [isAuthenticated, user, router, authLoading, activeSection]);
+  }, [isAuthenticated, user?.id, user?.email, router, authLoading, activeSection]);
 
   // 자동 새로고침 기능
   useEffect(() => {
