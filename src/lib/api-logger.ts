@@ -124,6 +124,15 @@ export const fetchWithLogging = async (
   const endpoint = url.replace(/^https?:\/\/[^\/]+/, ''); // Remove domain
   const method = options.method || 'GET';
   
+  // 토큰이 있으면 자동으로 Authorization 헤더 추가
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (token && !options.headers?.['Authorization']) {
+    options.headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`
+    };
+  }
+  
   let response: Response;
   let errorMessage: string | null = null;
   

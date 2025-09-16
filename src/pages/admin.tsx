@@ -250,7 +250,7 @@ const AdminPage = () => {
 
   const fetchUsers = async (page = 1, search = '') => {
     try {
-      const res = await fetch(`/api/admin/users?page=${page}&search=${search}`, {
+      const res = await fetchWithLogging(`/api/admin/users?page=${page}&search=${search}`, {
         credentials: 'include',
       });
       
@@ -278,7 +278,7 @@ const AdminPage = () => {
         category
       });
       
-      const res = await fetch(`/api/admin/prompts?${params}`, {
+      const res = await fetchWithLogging(`/api/admin/prompts?${params}`, {
         credentials: 'include',
       });
       
@@ -305,7 +305,7 @@ const AdminPage = () => {
 
   const handlePromptUpdate = async (updates: any) => {
     try {
-      const res = await fetch('/api/admin/prompts', {
+      const res = await fetchWithLogging('/api/admin/prompts', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -336,7 +336,7 @@ const AdminPage = () => {
     }
 
     try {
-      const res = await fetch(`/api/admin/prompts?promptId=${promptId}`, {
+      const res = await fetchWithLogging(`/api/admin/prompts?promptId=${promptId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -355,7 +355,7 @@ const AdminPage = () => {
     setShowUserModal(true);
     
     try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
+      const res = await fetchWithLogging(`/api/admin/users/${user.id}`, {
         credentials: 'include',
       });
       
@@ -377,7 +377,7 @@ const AdminPage = () => {
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetchWithLogging(`/api/admin/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -420,7 +420,7 @@ const AdminPage = () => {
     if (!detailReason) return;
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}/sanction`, {
+      const res = await fetchWithLogging(`/api/admin/users/${userId}/sanction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -471,7 +471,7 @@ const AdminPage = () => {
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}/delete`, {
+      const res = await fetchWithLogging(`/api/admin/users/${userId}/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -543,7 +543,7 @@ const AdminPage = () => {
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${userId}/sanction?sanctionId=${sanctionId}`, {
+      const res = await fetchWithLogging(`/api/admin/users/${userId}/sanction?sanctionId=${sanctionId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -757,7 +757,7 @@ const AdminPage = () => {
     formData.append('mode', 'merge'); // merge 또는 replace
 
     try {
-      const res = await fetch('/api/admin/backup/restore', {
+      const res = await fetchWithLogging('/api/admin/backup/restore', {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -967,7 +967,7 @@ const AdminPage = () => {
       if (action) params.append('action', action);
       if (adminId) params.append('adminId', adminId);
       
-      const res = await fetch(`/api/admin/logs?${params}`, {
+      const res = await fetchWithLogging(`/api/admin/logs?${params}`, {
         credentials: 'include',
       });
       
