@@ -3,9 +3,9 @@
 ## 문서 정보
 - 제목: 프롬프트 프롬프트를 저장/정리/공유할 수 있는 무료 플랫폼 서비스  
 - 버전 정보: v2.0  
-- 작성일자: 2025.08.14  
-- 최종 수정: 2025.08.28
-- 작성자: PROMPOT Team (태웅, 민호, 은지)  
+- 작성일자: 2024.08.14  
+- 최종 수정: 2024.09.16
+- 작성자: PROMPOT Team  
 - 상태: Production Ready  
 
 ---
@@ -153,26 +153,65 @@ CREATE TABLE prompts (
   tags JSONB,
   ai_model TEXT,
   preview_image TEXT,
+  additional_images JSONB,
+  video_url TEXT,
   is_public BOOLEAN DEFAULT true,
   author_id UUID REFERENCES profiles(id) NOT NULL,
+  views INTEGER DEFAULT 0,
+  result_type TEXT DEFAULT 'image' CHECK (result_type IN ('image', 'text')),
+  text_result TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
 
--- likes 테이블 (예정)
-CREATE TABLE likes (
+-- prompt_likes 테이블
+CREATE TABLE prompt_likes (
   user_id UUID REFERENCES profiles(id),
   prompt_id INTEGER REFERENCES prompts(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   PRIMARY KEY (user_id, prompt_id)
 );
 
--- bookmarks 테이블 (예정)
-CREATE TABLE bookmarks (
-  user_id UUID REFERENCES profiles(id),
-  prompt_id INTEGER REFERENCES prompts(id),
+-- user_bookmarks 테이블
+CREATE TABLE user_bookmarks (
+  id SERIAL PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) NOT NULL,
+  prompt_id INTEGER REFERENCES prompts(id) NOT NULL,
+  category_id UUID REFERENCES bookmark_categories(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-  PRIMARY KEY (user_id, prompt_id)
+  UNIQUE(user_id, prompt_id)
+);
+
+-- bookmark_categories 테이블
+CREATE TABLE bookmark_categories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) NOT NULL,
+  name TEXT NOT NULL,
+  color TEXT DEFAULT '#FF7A00',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- comments 테이블
+CREATE TABLE comments (
+  id SERIAL PRIMARY KEY,
+  content TEXT NOT NULL,
+  prompt_id INTEGER REFERENCES prompts(id) NOT NULL,
+  user_id UUID REFERENCES profiles(id) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- reports 테이블
+CREATE TABLE reports (
+  id SERIAL PRIMARY KEY,
+  reporter_id UUID REFERENCES profiles(id) NOT NULL,
+  content_type TEXT NOT NULL,
+  content_id INTEGER NOT NULL,
+  category TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
 ```
 
@@ -196,8 +235,14 @@ CREATE TABLE bookmarks (
   %% 마이페이지 (/mypage)
   %    %% 내 프롬프트 / 북마크 관리
   %% 관리자 페이지 (/admin)
-       %% 프롬프트 승인
-       %% 신고 관리
+       %% 대시보드 (통계 및 현황)
+       %% 사용자 관리 (정지/경고)
+       %% 프롬프트 관리 (수정/삭제)
+       %% 신고 관리 (처리/상태 변경)
+       %% 백업 관리 (생성/복원/다운로드)
+       %% API 모니터링 (로그 조회)
+       %% 시스템 설정
+       %% 공지사항 관리
 ```
 
 ---
@@ -231,25 +276,126 @@ http://localhost:3000
 - ✅ Prisma 제거 및 Supabase 직접 쿼리 전환
 - ✅ RLS (Row Level Security) 활성화
 - ✅ 환경변수 최적화 및 보안 강화
+- ✅ 조회수 및 좋아요 기능 구현
+- ✅ 고급 정렬 옵션 (최신순, 좋아요순, 조회수순, 북마크순)
+- ✅ AI 모델별 필터링 기능
+- ✅ 실시간 인기 프롬프트 롤링 UI (v2.0)
+- ✅ 작성자 프로필 페이지 및 작성자별 프롬프트 보기
+- ✅ 이미지 워터마크 자동 추가 기능
+- ✅ 텍스트/이미지 결과 타입 구분 기능
+- ✅ 댓글 시스템 구현
+- ✅ 신고 기능 구현
+- ✅ 관리자 대시보드 (v2.0)
+- ✅ 사용자 관리 시스템 (v2.0)
+- ✅ 프롬프트 관리 기능 (v2.0)
+- ✅ 신고 관리 시스템 (v2.0)
+- ✅ 백업 관리 시스템 (v2.0)
+- ✅ API 모니터링 시스템 (v2.0)
+- ✅ 프롬프트 생성 페이지 UI/UX 개선 (v2.0)
+- ✅ 로그인/회원가입 페이지 UX 개선 (v2.0)
+- ✅ 프로필 이미지 처리 개선 (v2.0)
 
 ### 진행 중
-- 🔄 프롬프트 CRUD API 구현 (Create, Update, Delete)
 - 🔄 OAuth 로그인 연동 (Google, Kakao)
-- 🔄 좋아요/북마크 테이블 생성 및 API 구현
+- 🔄 공지사항 관리 시스템
 
 ### 예정 기능
-- 📋 프롬프트 업로드 기능 완성
-- 📋 댓글 및 평점 시스템
-- 📋 이미지 업로드 (Supabase Storage)
-- 📋 사용자 프로필 페이지
 - 📋 프롬프트 버전 관리 시스템
-- 📋 관리자 대시보드
+- 📋 사용자 팔로우 기능
+- 📋 프롬프트 평점 시스템
+- 📋 프롬프트 공유 통계 및 분석
 
 ---
 
 ## 주요 업데이트 내역
 
-### v2.0 (2025.08.28)
+### v2.0 (2024.09.16)
+
+#### 관리자 기능 (개발담당자 1)
+- **관리자 대시보드 구현**
+  - 시스템 전체 통계 및 현황 대시보드
+  - 사용자, 프롬프트, 댓글, 신고 통계 실시간 확인
+  - 최근 활동 로그 표시
+  
+- **사용자 관리 시스템**
+  - 사용자 검색 및 상태 관리 (정상/정지/경고)
+  - 사용자별 프로필 상세 정보 조회
+  - 계정 상태 변경 기능 (정지/경고 처리)
+  - 관리자 권한 부여/철회 기능
+  
+- **프롬프트 관리 기능**
+  - 모든 프롬프트 조회 및 검색
+  - 관리자 전용 수정/삭제 권한
+  - 프롬프트 상태 변경 (공개/비공개 처리)
+  - 부적절한 콘텐츠 즉시 삭제
+  
+- **신고 관리 시스템**
+  - 신고 내역 통합 관리
+  - 신고 상태 변경 (대기/처리중/완료/거부)
+  - 신고 카테고리별 필터링
+  - 관리자 메모 기능
+  
+- **백업 관리 시스템**
+  - 전체 백업 및 데이터 전용 백업 옵션
+  - ZIP 파일 형식으로 백업 생성/다운로드
+  - 병합 모드와 교체 모드 백업 복원
+  - 백업 히스토리 관리
+  
+- **API 모니터링**
+  - API 호출 로그 실시간 조회
+  - 호출량 통계 및 분석
+  - API 키 발급 및 관리
+  - 사용량 제한 설정
+  
+- **시스템 설정**
+  - 공지사항 관리 (작성/수정/삭제)
+  - 시스템 설정 저장 기능
+  - 관리자 활동 로그
+  
+- **보안 강화**
+  - 관리자 전용 미들웨어 구현
+  - API 로깅 시스템 개선 (localStorage 용량 관리)
+  - 민감 정보 마스킹 처리
+
+#### UI/UX 개선 (개발담당자 2)
+- **프롬프트 생성 페이지 개선**
+  - 결과 타입 선택 UI 라디오 버튼 스타일로 변경
+  - 공개/비공개 설정 토글 UI 개선 (텍스트 동적 변경)
+  - 중복 필드 제거 및 UI 순서 재구성
+  - 텍스트 미리보기 레이블 "프롬프트 결과"로 변경
+  
+- **실시간 인기 프롬프트 기능**
+  - 헤더에 실시간 인기 프롬프트 롤링 표시
+  - 인기 점수 알고리즘 기반 TOP 10 표시
+  - 확장 가능한 드롭다운 리스트
+  - API 날짜 범위 수정 (7일 → 14일)
+  
+- **FAQ 페이지 개선**
+  - 문의하기 버튼 브랜드 컬러(오렌지) 적용
+  - 문의하기 폼 로그인 사용자 전용으로 제한
+  - 비로그인 시 alert 메시지 후 로그인 페이지 이동
+  
+- **로그인/회원가입 페이지 개선**
+  - 로딩 중 스피너 애니메이션 추가
+  - "로그인 중..." / "회원가입 중..." 상태 표시
+  - 버튼 비활성화로 중복 클릭 방지
+  
+- **프로필 이미지 처리 개선**
+  - 이미지 로드 실패 시 PROMPOT 로고로 자동 대체
+  - 모든 프로필 이미지 표시 영역에 일관된 처리 적용
+  - Header, 마이페이지, AvatarUpload, ProfileImageModal 컴포넌트 수정
+  
+- **UI 일관성 개선**
+  - 북마크와 신고하기 버튼 UI 스타일 통일
+  - 드롭다운 메뉴 z-index 우선순위 수정
+  - 반응형 디자인 개선
+  
+- **사용성 개선**
+  - 버튼 hover 효과 및 transition 적용
+  - 폼 필드 포커스 상태 시각적 피드백 강화
+  - 에러 메시지 표시 개선
+
+### v1.2 (2024.08.28)
 - **Supabase 완전 통합**: Prisma 제거, Supabase 직접 쿼리 사용
 - **Supabase Auth 마이그레이션**: JWT/bcrypt 제거, Supabase Auth 전환
 - **데이터베이스 변경**: SQLite → PostgreSQL (Supabase)
@@ -257,3 +403,20 @@ http://localhost:3000
 - **코드 최적화**: 불필요한 의존성 제거, 환경변수 정리
 - **타입 안정성**: TypeScript 타입 점검 완료
 - **API 안정화**: 모든 API 엔드포인트 검증 완료
+
+### v1.1 (2024.08.14)
+- **조회수 및 좋아요 기능**: 프롬프트별 조회수 추적, 좋아요 기능 구현
+- **고급 정렬 옵션**: 최신순, 좋아요순, 조회수순, 북마크순 정렬
+- **AI 모델 필터링**: AI 모델별 프롬프트 필터링 기능
+- **작성자 프로필**: 작성자별 프롬프트 모아보기 및 통계 제공
+- **이미지 워터마크**: 업로드 이미지에 자동 워터마크 추가
+- **결과 타입 구분**: 이미지/텍스트 결과물 구분 표시
+- **댓글 시스템**: 프롬프트별 댓글 기능 구현
+- **신고 기능**: 부적절한 콘텐츠 신고 시스템
+
+### v1.0 (2024.08.01)
+- **초기 버전 출시**: 기본 프롬프트 공유 기능
+- **Next.js + TypeScript** 기반 프론트엔드
+- **카테고리 필터링** 및 검색 기능
+- **북마크** 기능
+- **반응형 디자인**

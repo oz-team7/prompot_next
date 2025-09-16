@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth-utils';
+import { isAdmin } from '@/lib/admin-utils';
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,17 +19,12 @@ export default async function handler(
     return res.status(401).json({ message: '인증이 필요합니다.' });
   }
 
-  // 관리자 권한 확인 (여기서는 특정 이메일로 체크)
-  const supabase = createSupabaseServiceClient();
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', authUser.id)
-    .single();
-
-  if (error || !profile || profile.email !== 'admin@prompot.com') {
+  // 관리자 권한 확인
+  if (!await isAdmin(authUser.id)) {
     return res.status(403).json({ message: '관리자 권한이 필요합니다.' });
   }
+  
+  const supabase = createSupabaseServiceClient();
 
   try {
     // 전체 통계

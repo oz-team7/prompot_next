@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/router';
 import Header from '@/components/Header';
 import ContactForm from '@/components/ContactForm';
 import Modal from '@/components/Modal';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FAQItem {
   id: number;
@@ -11,6 +13,8 @@ interface FAQItem {
 }
 
 const FAQPage = () => {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [openItems, setOpenItems] = useState<number[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showContactModal, setShowContactModal] = useState(false);
@@ -146,6 +150,15 @@ const FAQPage = () => {
     return cat ? cat.label : category;
   };
 
+  const handleContactClick = () => {
+    if (!isAuthenticated) {
+      alert('로그인이 필요한 서비스입니다.');
+      router.push('/login');
+    } else {
+      setShowContactModal(true);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -231,13 +244,13 @@ const FAQPage = () => {
           {/* 추가 도움말 섹션 */}
                 <div className="mt-8 text-center">
         <button
-          onClick={() => setShowContactModal(true)}
-          className="inline-flex items-center px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors"
+          onClick={handleContactClick}
+          className="inline-flex items-center px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-orange-600 transition-colors"
         >
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          문의하기
+          {isAuthenticated ? '문의하기' : '로그인하여 문의하기'}
         </button>
         <Modal isOpen={showContactModal} onClose={() => setShowContactModal(false)}>
           <ContactForm supportEmail="support@prompot.com" />

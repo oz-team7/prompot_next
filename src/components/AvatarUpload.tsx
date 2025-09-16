@@ -98,11 +98,18 @@ export default function AvatarUpload({
               src={displayUrl}
               alt={userName}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = '/logo.png';
+              }}
             />
           ) : (
-            <span className="text-3xl font-bold text-gray-400">
-              {userName[0]?.toUpperCase()}
-            </span>
+            <img
+              src="/logo.png"
+              alt="PROMPOT Logo"
+              className="w-full h-full object-cover p-4"
+            />
           )}
         </div>
         

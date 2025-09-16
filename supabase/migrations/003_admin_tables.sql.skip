@@ -1,0 +1,222 @@
+-- Create admin_logs table
+CREATE TABLE IF NOT EXISTS admin_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    admin_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    action VARCHAR(100) NOT NULL,
+    target_type VARCHAR(50),
+    target_id VARCHAR(255),
+    details JSONB,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for better query performance
+CREATE INDEX idx_admin_logs_admin_id ON admin_logs(admin_id);
+CREATE INDEX idx_admin_logs_action ON admin_logs(action);
+CREATE INDEX idx_admin_logs_created_at ON admin_logs(created_at);
+CREATE INDEX idx_admin_logs_target ON admin_logs(target_type, target_id);
+
+-- Create system_announcements table
+CREATE TABLE IF NOT EXISTS system_announcements (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create system_settings table
+CREATE TABLE IF NOT EXISTS system_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    maintenance_mode BOOLEAN DEFAULT false,
+    registration_enabled BOOLEAN DEFAULT true,
+    max_prompts_per_user INTEGER DEFAULT 100,
+    max_file_size_mb INTEGER DEFAULT 10,
+    updated_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT single_row_constraint CHECK (id = 1)
+);
+
+-- Create system_backups table
+CREATE TABLE IF NOT EXISTS system_backups (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    status VARCHAR(50) DEFAULT 'pending',
+    size_mb DECIMAL(10, 2),
+    download_url TEXT,
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    completed_at TIMESTAMPTZ
+);
+
+-- Add is_blocked columns to profiles if not exists
+ALTER TABLE profiles 
+ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS blocked_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS blocked_by UUID REFERENCES profiles(id) ON DELETE SET NULL;
+
+-- Create admin_users table to explicitly manage admin permissions
+CREATE TABLE IF NOT EXISTS admin_users (
+    id UUID PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE,
+    role VARCHAR(50) DEFAULT 'admin',
+    permissions JSONB DEFAULT '{"full_access": true}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_by UUID REFERENCES profiles(id) ON DELETE SET NULL
+);
+
+-- Insert initial admin user (prompot7@gmail.com)
+INSERT INTO admin_users (id, role, permissions)
+SELECT id, 'super_admin', '{"full_access": true, "manage_admins": true}'::jsonb
+FROM profiles 
+WHERE email = 'prompot7@gmail.com'
+ON CONFLICT (id) DO NOTHING;
+
+-- Enable RLS
+ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_backups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for admin_logs
+-- Only admins can read admin logs
+CREATE POLICY "Admin can read admin_logs" ON admin_logs
+FOR SELECT 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- Only admins can insert admin logs
+CREATE POLICY "Admin can insert admin_logs" ON admin_logs
+FOR INSERT 
+TO authenticated
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- RLS Policies for system_announcements
+-- Anyone can read active announcements
+CREATE POLICY "Anyone can read active announcements" ON system_announcements
+FOR SELECT 
+TO authenticated
+USING (is_active = true);
+
+-- Only admins can read all announcements
+CREATE POLICY "Admin can read all announcements" ON system_announcements
+FOR SELECT 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- Only admins can manage announcements
+CREATE POLICY "Admin can manage announcements" ON system_announcements
+FOR ALL 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- RLS Policies for system_settings
+-- Only admins can read system settings
+CREATE POLICY "Admin can read system_settings" ON system_settings
+FOR SELECT 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- Only admins can update system settings
+CREATE POLICY "Admin can update system_settings" ON system_settings
+FOR UPDATE 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- RLS Policies for system_backups
+-- Only admins can manage backups
+CREATE POLICY "Admin can manage backups" ON system_backups
+FOR ALL 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- RLS Policies for admin_users
+-- Only super admins can read admin_users
+CREATE POLICY "Super admin can read admin_users" ON admin_users
+FOR SELECT 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid() 
+        AND admin_users.permissions->>'manage_admins' = 'true'
+    )
+);
+
+-- Only super admins can manage admin_users
+CREATE POLICY "Super admin can manage admin_users" ON admin_users
+FOR ALL 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid() 
+        AND admin_users.permissions->>'manage_admins' = 'true'
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid() 
+        AND admin_users.permissions->>'manage_admins' = 'true'
+    )
+);
+
+-- Insert default system settings
+INSERT INTO system_settings (id) VALUES (1)
+ON CONFLICT (id) DO NOTHING;

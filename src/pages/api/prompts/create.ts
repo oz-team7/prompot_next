@@ -41,7 +41,7 @@ export default async function handler(
     }
   }
   
-  const { title, description, content, category, tags, aiModel, previewImage, additionalImages, videoUrl, isPublic } = req.body;
+  const { title, description, content, category, tags, aiModel, previewImage, additionalImages, videoUrl, isPublic, resultType, textResult } = req.body;
 
   if (!title || !content || !category || !aiModel) {
     return res.status(400).json({ message: "제목, 프롬프트 내용, 카테고리, AI 모델은 필수입니다." });
@@ -72,6 +72,8 @@ export default async function handler(
       video_url: videoUrl || null,
       is_public: isPublic ?? true,
       author_id: authUser.id,
+      result_type: resultType || 'image',
+      text_result: resultType === 'text' ? (textResult || '') : null,
     };
     
     if (processedTags.length > 0) {

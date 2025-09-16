@@ -49,12 +49,21 @@ export default function ProfileImageModal({
               alt={user?.email || '프로필 이미지'}
               fill
               className="object-cover rounded-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = '/logo.png';
+              }}
             />
           ) : (
             <div className="w-full h-full rounded-lg bg-gray-100 flex items-center justify-center">
-              <span className="text-6xl font-bold text-gray-400">
-                {user?.email?.[0]?.toUpperCase()}
-              </span>
+              <Image
+                src="/logo.png"
+                alt="PROMPOT Logo"
+                width={200}
+                height={200}
+                className="object-contain p-8"
+              />
             </div>
           )}
         </div>

@@ -1,0 +1,138 @@
+-- 회원 제재 테이블
+CREATE TABLE IF NOT EXISTS user_sanctions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    sanction_type VARCHAR(50) NOT NULL, -- 'warning', 'suspension', 'permanent_ban'
+    reason TEXT NOT NULL,
+    duration INTEGER, -- 정지 일수 (7, 30, NULL for permanent)
+    start_date TIMESTAMPTZ DEFAULT NOW(),
+    end_date TIMESTAMPTZ, -- NULL이면 영구정지
+    is_active BOOLEAN DEFAULT true,
+    created_by UUID REFERENCES profiles(id),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 인덱스 생성
+CREATE INDEX idx_user_sanctions_user_id ON user_sanctions(user_id);
+CREATE INDEX idx_user_sanctions_is_active ON user_sanctions(is_active);
+CREATE INDEX idx_user_sanctions_end_date ON user_sanctions(end_date);
+
+-- RLS 정책
+ALTER TABLE user_sanctions ENABLE ROW LEVEL SECURITY;
+
+-- 관리자만 조회/수정 가능
+CREATE POLICY "Admin users can manage sanctions" ON user_sanctions
+    FOR ALL USING (
+        auth.uid() IN (
+            SELECT id FROM profiles WHERE email = 'prompot7@gmail.com'
+        )
+    );
+
+-- 사용자는 자신의 제재 내역만 조회 가능
+CREATE POLICY "Users can view own sanctions" ON user_sanctions
+    FOR SELECT USING (
+        auth.uid() = user_id
+    );
+
+-- profiles 테이블에 제재 관련 컬럼 추가
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS suspension_reason TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS suspension_end_date TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS warning_count INTEGER DEFAULT 0;
+
+-- 제재 적용 함수
+CREATE OR REPLACE FUNCTION apply_user_sanction(
+    p_user_id UUID,
+    p_sanction_type VARCHAR(50),
+    p_reason TEXT,
+    p_duration INTEGER,
+    p_created_by UUID
+) RETURNS void AS $$
+DECLARE
+    v_end_date TIMESTAMPTZ;
+BEGIN
+    -- 종료일 계산
+    IF p_duration IS NOT NULL THEN
+        v_end_date := NOW() + (p_duration || ' days')::INTERVAL;
+    ELSE
+        v_end_date := NULL; -- 영구정지
+    END IF;
+
+    -- 제재 기록 추가
+    INSERT INTO user_sanctions (
+        user_id, sanction_type, reason, duration, 
+        end_date, created_by
+    ) VALUES (
+        p_user_id, p_sanction_type, p_reason, p_duration, 
+        v_end_date, p_created_by
+    );
+
+    -- profiles 테이블 업데이트
+    IF p_sanction_type = 'warning' THEN
+        UPDATE profiles 
+        SET warning_count = warning_count + 1,
+            updated_at = NOW()
+        WHERE id = p_user_id;
+    ELSIF p_sanction_type IN ('suspension', 'permanent_ban') THEN
+        UPDATE profiles 
+        SET is_suspended = true,
+            suspension_reason = p_reason,
+            suspension_end_date = v_end_date,
+            updated_at = NOW()
+        WHERE id = p_user_id;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 제재 해제 함수
+CREATE OR REPLACE FUNCTION revoke_user_sanction(
+    p_user_id UUID,
+    p_sanction_id UUID
+) RETURNS void AS $$
+BEGIN
+    -- 제재 비활성화
+    UPDATE user_sanctions 
+    SET is_active = false,
+        updated_at = NOW()
+    WHERE id = p_sanction_id AND user_id = p_user_id;
+
+    -- profiles 테이블 업데이트
+    UPDATE profiles 
+    SET is_suspended = false,
+        suspension_reason = NULL,
+        suspension_end_date = NULL,
+        updated_at = NOW()
+    WHERE id = p_user_id
+    AND NOT EXISTS (
+        SELECT 1 FROM user_sanctions
+        WHERE user_id = p_user_id 
+        AND is_active = true
+        AND sanction_type IN ('suspension', 'permanent_ban')
+        AND (end_date IS NULL OR end_date > NOW())
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- 만료된 제재 자동 해제 함수
+CREATE OR REPLACE FUNCTION check_expired_sanctions() RETURNS void AS $$
+BEGIN
+    -- 만료된 제재 비활성화
+    UPDATE user_sanctions 
+    SET is_active = false,
+        updated_at = NOW()
+    WHERE is_active = true
+    AND end_date IS NOT NULL
+    AND end_date < NOW();
+
+    -- profiles 테이블에서 만료된 정지 해제
+    UPDATE profiles 
+    SET is_suspended = false,
+        suspension_reason = NULL,
+        suspension_end_date = NULL,
+        updated_at = NOW()
+    WHERE is_suspended = true
+    AND suspension_end_date IS NOT NULL
+    AND suspension_end_date < NOW();
+END;
+$$ LANGUAGE plpgsql;

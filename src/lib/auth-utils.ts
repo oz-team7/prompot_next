@@ -77,3 +77,18 @@ export async function requireAuth(req: NextApiRequest) {
   
   return user;
 }
+
+export async function checkAdminAuth(req: NextApiRequest) {
+  const user = await getAuthUser(req);
+  
+  if (!user) {
+    return null;
+  }
+  
+  // 관리자 이메일 확인
+  if (user.email !== 'prompot7@gmail.com') {
+    return null;
+  }
+  
+  return user;
+}

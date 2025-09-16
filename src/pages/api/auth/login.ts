@@ -49,14 +49,65 @@ export default async function handler(
       return res.status(401).json({ message: '로그인에 실패했습니다.' });
     }
 
+    // 사용자 정지 상태 확인
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('is_suspended, suspension_reason, suspension_end_date')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      return res.status(500).json({ message: '프로필 정보를 가져오는 중 오류가 발생했습니다.' });
+    }
+
+    // 정지된 사용자인 경우
+    if (userProfile?.is_suspended) {
+      // 로그아웃 처리
+      await supabase.auth.signOut();
+      
+      let suspensionMessage = '계정이 정지되었습니다.';
+      if (userProfile.suspension_reason) {
+        suspensionMessage += `\n사유: ${userProfile.suspension_reason}`;
+      }
+      if (userProfile.suspension_end_date) {
+        const endDate = new Date(userProfile.suspension_end_date);
+        const now = new Date();
+        
+        if (endDate > now) {
+          const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          suspensionMessage += `\n정지 해제까지 ${daysLeft}일 남았습니다.`;
+        } else {
+          // 정지 기간이 만료된 경우 정지 해제
+          await supabase
+            .from('profiles')
+            .update({
+              is_suspended: false,
+              suspension_reason: null,
+              suspension_end_date: null
+            })
+            .eq('id', data.user.id);
+        }
+      } else {
+        suspensionMessage += '\n영구 정지 상태입니다.';
+      }
+      
+      return res.status(403).json({ 
+        message: suspensionMessage,
+        isSuspended: true,
+        suspensionReason: userProfile.suspension_reason,
+        suspensionEndDate: userProfile.suspension_end_date
+      });
+    }
+
     // 프로필 정보 가져오기
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileFetchError } = await supabase
       .from('profiles')
       .select('id, email, name, avatar_url')
       .eq('id', data.user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (profileFetchError || !profile) {
       return res.status(500).json({ message: '사용자 정보를 가져올 수 없습니다.' });
     }
 

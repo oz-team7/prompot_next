@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { fetchWithLogging } from '@/lib/api-logger';
 
 interface Comment {
   id: string;
@@ -32,7 +33,7 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
   const fetchComments = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/prompts/${promptId}/comments?page=${page}`, {
+      const res = await fetchWithLogging(`/api/prompts/${promptId}/comments?page=${page}`, {
         credentials: 'include',
         headers: {
           'Authorization': token ? `Bearer ${token}` : ''
@@ -64,7 +65,7 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
     if (!user || !content.trim()) return;
 
     try {
-      const res = await fetch(`/api/prompts/${promptId}/comments`, {
+      const res = await fetchWithLogging(`/api/prompts/${promptId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
     if (!user || !editContent.trim()) return;
 
     try {
-      const res = await fetch(`/api/prompts/${promptId}/comments`, {
+      const res = await fetchWithLogging(`/api/prompts/${promptId}/comments`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -116,7 +117,7 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
     if (!user || !confirm('정말로 이 댓글을 삭제하시겠습니까?')) return;
 
     try {
-      const res = await fetch(`/api/prompts/${promptId}/comments?commentId=${commentId}`, {
+      const res = await fetchWithLogging(`/api/prompts/${promptId}/comments?commentId=${commentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

@@ -1,0 +1,65 @@
+-- 신고 테이블 생성
+CREATE TABLE IF NOT EXISTS reports (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    reporter_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    reported_type VARCHAR(50) NOT NULL, -- 'prompt', 'user', 'comment'
+    reported_id VARCHAR(255) NOT NULL, -- 신고 대상의 ID
+    reason VARCHAR(100) NOT NULL, -- 신고 사유
+    details TEXT, -- 상세 설명
+    status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'reviewing', 'resolved', 'rejected'
+    resolved_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    resolved_at TIMESTAMPTZ,
+    resolution_note TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 인덱스 생성
+CREATE INDEX idx_reports_reporter_id ON reports(reporter_id);
+CREATE INDEX idx_reports_reported ON reports(reported_type, reported_id);
+CREATE INDEX idx_reports_status ON reports(status);
+CREATE INDEX idx_reports_created_at ON reports(created_at);
+
+-- RLS 활성화
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+
+-- RLS 정책
+-- 사용자는 자신의 신고를 볼 수 있음
+CREATE POLICY "Users can view own reports" ON reports
+FOR SELECT 
+TO authenticated
+USING (reporter_id = auth.uid());
+
+-- 사용자는 신고를 생성할 수 있음
+CREATE POLICY "Users can create reports" ON reports
+FOR INSERT 
+TO authenticated
+WITH CHECK (reporter_id = auth.uid());
+
+-- 관리자는 모든 신고를 볼 수 있음
+CREATE POLICY "Admins can view all reports" ON reports
+FOR SELECT 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);
+
+-- 관리자는 신고를 수정할 수 있음
+CREATE POLICY "Admins can update reports" ON reports
+FOR UPDATE 
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users 
+        WHERE admin_users.id = auth.uid()
+    )
+);

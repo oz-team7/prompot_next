@@ -55,7 +55,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
   // 1) 프롬프트 본문(조인 없이 단건)
   const { data: prompt, error } = await svc
     .from('prompts')
-    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image,additional_images,video_url')
+    .select('id,title,content,description,category,is_public,created_at,updated_at,author_id,tags,ai_model,preview_image,additional_images,video_url,views')
     .eq('id', id)
     .single()
 
@@ -96,6 +96,19 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
     .select('user_id', { count: 'exact', head: true })
     .eq('prompt_id', id)
 
+  // 5) 현재 사용자의 좋아요 여부 확인
+  let isLiked = false
+  if (requesterId) {
+    const { data: userLike } = await svc
+      .from('prompt_likes')
+      .select('id')
+      .eq('prompt_id', id)
+      .eq('user_id', requesterId)
+      .single()
+    
+    isLiked = !!userLike
+  }
+
   // 응답 데이터 구성
   return json(res, 200, {
     ok: true,
@@ -109,6 +122,9 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
         avatar_url: author.avatar_url
       },
       likes: likesCount ?? 0,
+      likes_count: likesCount ?? 0, // 새로운 API 형식
+      is_liked: isLiked, // 현재 사용자의 좋아요 여부
+      views: prompt.views || 0, // 조회수
       bookmarks: bookmarksCount ?? 0,
       rating: 0, // 항상 기본값 0 추가
       date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),

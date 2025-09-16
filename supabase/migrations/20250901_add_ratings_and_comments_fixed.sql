@@ -1,6 +1,6 @@
 -- 별점 테이블 생성 (수정된 버전)
 create table if not exists prompt_ratings (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     prompt_id integer references prompts(id) on delete cascade,
     user_id uuid references profiles(id) on delete cascade,
     rating integer check (rating >= 1 and rating <= 5),
@@ -11,7 +11,7 @@ create table if not exists prompt_ratings (
 
 -- 댓글 테이블 생성 (수정된 버전)
 create table if not exists prompt_comments (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     prompt_id integer references prompts(id) on delete cascade,
     user_id uuid references profiles(id) on delete cascade,
     content text not null,
