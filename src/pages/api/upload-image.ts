@@ -170,7 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Supabase Storage에 업로드
     const supabase = createSupabaseServiceClient();
     const { data, error } = await supabase.storage
-      .from('images')
+      .from('prompt-images')
       .upload(`${folder}/${finalFileName}`, processedImage, {
         contentType: 'image/jpeg',
         upsert: false
@@ -183,7 +183,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 공개 URL 생성
     const { data: urlData } = supabase.storage
-      .from('images')
+      .from('prompt-images')
       .getPublicUrl(`${folder}/${finalFileName}`);
 
     if (!urlData?.publicUrl) {
