@@ -94,10 +94,93 @@ export default async function handler(
         };
       }
     }
+
+    // admin_notifications 테이블 체크
+    const { data: adminNotificationsSample, error: adminNotificationsError } = await supabase
+      .from('admin_notifications')
+      .select('*')
+      .limit(1);
+    
+    if (!adminNotificationsError && adminNotificationsSample) {
+      tables['admin_notifications'] = {
+        exists: true,
+        columns: adminNotificationsSample.length > 0 ? Object.keys(adminNotificationsSample[0]) : [],
+        sample: adminNotificationsSample[0] || null,
+        error: null
+      };
+    } else {
+      tables['admin_notifications'] = {
+        exists: false,
+        error: adminNotificationsError?.message || 'Table not found'
+      };
+    }
+
+    // inquiries 테이블 체크
+    const { data: inquiriesSample, error: inquiriesError } = await supabase
+      .from('inquiries')
+      .select('*')
+      .limit(1);
+    
+    if (!inquiriesError && inquiriesSample) {
+      tables['inquiries'] = {
+        exists: true,
+        columns: inquiriesSample.length > 0 ? Object.keys(inquiriesSample[0]) : [],
+        sample: inquiriesSample[0] || null,
+        error: null
+      };
+    } else {
+      tables['inquiries'] = {
+        exists: false,
+        error: inquiriesError?.message || 'Table not found'
+      };
+    }
+
+    // system_settings 테이블 체크
+    const { data: systemSettingsSample, error: systemSettingsError } = await supabase
+      .from('system_settings')
+      .select('*')
+      .limit(1);
+    
+    if (!systemSettingsError && systemSettingsSample) {
+      tables['system_settings'] = {
+        exists: true,
+        columns: systemSettingsSample.length > 0 ? Object.keys(systemSettingsSample[0]) : [],
+        sample: systemSettingsSample[0] || null,
+        error: null
+      };
+    } else {
+      tables['system_settings'] = {
+        exists: false,
+        error: systemSettingsError?.message || 'Table not found'
+      };
+    }
+
+    // announcements 테이블 체크
+    const { data: announcementsSample, error: announcementsError } = await supabase
+      .from('announcements')
+      .select('*')
+      .limit(1);
+    
+    if (!announcementsError && announcementsSample) {
+      tables['announcements'] = {
+        exists: true,
+        columns: announcementsSample.length > 0 ? Object.keys(announcementsSample[0]) : [],
+        sample: announcementsSample[0] || null,
+        error: null
+      };
+    } else {
+      tables['announcements'] = {
+        exists: false,
+        error: announcementsError?.message || 'Table not found'
+      };
+    }
     
     res.status(200).json({ 
       tables,
-      message: '스키마 정보를 성공적으로 가져왔습니다.'
+      message: '스키마 정보를 성공적으로 가져왔습니다.',
+      missingTables: Object.entries(tables)
+        .filter(([_, info]: any) => info.exists === false)
+        .map(([name]) => name)
     });
   } catch (error) {
     console.error('Schema check error:', error);

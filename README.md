@@ -307,6 +307,33 @@ http://localhost:3000
 
 ---
 
+## 🚨 Admin 기능 마이그레이션 필수
+
+### 에러 해결 방법
+Admin 페이지에서 500 에러 발생 시 다음 마이그레이션을 실행하세요:
+
+1. **Supabase SQL Editor에서 실행**
+   ```sql
+   -- 1. admin_notifications 테이블 (관리자 알림)
+   supabase/migrations/013_admin_notifications_table.sql
+   
+   -- 2. inquiries 테이블 (문의사항)
+   supabase/migrations/014_inquiries_table.sql
+   ```
+
+2. **확인 쿼리**
+   ```sql
+   SELECT table_name FROM information_schema.tables 
+   WHERE table_schema = 'public' 
+   AND table_name IN ('admin_notifications', 'inquiries');
+   ```
+
+3. **문제 지속 시**
+   - `/api/admin/check-schema` 호출하여 누락 테이블 확인
+   - 브라우저 콘솔 및 Network 탭 확인
+
+---
+
 ## 주요 업데이트 내역
 
 ### v2.0 (2024.09.16)

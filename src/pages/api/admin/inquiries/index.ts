@@ -69,7 +69,19 @@ export default async function handler(
       const { data: inquiries, error, count } = await query
         .range(offset, offset + limitNum - 1);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching inquiries:', error);
+        // 테이블이 없을 경우 빈 배열 반환
+        if (error.code === '42P01') {
+          return res.status(200).json({
+            inquiries: [],
+            totalPages: 0,
+            currentPage: pageNum,
+            totalCount: 0
+          });
+        }
+        throw error;
+      }
 
       const totalPages = Math.ceil((count || 0) / limitNum);
 
