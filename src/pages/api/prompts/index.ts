@@ -103,6 +103,10 @@ export default async function handler(
           rating,
           created_at,
           user_id
+        ),
+        prompt_likes (
+          id,
+          user_id
         )
       `)
       .range(offset, offset + limitNum - 1);
@@ -136,15 +140,15 @@ export default async function handler(
       case 'latest':
         query = query.order('created_at', { ascending: false });
         break;
-      case 'latest-desc':
-        query = query.order('created_at', { ascending: true });
-        break;
-      case 'popular':
-        // 댓글 수 기준으로 정렬 (오름차순)
+      case 'likes':
+        // 좋아요 수는 집계 후 처리
         query = query.order('created_at', { ascending: false }); // 기본 정렬
         break;
-      case 'popular-desc':
-        // 댓글 수 기준으로 정렬 (내림차순)
+      case 'views':
+        query = query.order('views', { ascending: false });
+        break;
+      case 'bookmarks':
+        // 북마크 수는 집계 후 처리
         query = query.order('created_at', { ascending: false }); // 기본 정렬
         break;
       case 'rating':
@@ -203,23 +207,38 @@ export default async function handler(
       // 북마크 수 계산
       const bookmarkCount = bookmarkCountMap[prompt.id] || 0;
 
+      // 좋아요 수 계산 및 현재 사용자의 좋아요 여부 확인
+      const likes = prompt.prompt_likes || [];
+      const likesCount = likes.length;
+      const isLiked = userId ? likes.some((like: any) => like.user_id === userId) : false;
+
       return {
         ...prompt,
         averageRating: Math.round(averageRating * 10) / 10, // 소수점 둘째 자리까지
         commentCount,
         bookmarkCount,
+        likes_count: likesCount,
+        is_liked: isLiked,
+        views: prompt.views || 0, // 조회수
         // 클라이언트에서 필요한 데이터만 포함
         comments: undefined, // 댓글 내용은 제거하고 개수만 유지
         ratings: undefined, // 평점 내용은 제거하고 평균만 유지
+        prompt_likes: undefined, // 좋아요 상세 정보는 제거
       };
     });
 
-    // 인기순 정렬을 위한 추가 처리 (북마크 수 기준)
-    if (sort === 'popular' || sort === 'popular-desc') {
+    // 정렬 처리 (좋아요, 북마크는 집계 후 처리)
+    if (sort === 'likes') {
+      processedPrompts.sort((a, b) => {
+        const aLikes = a.likes_count || 0;
+        const bLikes = b.likes_count || 0;
+        return bLikes - aLikes; // 내림차순
+      });
+    } else if (sort === 'bookmarks') {
       processedPrompts.sort((a, b) => {
         const aBookmarks = a.bookmarkCount || 0;
         const bBookmarks = b.bookmarkCount || 0;
-        return sort === 'popular' ? aBookmarks - bBookmarks : bBookmarks - aBookmarks;
+        return bBookmarks - aBookmarks; // 내림차순
       });
     }
 

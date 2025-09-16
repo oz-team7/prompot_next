@@ -88,7 +88,7 @@ export default function ContactForm({ supportEmail }: ContactFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="your@email.com"
           />
         </div>
@@ -102,7 +102,7 @@ export default function ContactForm({ supportEmail }: ContactFormProps) {
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="문의 제목을 입력해주세요"
           />
         </div>
@@ -116,13 +116,13 @@ export default function ContactForm({ supportEmail }: ContactFormProps) {
             onChange={(e) => setMessage(e.target.value)}
             required
             rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             placeholder="문의하실 내용을 자세히 적어주세요"
           />
         </div>
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+          className="w-full bg-primary text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors"
         >
           문의하기
         </button>

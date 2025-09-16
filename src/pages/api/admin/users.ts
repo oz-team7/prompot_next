@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import { requireAuth } from '@/lib/auth-utils';
+import { isAdmin } from '@/lib/admin-utils';
 
 export default async function handler(
   req: NextApiRequest,
@@ -19,16 +20,11 @@ export default async function handler(
   }
 
   // 관리자 권한 확인
-  const supabase = createSupabaseServiceClient();
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', authUser.id)
-    .single();
-
-  if (error || !profile || profile.email !== 'admin@prompot.com') {
+  if (!await isAdmin(authUser.id)) {
     return res.status(403).json({ message: '관리자 권한이 필요합니다.' });
   }
+  
+  const supabase = createSupabaseServiceClient();
 
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -51,18 +47,10 @@ export default async function handler(
     }
     const { count: totalCount } = await countQuery;
 
-    // 사용자 목록 조회
+    // 사용자 목록 조회 (정지 상태 정보 포함)
     let usersQuery = supabase
       .from('profiles')
-      .select(`
-        id,
-        name,
-        email,
-        created_at,
-        prompts:prompts(count),
-        likes:likes(count),
-        bookmarks:bookmarks(count)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .range(skip, skip + limit - 1);
     
@@ -72,22 +60,49 @@ export default async function handler(
     
     const { data: usersRaw, error: usersError } = await usersQuery;
     
-    if (usersError || !usersRaw) {
+    if (usersError) {
+      console.error('Users query error:', usersError);
       throw new Error('사용자 목록을 가져올 수 없습니다.');
     }
     
-    // 사용자 데이터 형식 정리
-    const users = usersRaw.map(user => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      createdAt: new Date(user.created_at),
-      _count: {
-        prompts: user.prompts?.[0]?.count || 0,
-        likes: user.likes?.[0]?.count || 0,
-        bookmarks: user.bookmarks?.[0]?.count || 0,
-      }
-    }));
+    // 각 사용자의 통계를 별도로 가져오기
+    const users = await Promise.all(
+      (usersRaw || []).map(async (user) => {
+        // 프롬프트 수 가져오기
+        const { count: promptCount } = await supabase
+          .from('prompts')
+          .select('*', { count: 'exact', head: true })
+          .eq('author_id', user.id);
+        
+        // 좋아요 수 가져오기
+        const { count: likeCount } = await supabase
+          .from('likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        // 북마크 수 가져오기
+        const { count: bookmarkCount } = await supabase
+          .from('bookmarks')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          createdAt: new Date(user.created_at),
+          is_suspended: user.is_suspended || false,
+          suspension_reason: user.suspension_reason || null,
+          suspension_end_date: user.suspension_end_date || null,
+          warning_count: user.warning_count || 0,
+          _count: {
+            prompts: promptCount || 0,
+            likes: likeCount || 0,
+            bookmarks: bookmarkCount || 0,
+          }
+        };
+      })
+    );
 
     // 최근 30일 활동 확인
     const thirtyDaysAgo = new Date();

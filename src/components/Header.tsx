@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import Sidebar from './Sidebar';
+import TrendingPrompts from './TrendingPrompts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearch } from '@/contexts/SearchContext';
 
@@ -28,7 +29,7 @@ const Header: React.FC = () => {
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-30">
-        <div className="container mx-auto px-4">
+        <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8">
           <div className="flex items-center gap-4 h-16">
             {/* Hamburger Menu Button */}
             <button
@@ -55,6 +56,11 @@ const Header: React.FC = () => {
               <SearchBar className="w-full max-w-lg" />
             </div>
 
+            {/* Trending Prompts - Only on desktop */}
+            <div className="hidden lg:block">
+              <TrendingPrompts />
+            </div>
+
             {/* Login/Logout Button (Desktop only) */}
             {isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-3">
@@ -66,11 +72,18 @@ const Header: React.FC = () => {
                         src={user.avatar_url}
                         alt={user?.name || ''}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/logo.png';
+                        }}
                       />
                     ) : (
-                      <span className="text-sm font-bold text-gray-400">
-                        {user?.name?.[0]?.toUpperCase()}
-                      </span>
+                      <img
+                        src="/logo.png"
+                        alt="PROMPOT Logo"
+                        className="w-full h-full object-cover p-1"
+                      />
                     )}
                   </div>
                 </div>

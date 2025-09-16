@@ -10,52 +10,6 @@ import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSearch } from '@/contexts/SearchContext';
 import Toast from '@/components/Toast';
 
-// 태그 표시 유틸리티 함수 - 더 정확한 너비 계산
-const getDisplayTags = (tags: string[], cardWidth: number = 250): { displayTags: string[]; remainingCount: number } => {
-  if (tags.length === 0) return { displayTags: [], remainingCount: 0 };
-  
-  // 더 보수적인 태그 너비 계산 (한글 문자 고려)
-  const getTagWidth = (tag: string) => {
-    // 한글은 더 넓은 공간 필요 (한글 1자 = 약 12px, 영문 1자 = 약 6px)
-    const koreanChars = (tag.match(/[가-힣]/g) || []).length;
-    const otherChars = tag.length - koreanChars;
-    const textWidth = koreanChars * 12 + otherChars * 6;
-    
-    const padding = 16; // px-2 (8px * 2) + 여유분
-    const gap = 6; // gap-1 + 여유분
-    return textWidth + padding + gap;
-  };
-  
-  // + 표시 너비 (더 여유있게)
-  const plusWidth = 30; // +숫자 표시 예상 너비 + 여유분
-  
-  let totalWidth = 0;
-  let displayCount = 0;
-  
-  for (let i = 0; i < tags.length; i++) {
-    const tagWidth = getTagWidth(tags[i]);
-    
-    // + 표시가 필요한지 확인 (다음 태그가 있으면)
-    const needsPlus = i < tags.length - 1;
-    const requiredWidth = totalWidth + tagWidth + (needsPlus ? plusWidth : 0);
-    
-    // 더 보수적인 계산 (카드 너비의 90%까지만 사용)
-    const availableWidth = cardWidth * 0.9;
-    
-    if (requiredWidth <= availableWidth) {
-      totalWidth += tagWidth;
-      displayCount++;
-    } else {
-      break;
-    }
-  }
-  
-  const displayTags = tags.slice(0, displayCount);
-  const remainingCount = Math.max(0, tags.length - displayCount);
-  
-  return { displayTags, remainingCount };
-};
-
 interface PromptCardCompactProps {
   prompt: Prompt;
   onLike: (id: number) => void;
@@ -76,53 +30,37 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   onTagClick
 }) => {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
-  // 최적화된 북마크 훅 사용
+  const { isAuthenticated, user } = useAuth();
   const { bookmarks, addBookmark, removeBookmark, isBookmarked: checkIsBookmarked } = useBookmarks();
   const { setSearchQuery, setAuthorFilter } = useSearch();
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
+  const [localIsLiked, setLocalIsLiked] = useState(prompt.is_liked || false);
+  const [localLikesCount, setLocalLikesCount] = useState(prompt.likes_count || prompt.likes || 0);
 
-  // 단순화된 북마크 상태 (실시간 반영)
+  // 북마크 상태
   const actualIsBookmarked = useMemo(() => {
     return checkIsBookmarked(prompt.id);
   }, [checkIsBookmarked, prompt.id]);
-
-  const getCategoryLabel = (category: string) => {
-    const categoryLabels: { [key: string]: string } = {
-      'work': '⚡ 업무/마케팅',
-      'dev': '⚙️ 개발/코드',
-      'design': '✨ 디자인/브랜드',
-      'edu': '🎯 교육/학습',
-      'image': '🎬 이미지/동영상',
-    };
-    return categoryLabels[category] || category;
-  };
 
   const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      setToastMessage('로그인이 필요합니다.');
-      setToastType('error');
-      setShowToast(true);
+      router.push('/login');
       return;
     }
 
-    console.log('[DEBUG] Bookmark toggle - prompt ID:', prompt.id, 'current state:', actualIsBookmarked);
-
     try {
       if (actualIsBookmarked) {
-        // 북마크 제거 (즉시 UI 반영됨)
         await removeBookmark(prompt.id);
         setToastMessage('북마크가 제거되었습니다.');
         setToastType('bookmark');
         setShowToast(true);
       } else {
-        // 북마크 추가 시 카테고리 선택 모달 표시
         setShowCategorySelector(true);
       }
     } catch (error: any) {
@@ -135,15 +73,9 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
 
   const handleCategorySelect = async (categoryIds: (string | null)[]) => {
     try {
-      console.log('[DEBUG] Adding bookmark with category IDs:', categoryIds);
-      
-      // 첫 번째 카테고리 ID 사용 (기존 API 호환성)
       const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null;
-      
-      // 실제 프롬프트 데이터를 전달 (낙관적 업데이트를 위해)
       await addBookmark(prompt.id, primaryCategoryId, prompt);
       
-      console.log('[DEBUG] Bookmark added successfully');
       setToastMessage('북마크에 추가되었습니다!');
       setToastType('bookmark');
       setShowToast(true);
@@ -157,294 +89,234 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
     }
   };
 
-  // 카테고리 클릭 핸들러
-  const handleCategoryClick = (e: React.MouseEvent) => {
+  // 좋아요 처리
+  const handleLikeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!prompt.category) return;
-    if (onCategoryClick) {
-      onCategoryClick(prompt.category);
-    } else {
-      const categoryLabel = getCategoryLabel(prompt.category);
-      setSearchQuery(categoryLabel);
-      router.push('/prompts');
+
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const method = localIsLiked ? 'DELETE' : 'POST';
+      const token = localStorage.getItem('supabase.auth.token');
+      
+      const response = await fetch(`/api/prompts/${prompt.id}/likes`, {
+        method,
+        headers: {
+          'Authorization': token ? `Bearer ${JSON.parse(token).access_token}` : ''
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update like');
+      }
+
+      const data = await response.json();
+      setLocalIsLiked(data.is_liked);
+      setLocalLikesCount(data.likes_count);
+    } catch (error) {
+      console.error('Error updating like:', error);
+      setToastMessage('좋아요 처리 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
     }
   };
 
-  // AI 모델 클릭 핸들러
-  const handleAIModelClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const aiModelName = prompt.aiModel?.name || '';
-    if (onAIModelClick) {
-      onAIModelClick(aiModelName);
-    } else {
-      setSearchQuery(aiModelName);
-      router.push('/prompts');
-    }
-  };
-
-  // 태그 클릭 핸들러
-  const handleTagClick = (e: React.MouseEvent, tag: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onTagClick) {
-      onTagClick(tag);
-    } else {
-      setSearchQuery(tag);
-      router.push('/prompts');
-    }
-  };
   return (
-    <Link href={`/prompt/${prompt.id}`} className="block">
-      <div 
-        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 h-[350px] flex flex-col w-full overflow-hidden"
-        onClick={(e) => {
-          // 북마크 카테고리 선택기가 열려있을 때는 페이지 이동 방지
-          if (showCategorySelector) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
-      >
-        {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
-        <div className="flex-shrink-0">
-          <div className="px-3 sm:px-4 pt-3 pb-2">
-            <div className="flex justify-between items-start mb-0">
-              <h3 className="text-sm sm:text-base font-semibold line-clamp-1 flex-1 min-w-0" title={prompt.title}>
-                {prompt.title}
-              </h3>
-              {isAuthenticated && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleBookmarkClick(e);
-                  }}
-                  className="flex items-center hover:scale-110 transition-transform ml-2 flex-shrink-0"
-                  title={actualIsBookmarked ? '북마크 제거' : '북마크 추가'}
-                >
-                  <svg
-                    className={`w-5 h-5 ${
-                      actualIsBookmarked ? 'text-primary fill-current' : 'text-gray-500'
-                    }`}
-                    viewBox="0 0 24 24"
-                    fill={actualIsBookmarked ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" 
+    <>
+      <Link href={`/prompt/${prompt.id}`} className="block">
+        <div 
+          className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+          onClick={(e) => {
+            if (showCategorySelector) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
+          {/* 이미지 영역 */}
+          <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+            {/* AI 모델 표시 (왼쪽 상단) */}
+            {prompt.aiModel && (
+              <div className="absolute top-3 left-3 z-10">
+                <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1.5 shadow-sm">
+                  {prompt.aiModel.icon && (
+                    <img 
+                      src={prompt.aiModel.icon} 
+                      alt={prompt.aiModel.name}
+                      className="w-4 h-4 object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {/* 미리보기 이미지 - 최대 확장된 높이 */}
-          <div className="h-40 mx-3 sm:mx-4 mb-3">
-            {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
-              <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-                <Image
-                  src={getVideoThumbnail(prompt.video_url)!}
-                  alt={getVideoTitle(prompt.video_url)}
-                  fill
-                  className="object-cover"
-                  onError={(e) => {
-                    console.error('썸네일 로드 실패:', prompt.video_url, e);
-                    // 대체 썸네일 시도
-                    const fallbackUrl = prompt.video_url ? getFallbackThumbnail(prompt.video_url) : null;
-                    if (fallbackUrl) {
-                      e.currentTarget.src = fallbackUrl;
-                      console.log('대체 썸네일 시도:', fallbackUrl);
-                    } else {
-                      e.currentTarget.style.display = 'none';
-                    }
-                  }}
-                  onLoad={() => {
-                    console.log('썸네일 로드 성공:', prompt.video_url);
-                  }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
-                  <div className="w-6 h-6 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
+                  )}
+                  <span className="text-xs font-medium text-gray-700">
+                    {prompt.aiModel.name}
+                  </span>
                 </div>
               </div>
+            )}
+
+            {/* 북마크 버튼 (오른쪽 상단) */}
+            <div className="absolute top-3 right-3 z-10">
+              <button
+                onClick={handleBookmarkClick}
+                className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm hover:bg-white transition-colors"
+                title={actualIsBookmarked ? '북마크 제거' : '북마크 추가'}
+              >
+                <svg
+                  className={`w-5 h-5 ${
+                    actualIsBookmarked ? 'text-orange-500 fill-current' : 'text-gray-600'
+                  }`}
+                  viewBox="0 0 24 24"
+                  fill={actualIsBookmarked ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 이미지 */}
+            {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
+              <Image
+                src={getVideoThumbnail(prompt.video_url)!}
+                alt={getVideoTitle(prompt.video_url)}
+                fill
+                className="object-cover"
+                onError={(e) => {
+                  const fallbackUrl = prompt.video_url ? getFallbackThumbnail(prompt.video_url) : null;
+                  if (fallbackUrl) {
+                    e.currentTarget.src = fallbackUrl;
+                  } else {
+                    e.currentTarget.style.display = 'none';
+                  }
+                }}
+              />
             ) : prompt.preview_image ? (
-              <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
-                <Image
-                  src={prompt.preview_image}
-                  alt={prompt.title}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  onError={(e) => {
-                    console.error('이미지 로드 실패:', prompt.preview_image, e);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                  onLoad={() => {
-                    console.log('이미지 로드 성공:', prompt.preview_image);
-                  }}
-                />
-              </div>
+              <Image
+                src={prompt.preview_image}
+                alt={prompt.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
-              <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
-                <Image
-                  src={prompt.additional_images[0]}
-                  alt={prompt.title}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  onError={(e) => {
-                    console.error('추가 이미지 로드 실패:', prompt.additional_images?.[0], e);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                  onLoad={() => {
-                    console.log('추가 이미지 로드 성공:', prompt.additional_images?.[0]);
-                  }}
-                />
-              </div>
+              <Image
+                src={prompt.additional_images[0]}
+                alt={prompt.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             ) : (
-              <div className="relative w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
                 <Image
                   src="/logo.png"
                   alt="Prompot"
-                  width={48}
-                  height={48}
-                  className="w-12 h-12 object-contain opacity-70"
+                  width={60}
+                  height={60}
+                  className="object-contain opacity-50"
                 />
               </div>
             )}
-          </div>
-        </div>
 
-        {/* 중간 고정 영역: 설명 */}
-        <div className="flex-shrink-0 px-3 sm:px-4 mb-3">
-          <div className="h-10">
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-2">
-              {prompt.description}
-            </p>
-          </div>
-        </div>
+            {/* 하단 정보 오버레이 */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-3 sm:p-4">
+              {/* 제목 */}
+              <h3 className="font-semibold text-white text-base sm:text-lg mb-2 line-clamp-2 drop-shadow-lg" title={prompt.title}>
+                {prompt.title}
+              </h3>
 
-        {/* 하단 고정 영역: 태그 + 카테고리/AI모델/작성자 */}
-        <div className="flex-shrink-0 px-3 sm:px-4 pb-3 sm:pb-4 space-y-2">
-          {/* Tags - 고정 높이 */}
-          <div className="h-5 flex items-center">
-            {(() => {
-              const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 220); // 더 보수적인 컴팩트 카드 너비
-              return displayTags.length > 0 || remainingCount > 0 ? (
-                <div className="flex flex-nowrap gap-1 overflow-hidden">
-                  {displayTags.map((tag, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => handleTagClick(e, tag)}
-                      className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0 hover:bg-orange-200 transition-colors cursor-pointer"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                  {remainingCount > 0 && (
-                    <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
-                      +{remainingCount}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <div className="h-5"></div>
-              );
-            })()}
-          </div>
-          
-          {/* Footer - 카테고리/AI모델/작성자 */}
-          <div className="space-y-2">
-            {/* 첫 번째 줄: 카테고리와 AI 모델 */}
-            <div className="flex items-center gap-1 flex-wrap">
-              {/* 카테고리 */}
-              {prompt.category && (
-                <button
-                  onClick={handleCategoryClick}
-                  className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-1.5 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer flex-shrink-0"
-                >
-                  {prompt.category === 'work' && '⚡ 업무/마케팅'}
-                  {prompt.category === 'dev' && '⚙️ 개발/코드'}
-                  {prompt.category === 'design' && '✨ 디자인/브랜드'}
-                  {prompt.category === 'edu' && '🎯 교육/학습'}
-                  {prompt.category === 'image' && '🎬 이미지/동영상'}
-                  {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
-                </button>
-              )}
-              {/* AI 모델 */}
-              {prompt.aiModel && (
-                <button
-                  onClick={handleAIModelClick}
-                  className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-1.5 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer flex-shrink-0"
-                >
-                  <div className="flex items-center gap-1">
-                    {prompt.aiModel?.icon && (
-                      <img 
-                        src={prompt.aiModel.icon} 
-                        alt={prompt.aiModel.name}
-                        className="w-3 h-3 object-contain"
-                        onError={(e) => {
-                          console.log(`[DEBUG] AI Model icon failed to load: ${prompt.aiModel?.icon} for ${prompt.aiModel?.name}`);
-                          e.currentTarget.style.display = 'none';
-                        }}
-                        onLoad={() => {
-                          console.log(`[DEBUG] AI Model icon loaded successfully: ${prompt.aiModel?.icon} for ${prompt.aiModel?.name}`);
-                        }}
-                      />
-                    )}
-                    <span className="whitespace-nowrap">{prompt.aiModel?.name}</span>
-                  </div>
-                </button>
-              )}
-            </div>
-            
-            {/* 두 번째 줄: 작성자 */}
-            <div className="flex justify-end">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const authorName = prompt.author?.name || '익명';
-                  setAuthorFilter(authorName);
-                  router.push('/');
-                }}
-                className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
-              >
-                {/* 작성자 프로필사진 */}
-                <div className="w-4 h-4 rounded-full overflow-hidden bg-white flex-shrink-0">
+              {/* 작성자 및 통계 정보 */}
+              <div className="flex items-center justify-between">
+                {/* 작성자 정보 */}
+                <div className="flex items-center gap-2">
                   {prompt.author?.avatar_url ? (
                     <Image
                       src={prompt.author.avatar_url}
                       alt={prompt.author.name || '작성자'}
-                      width={16}
-                      height={16}
-                      className="w-full h-full object-cover"
+                      width={24}
+                      height={24}
+                      className="rounded-full border border-white/30"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                      <span className="text-xs font-medium text-orange-600">
+                    <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                      <span className="text-xs font-medium text-white">
                         {(prompt.author?.name || '익명').charAt(0).toUpperCase()}
                       </span>
                     </div>
                   )}
+                  <span className="text-sm sm:text-base text-white/90 drop-shadow font-medium">
+                    {prompt.author?.name || '익명'}
+                  </span>
                 </div>
-                {/* 작성자 이름 */}
-                <span className="text-xs text-gray-500 group-hover:text-orange-600 whitespace-nowrap min-w-0 flex-shrink-0 transition-colors">
-                  {prompt.author?.name || '익명'}
-                </span>
-              </button>
+
+                {/* 통계 정보 */}
+                <div className="flex items-center gap-3">
+                  {/* 댓글 */}
+                  <div className="flex items-center gap-1.5 text-white/90">
+                    <svg 
+                      className="w-4 h-4 sm:w-5 sm:h-5" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth={2}
+                    >
+                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                    </svg>
+                    <span className="text-sm sm:text-base font-medium">{prompt.commentCount || prompt.comments?.length || 0}</span>
+                  </div>
+
+                  {/* 조회수 */}
+                  <div className="flex items-center gap-1.5 text-white/90">
+                    <svg 
+                      className="w-4 h-4 sm:w-5 sm:h-5" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth={2}
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <span className="text-sm sm:text-base font-medium">{prompt.views || 0}</span>
+                  </div>
+
+                  {/* 좋아요 */}
+                  <button
+                    onClick={handleLikeClick}
+                    className="flex items-center gap-1.5 text-white/90 hover:text-red-400 transition-colors"
+                  >
+                    <svg
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${localIsLiked ? 'text-red-400 fill-current' : ''}`}
+                      viewBox="0 0 24 24"
+                      fill={localIsLiked ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                    </svg>
+                    <span className={`text-sm sm:text-base font-medium ${localIsLiked ? 'text-red-400' : ''}`}>
+                      {localLikesCount}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Bookmark Category Selector */}
       <BookmarkCategorySelector
@@ -461,7 +333,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
           onClose={() => setShowToast(false)}
         />
       )}
-    </Link>
+    </>
   );
 };
 

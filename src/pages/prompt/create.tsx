@@ -5,6 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
+import { fetchWithLogging } from '@/lib/api-logger';
+import { createTextImage } from '@/utils/textToImage';
 
 interface AIModel {
   id: string;
@@ -66,12 +68,13 @@ const CreatePromptPage = () => {
     isPublic: true,
     videoUrl: '',
     additionalImages: [] as string[],
+    resultType: 'image' as 'image' | 'text',
+    textResult: '',
   });
   
-  const [image, setImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
-  const [additionalImages, setAdditionalImages] = useState<File[]>([]);
-  const [additionalPreviewUrls, setAdditionalPreviewUrls] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ file: File, url: string, serverUrl: string }>>([]);
+  const [selectedThumbnailIndex, setSelectedThumbnailIndex] = useState<number>(0);
+  const [textImageUrl, setTextImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -84,7 +87,23 @@ const CreatePromptPage = () => {
   
   // 드래그 앤 드롭 상태
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isAdditionalDragOver, setIsAdditionalDragOver] = useState(false);
+
+  // 텍스트 결과를 이미지로 변환
+  useEffect(() => {
+    if (formData.resultType === 'text' && formData.textResult) {
+      const generateTextImage = async () => {
+        try {
+          const imageUrl = await createTextImage(formData.textResult);
+          setTextImageUrl(imageUrl);
+        } catch (error) {
+          console.error('텍스트 이미지 생성 오류:', error);
+        }
+      };
+      generateTextImage();
+    } else {
+      setTextImageUrl('');
+    }
+  }, [formData.textResult, formData.resultType]);
 
   // 인증 확인
   useEffect(() => {
@@ -115,76 +134,15 @@ const CreatePromptPage = () => {
   };
 
   const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // 파일 크기 검증 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setToastMessage('이미지 크기는 5MB 이하여야 합니다.');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
-    // 파일 타입 검증
-    if (!file.type.startsWith('image/')) {
-      setToastMessage('이미지 파일만 업로드 가능합니다.');
-      setToastType('error');
-      setShowToast(true);
-      return;
-    }
-
-    try {
-      // 파일을 Base64로 변환
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const imageData = e.target?.result as string;
-        
-        // 서버에 이미지 업로드
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageData: imageData,
-            fileName: file.name,
-          }),
-        });
-
-        const result = await response.json();
-        
-        if (response.ok) {
-          setImage(file);
-          setPreviewUrl(imageData); // Base64 URL로 미리보기
-          setFormData(prev => ({
-            ...prev,
-            previewImage: result.imageUrl // 서버 URL 저장
-          }));
-          setToastMessage('이미지가 업로드되었습니다.');
-          setToastType('success');
-          setShowToast(true);
-        } else {
-          throw new Error(result.message || '이미지 업로드에 실패했습니다.');
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('Image upload error:', error);
-      setToastMessage('이미지 업로드에 실패했습니다.');
-      setToastType('error');
-      setShowToast(true);
-    }
+    const files = Array.from(event.target.files || []);
+    await handleImageUpload(files);
   };
 
-  const handleAdditionalImagesChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const maxImages = 5; // 최대 5개 추가 이미지
+  const handleImageUpload = async (files: File[]) => {
+    const maxImages = 6; // 최대 6개 이미지 (썸네일 포함)
     
-    if (additionalImages.length + files.length > maxImages) {
-      setToastMessage(`최대 ${maxImages}개의 추가 이미지만 업로드할 수 있습니다.`);
+    if (uploadedImages.length + files.length > maxImages) {
+      setToastMessage(`최대 ${maxImages}개의 이미지만 업로드할 수 있습니다.`);
       setToastType('error');
       setShowToast(true);
       return;
@@ -211,7 +169,7 @@ const CreatePromptPage = () => {
     });
 
     if (validFiles.length > 0) {
-      const uploadedImages: string[] = [];
+      const newImages: Array<{ file: File, url: string, serverUrl: string }> = [];
       
       for (const file of validFiles) {
         try {
@@ -239,43 +197,42 @@ const CreatePromptPage = () => {
 
           const result = await response.json();
           
-          if (response.ok) {
-            uploadedImages.push(result.imageUrl);
+          if (response.ok && result.success && result.data) {
+            newImages.push({
+              file,
+              url: imageData,
+              serverUrl: result.data.url
+            });
           } else {
             throw new Error(result.message || '이미지 업로드에 실패했습니다.');
           }
         } catch (error) {
-          console.error('Additional image upload error:', error);
+          console.error('Image upload error:', error);
           setToastMessage(`${file.name} 업로드에 실패했습니다.`);
           setToastType('error');
           setShowToast(true);
         }
       }
 
-      if (uploadedImages.length > 0) {
-        setAdditionalImages(prev => [...prev, ...validFiles]);
-        const newPreviewUrls = uploadedImages; // 서버 URL 사용
-        setAdditionalPreviewUrls(prev => [...prev, ...newPreviewUrls]);
-        
-        setFormData(prev => ({
-          ...prev,
-          additionalImages: [...(prev.additionalImages || []), ...uploadedImages]
-        }));
-        
-        setToastMessage(`${uploadedImages.length}개의 이미지가 업로드되었습니다.`);
+      if (newImages.length > 0) {
+        setUploadedImages(prev => [...prev, ...newImages]);
+        setToastMessage(`${newImages.length}개의 이미지가 업로드되었습니다.`);
         setToastType('success');
         setShowToast(true);
       }
     }
   };
 
-  const removeAdditionalImage = (index: number) => {
-    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
-    setAdditionalPreviewUrls(prev => {
-      const newUrls = prev.filter((_, i) => i !== index);
-      // URL 해제
-      URL.revokeObjectURL(prev[index]);
-      return newUrls;
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => {
+      const newImages = prev.filter((_, i) => i !== index);
+      // 썸네일 인덱스 조정
+      if (selectedThumbnailIndex >= newImages.length && newImages.length > 0) {
+        setSelectedThumbnailIndex(0);
+      } else if (selectedThumbnailIndex > index && selectedThumbnailIndex > 0) {
+        setSelectedThumbnailIndex(selectedThumbnailIndex - 1);
+      }
+      return newImages;
     });
   };
 
@@ -295,35 +252,22 @@ const CreatePromptPage = () => {
   };
 
   // 드래그 앤 드롭 핸들러
-  const handleDragOver = (e: React.DragEvent, isAdditional: boolean = false) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isAdditional) {
-      setIsAdditionalDragOver(true);
-    } else {
-      setIsDragOver(true);
-    }
+    setIsDragOver(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent, isAdditional: boolean = false) => {
+  const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isAdditional) {
-      setIsAdditionalDragOver(false);
-    } else {
-      setIsDragOver(false);
-    }
+    setIsDragOver(false);
   };
 
-  const handleDrop = async (e: React.DragEvent, isAdditional: boolean = false) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (isAdditional) {
-      setIsAdditionalDragOver(false);
-    } else {
-      setIsDragOver(false);
-    }
+    setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -335,134 +279,7 @@ const CreatePromptPage = () => {
       return;
     }
 
-    if (isAdditional) {
-      // 추가 이미지 업로드
-      const maxImages = 5;
-      if (additionalImages.length + imageFiles.length > maxImages) {
-        setToastMessage(`최대 ${maxImages}개의 추가 이미지만 업로드할 수 있습니다.`);
-        setToastType('error');
-        setShowToast(true);
-        return;
-      }
-
-      // 파일 검증 및 업로드
-      const validFiles = imageFiles.filter(file => {
-        if (file.size > 5 * 1024 * 1024) {
-          setToastMessage(`${file.name}의 크기가 5MB를 초과합니다.`);
-          setToastType('error');
-          setShowToast(true);
-          return false;
-        }
-        return true;
-      });
-
-      if (validFiles.length > 0) {
-        const uploadedImages: string[] = [];
-        
-        for (const file of validFiles) {
-          try {
-            const reader = new FileReader();
-            const imageData = await new Promise<string>((resolve, reject) => {
-              reader.onload = (e) => resolve(e.target?.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            });
-            
-            const token = localStorage.getItem('token');
-            const response = await fetch('/api/upload-image', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                imageData: imageData,
-                fileName: file.name,
-              }),
-            });
-
-            const result = await response.json();
-            
-            if (response.ok) {
-              uploadedImages.push(result.imageUrl);
-            } else {
-              throw new Error(result.message || '이미지 업로드에 실패했습니다.');
-            }
-          } catch (error) {
-            console.error('Additional image upload error:', error);
-            setToastMessage(`${file.name} 업로드에 실패했습니다.`);
-            setToastType('error');
-            setShowToast(true);
-          }
-        }
-
-        if (uploadedImages.length > 0) {
-          setAdditionalImages(prev => [...prev, ...validFiles]);
-          setAdditionalPreviewUrls(prev => [...prev, ...uploadedImages]);
-          
-          setFormData(prev => ({
-            ...prev,
-            additionalImages: [...(prev.additionalImages || []), ...uploadedImages]
-          }));
-          
-          setToastMessage(`${uploadedImages.length}개의 이미지가 업로드되었습니다.`);
-          setToastType('success');
-          setShowToast(true);
-        }
-      }
-    } else {
-      // 메인 이미지 업로드
-      const file = imageFiles[0];
-      
-      if (file.size > 5 * 1024 * 1024) {
-        setToastMessage('이미지 크기는 5MB 이하여야 합니다.');
-        setToastType('error');
-        setShowToast(true);
-        return;
-      }
-
-      try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const imageData = e.target?.result as string;
-          
-          const token = localStorage.getItem('token');
-          const response = await fetch('/api/upload-image', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              imageData: imageData,
-              fileName: file.name,
-            }),
-          });
-
-          const result = await response.json();
-          
-          if (response.ok) {
-            setImage(file);
-            setPreviewUrl(imageData);
-            setFormData(prev => ({
-              ...prev,
-              previewImage: result.imageUrl
-            }));
-            setToastMessage('이미지가 업로드되었습니다.');
-            setToastType('success');
-            setShowToast(true);
-          } else {
-            throw new Error(result.message || '이미지 업로드에 실패했습니다.');
-          }
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Image upload error:', error);
-        setToastMessage('이미지 업로드에 실패했습니다.');
-        setToastType('error');
-        setShowToast(true);
-      }
-    }
+    await handleImageUpload(imageFiles);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -486,75 +303,62 @@ const CreatePromptPage = () => {
     setLoading(true);
 
     try {
-      let imageUrl = null;
-      const additionalImageUrls: string[] = [];
-      
-      // 메인 이미지 업로드
-      if (image) {
-        // 파일을 Base64로 변환
-        const imageData = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(image);
-        });
-        
-        // 인증 토큰 가져오기
-        const token = localStorage.getItem('token');
-        
-        const uploadRes = await fetch('/api/upload-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            imageData: imageData,
-            fileName: image.name,
-          }),
-        });
-        
-        if (!uploadRes.ok) {
-          const errorData = await uploadRes.json();
-          throw new Error(errorData.message || '이미지 업로드에 실패했습니다.');
+      let thumbnailUrl = '';
+      let additionalImageUrls: string[] = [];
+
+      if (formData.resultType === 'image') {
+        // 이미지 결과 타입인 경우 업로드된 이미지 확인
+        if (uploadedImages.length === 0) {
+          setToastMessage('최소 하나의 이미지를 업로드해주세요.');
+          setToastType('error');
+          setShowToast(true);
+          return;
         }
-        
-        const uploadData = await uploadRes.json();
-        imageUrl = uploadData.imageUrl;
-      }
 
-      // 추가 이미지들 업로드
-      if (additionalImages.length > 0) {
-        const token = localStorage.getItem('token');
+        // 썸네일 이미지와 나머지 이미지 분리
+        const thumbnailImage = uploadedImages[selectedThumbnailIndex];
+        thumbnailUrl = thumbnailImage.serverUrl;
+        additionalImageUrls = uploadedImages
+          .filter((_, index) => index !== selectedThumbnailIndex)
+          .map(img => img.serverUrl);
+      } else if (formData.resultType === 'text') {
+        // 텍스트 결과 타입인 경우
+        if (!formData.textResult.trim()) {
+          setToastMessage('텍스트 결과를 입력해주세요.');
+          setToastType('error');
+          setShowToast(true);
+          return;
+        }
 
-        for (const additionalImage of additionalImages) {
-          // 파일을 Base64로 변환
-          const imageData = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(additionalImage);
-          });
-          
-          const uploadRes = await fetch('/api/upload-image', {
+        // 텍스트를 이미지로 변환하여 업로드
+        try {
+          const textImageData = await createTextImage(formData.textResult);
+          const token = localStorage.getItem('token');
+          const response = await fetch('/api/upload-image', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({
-              imageData: imageData,
-              fileName: additionalImage.name,
+              imageData: textImageData,
+              fileName: 'text-result.png',
             }),
           });
+
+          const result = await response.json();
           
-          if (!uploadRes.ok) {
-            const errorData = await uploadRes.json();
-            throw new Error(errorData.message || '추가 이미지 업로드에 실패했습니다.');
+          if (response.ok && result.success && result.data) {
+            thumbnailUrl = result.data.url;
+          } else {
+            throw new Error(result.message || '텍스트 이미지 업로드에 실패했습니다.');
           }
-          
-          const uploadData = await uploadRes.json();
-          additionalImageUrls.push(uploadData.imageUrl);
+        } catch (error) {
+          console.error('Text image upload error:', error);
+          setToastMessage('텍스트 이미지 생성에 실패했습니다.');
+          setToastType('error');
+          setShowToast(true);
+          return;
         }
       }
 
@@ -568,9 +372,9 @@ const CreatePromptPage = () => {
         },
         body: JSON.stringify({
           ...formData,
-          previewImage: imageUrl,
+          previewImage: thumbnailUrl,
           additionalImages: additionalImageUrls,
-          videoUrl: formData.videoUrl,
+          videoUrl: formData.resultType === 'image' ? formData.videoUrl : '',
         }),
       });
 
@@ -629,142 +433,32 @@ const CreatePromptPage = () => {
           {/* 폼 */}
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6">
             {/* 헤더 */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-orange-500 mb-2">새 프롬프트 생성</h1>
-              <p className="text-orange-500">창의적인 프롬프트를 만들어 다른 사용자와 공유해보세요!</p>
+            <div className="mb-8 flex justify-between items-start">
+              <div>
+                <h1 className="text-3xl font-bold text-orange-500 mb-2">프롬프트 생성</h1>
+                <p className="text-orange-500">창의적인 프롬프트를 만들어 다른 사용자와 공유해보세요!</p>
+              </div>
+              {/* 공개 설정 - 우측 상단 */}
+              <div className="flex flex-col items-center gap-1">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.isPublic}
+                    onChange={(e) => handleInputChange('isPublic', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+                <span className="text-xs font-medium text-gray-700">
+                  {formData.isPublic ? '공개' : '비공개'}
+                </span>
+              </div>
             </div>
             <form onSubmit={handleSubmit} className="space-y-6">
-              
-              {/* 이미지 업로드 섹션 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 미리보기 이미지 */}
-                <div>
-                  <div 
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                      isDragOver 
-                        ? 'border-orange-400 bg-orange-50' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    onDragOver={(e) => handleDragOver(e, false)}
-                    onDragLeave={(e) => handleDragLeave(e, false)}
-                    onDrop={(e) => handleDrop(e, false)}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload" className="cursor-pointer">
-                      {previewUrl ? (
-                        <div className="space-y-2">
-                          <div className="relative w-32 h-32 mx-auto">
-                            <Image
-                              src={previewUrl}
-                              alt="미리보기"
-                              fill
-                              className="object-cover rounded-lg"
-                              unoptimized={true}
-                            />
-                          </div>
-                          <p className="text-sm text-gray-600">클릭하여 이미지 변경</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="w-16 h-16 mx-auto">
-                            <Image
-                              src="/logo.png"
-                              alt="프롬팟 로고"
-                              width={64}
-                              height={64}
-                              className="w-full h-full object-contain opacity-40"
-                              unoptimized={true}
-                            />
-                          </div>
-                          <p className="text-sm text-gray-600">미리보기 이미지를 업로드하려면 클릭하거나 드래그하세요</p>
-                          <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB)</p>
-                        </div>
-                      )}
-                    </label>
-                  </div>
-                </div>
-
-                {/* 추가 이미지 업로드 */}
-                <div>
-                  <div 
-                    className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                      isAdditionalDragOver 
-                        ? 'border-orange-400 bg-orange-50' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    onDragOver={(e) => handleDragOver(e, true)}
-                    onDragLeave={(e) => handleDragLeave(e, true)}
-                    onDrop={(e) => handleDrop(e, true)}
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleAdditionalImagesChange}
-                      className="hidden"
-                      id="additional-images-upload"
-                    />
-                    <label htmlFor="additional-images-upload" className="cursor-pointer">
-                      <div className="space-y-2">
-                        <div className="w-16 h-16 mx-auto">
-                          <Image
-                            src="/logo.png"
-                            alt="프롬팟 로고"
-                            width={64}
-                            height={64}
-                            className="w-full h-full object-contain opacity-40"
-                            unoptimized={true}
-                          />
-                        </div>
-                        <p className="text-sm text-gray-600">추가 이미지를 업로드하려면 클릭하거나 드래그하세요</p>
-                        <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB, 최대 5개)</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 추가 이미지 미리보기 */}
-              {additionalPreviewUrls.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">업로드된 추가 이미지 ({additionalPreviewUrls.length}/5)</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                    {additionalPreviewUrls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <div className="relative w-full h-24">
-                          <Image
-                            src={url}
-                            alt={`추가 이미지 ${index + 1}`}
-                            fill
-                            className="object-cover rounded-lg"
-                            unoptimized={true}
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeAdditionalImage(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 제목 */}
+              {/* 프롬프트 제목 */}
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900">
-                  제목
+                  프롬프트 제목
                 </h3>
                 <input
                   type="text"
@@ -777,86 +471,61 @@ const CreatePromptPage = () => {
                 />
               </div>
 
-              {/* 설명 */}
+              {/* 결과 구분 선택 */}
               <div>
                 <h3 className="text-lg font-semibold mb-3 text-gray-900">
-                  설명
+                  유형
                 </h3>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="프롬프트에 대한 간단한 설명을 입력하세요"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="resultType"
+                      value="image"
+                      checked={formData.resultType === 'image'}
+                      onChange={() => handleInputChange('resultType', 'image')}
+                      className="sr-only"
+                    />
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      formData.resultType === 'image' ? 'border-orange-500' : 'border-gray-300'
+                    }`}>
+                      {formData.resultType === 'image' && (
+                        <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                      )}
+                    </span>
+                    <span className={`ml-2 text-base ${
+                      formData.resultType === 'image' ? 'text-gray-900 font-medium' : 'text-gray-700'
+                    }`}>
+                      이미지/동영상
+                    </span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="resultType"
+                      value="text"
+                      checked={formData.resultType === 'text'}
+                      onChange={() => handleInputChange('resultType', 'text')}
+                      className="sr-only"
+                    />
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      formData.resultType === 'text' ? 'border-orange-500' : 'border-gray-300'
+                    }`}>
+                      {formData.resultType === 'text' && (
+                        <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                      )}
+                    </span>
+                    <span className={`ml-2 text-base ${
+                      formData.resultType === 'text' ? 'text-gray-900 font-medium' : 'text-gray-700'
+                    }`}>
+                      텍스트
+                    </span>
+                  </label>
+                </div>
               </div>
-
-              {/* 프롬프트 내용 */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">
-                  프롬프트 내용
-                </h3>
-                <textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => handleInputChange('content', e.target.value)}
-                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요"
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  required
-                />
-              </div>
-
-              {/* 동영상 URL */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-900">
-                  동영상 URL (선택사항)
-                </h3>
-                <input
-                  type="url"
-                  id="videoUrl"
-                  value={formData.videoUrl}
-                  onChange={(e) => handleInputChange('videoUrl', e.target.value)}
-                  placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                
-                {/* 동영상 썸네일 미리보기 */}
-                {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
-                  <div className="mt-3">
-                    <p className="text-sm font-medium text-gray-700 mb-2">동영상 미리보기</p>
-                    <div className="relative w-full max-w-md mx-auto">
-                      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                        <Image
-                          src={getVideoThumbnail(formData.videoUrl)!}
-                          alt={getVideoTitle(formData.videoUrl)}
-                          fill
-                          className="object-cover"
-                          unoptimized={true}
-                          onError={(e) => {
-                            console.error('썸네일 로드 실패:', e);
-                            e.currentTarget.style.display = 'none';
-                          }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                          <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-xs text-gray-600 text-center">
-                        {getVideoTitle(formData.videoUrl)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 카테고리, AI 모델 & 공개 설정 */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* 카테고리 & AI 모델 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* 카테고리 */}
                 <div className="dropdown-container">
                   <h3 className="font-medium text-gray-900 mb-2">
@@ -884,7 +553,7 @@ const CreatePromptPage = () => {
                     </button>
                     
                     {showCategoryDropdown && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
                         {categories.map((cat) => (
                           <button
                             key={cat.value}
@@ -944,7 +613,7 @@ const CreatePromptPage = () => {
                     </button>
                     
                     {showAIModelDropdown && (
-                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                         {aiModels.map((model) => (
                           <button
                             key={model.id}
@@ -973,31 +642,227 @@ const CreatePromptPage = () => {
                     )}
                   </div>
                 </div>
-
-                {/* 공개 설정 */}
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    공개 설정
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm text-gray-600">
-                      {formData.isPublic 
-                        ? '모두에게 프롬프트가 보여집니다.' 
-                        : '나만 이 프롬프트를 볼 수 있습니다.'
-                      }
-                    </p>
-                    <label className="relative inline-flex items-center cursor-pointer ml-auto">
-                      <input
-                        type="checkbox"
-                        checked={formData.isPublic}
-                        onChange={(e) => handleInputChange('isPublic', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                  </div>
-                </div>
               </div>
+
+              {/* 프롬프트 소개 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                  프롬프트 소개
+                </h3>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  placeholder="프롬프트에 대한 간단한 설명을 입력하세요"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              {/* 프롬프트 내용 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                  프롬프트
+                </h3>
+                <textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => handleInputChange('content', e.target.value)}
+                  placeholder="AI에게 전달할 프롬프트 내용을 입력하세요"
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  required
+                />
+              </div>
+              
+              {/* 이미지 업로드 섹션 (결과 타입이 이미지일 때만 표시) */}
+              {/* 이미지 업로드 섹션 또는 텍스트 미리보기 */}
+              {formData.resultType === 'image' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                    이미지 업로드
+                  </h3>
+                
+                {/* 이미지 업로드 영역 */}
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    isDragOver 
+                      ? 'border-orange-400 bg-orange-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label htmlFor="image-upload" className="cursor-pointer">
+                    <div className="space-y-2">
+                      <div className="w-16 h-16 mx-auto">
+                        <Image
+                          src="/logo.png"
+                          alt="프롬팟 로고"
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-contain opacity-40"
+                          unoptimized={true}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600">이미지를 업로드하려면 클릭하거나 드래그하세요</p>
+                      <p className="text-xs text-gray-500">JPG, PNG, GIF (최대 5MB, 최대 6개)</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* 업로드된 이미지 미리보기 및 썸네일 선택 */}
+                {uploadedImages.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
+                      업로드된 이미지 ({uploadedImages.length}/6)
+                    </h4>
+                    
+                    {/* 썸네일 선택 안내 */}
+                    <p className="text-xs text-gray-500 mb-3">
+                      클릭하여 썸네일을 선택하세요. 선택된 이미지가 프롬프트의 대표 이미지로 사용됩니다.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                      {uploadedImages.map((img, index) => (
+                        <div key={index} className="relative group">
+                          <div 
+                            className={`relative w-full h-24 cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                              selectedThumbnailIndex === index 
+                                ? 'border-orange-500 shadow-lg' 
+                                : 'border-transparent hover:border-gray-300'
+                            }`}
+                            onClick={() => setSelectedThumbnailIndex(index)}
+                          >
+                            <Image
+                              src={img.url}
+                              alt={`이미지 ${index + 1}`}
+                              fill
+                              className="object-cover"
+                              unoptimized={true}
+                            />
+                            {selectedThumbnailIndex === index && (
+                              <div className="absolute inset-0 bg-orange-500 bg-opacity-20 flex items-center justify-center">
+                                <div className="bg-white rounded-full p-1">
+                                  <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                </div>
+              )}
+
+
+              {/* 동영상 URL (결과 타입이 이미지일 때만 표시) */}
+              {formData.resultType === 'image' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                    동영상 URL (선택사항)
+                  </h3>
+                  <input
+                    type="url"
+                    id="videoUrl"
+                    value={formData.videoUrl}
+                    onChange={(e) => handleInputChange('videoUrl', e.target.value)}
+                    placeholder="YouTube, Vimeo 등의 동영상 URL을 입력하세요"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  
+                  {/* 동영상 썸네일 미리보기 */}
+                  {formData.videoUrl && getVideoThumbnail(formData.videoUrl) && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">동영상 미리보기</p>
+                      <div className="relative w-full max-w-md mx-auto">
+                        <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={getVideoThumbnail(formData.videoUrl)!}
+                            alt={getVideoTitle(formData.videoUrl)}
+                            fill
+                            className="object-cover"
+                            unoptimized={true}
+                            onError={(e) => {
+                              console.error('썸네일 로드 실패:', e);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                            <div className="w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                              <svg className="w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs text-gray-600 text-center">
+                          {getVideoTitle(formData.videoUrl)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+
+
+              {/* 텍스트 결과 입력 (결과 타입이 텍스트일 때만 표시) */}
+              {formData.resultType === 'text' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                    프롬프트 결과
+                  </h3>
+                  <textarea
+                    id="textResult"
+                    value={formData.textResult}
+                    onChange={(e) => handleInputChange('textResult', e.target.value)}
+                    placeholder="AI가 생성한 프롬프트 결과를 입력하세요. 결과 값이 미리보기로 보여집니다."
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  
+                  {/* 텍스트 이미지 미리보기 */}
+                  {formData.textResult && textImageUrl && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">미리보기</p>
+                      <div className="relative w-full max-w-md mx-auto">
+                        <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={textImageUrl}
+                            alt="텍스트 미리보기"
+                            fill
+                            className="object-contain"
+                            unoptimized={true}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* 태그 */}
               <div>

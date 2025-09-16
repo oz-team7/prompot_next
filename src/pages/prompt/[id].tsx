@@ -118,6 +118,11 @@ interface PromptDetail {
   previewImage?: string;
   additionalImages?: string[];
   videoUrl?: string;
+  views?: number;
+  likes?: number;
+  likes_count?: number;
+  comments?: any[];
+  commentCount?: number;
 }
 
 // 동영상 미리보기 컴포넌트
@@ -242,6 +247,9 @@ const PromptDetailPage = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageUrl, setModalImageUrl] = useState('');
   const [modalImageAlt, setModalImageAlt] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportCategory, setReportCategory] = useState<'spam' | 'offensive' | 'illegal' | 'other'>('other');
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -271,11 +279,24 @@ const PromptDetailPage = () => {
     }
   }, [id]);
 
+  // 조회수 증가 함수
+  const incrementViews = useCallback(async () => {
+    try {
+      await fetch(`/api/prompts/${id}/views`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Error incrementing views:', error);
+    }
+  }, [id]);
+
   useEffect(() => {
     if (id) {
       fetchPrompt();
+      // 페이지 방문 시 조회수 증가
+      incrementViews();
     }
-  }, [id, fetchPrompt]);
+  }, [id, fetchPrompt, incrementViews]);
 
 
   if (loading) {
@@ -307,6 +328,7 @@ const PromptDetailPage = () => {
     bookmark && bookmark.prompt && bookmark.prompt.id === prompt?.id
   );
   const isAuthor = user?.id === prompt.author?.id;
+  const isAdmin = user?.email === 'prompot7@gmail.com';
 
   const handleBookmarkToggle = async () => {
     if (!isAuthenticated) {
@@ -444,6 +466,83 @@ const PromptDetailPage = () => {
     }
   };
 
+  const handleReport = async () => {
+    if (!reportReason.trim()) {
+      setToastMessage('신고 사유를 입력해주세요.');
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          contentType: 'prompt',
+          contentId: prompt.id,
+          category: reportCategory,
+          reason: reportReason,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || '신고 처리에 실패했습니다.');
+      }
+
+      setToastMessage('신고가 접수되었습니다.');
+      setToastType('success');
+      setShowToast(true);
+      setShowReportModal(false);
+      setReportReason('');
+      setReportCategory('other');
+    } catch (error: any) {
+      setToastMessage(error.message);
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
+  const handleAdminDelete = async () => {
+    if (!confirm('정말로 이 프롬프트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/admin/prompts/${prompt.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || '프롬프트 삭제에 실패했습니다.');
+      }
+
+      setToastMessage('프롬프트가 삭제되었습니다.');
+      setToastType('success');
+      setShowToast(true);
+      
+      // 2초 후 목록 페이지로 이동
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
+    } catch (error) {
+      console.error('Delete error:', error);
+      setToastMessage(error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-orange-50/20">
       <Header />
@@ -493,6 +592,52 @@ const PromptDetailPage = () => {
                   <span className="text-gray-400">•</span>
                   <time dateTime={prompt.createdAt} className="text-gray-500">{prompt.date}</time>
                 </div>
+                
+                {/* 조회수, 좋아요, 댓글 정보 */}
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  {/* 조회수 */}
+                  <div className="flex items-center gap-1.5">
+                    <svg 
+                      className="w-4 h-4" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth={2}
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <span>{prompt.views || 0}</span>
+                  </div>
+                  
+                  {/* 좋아요 */}
+                  <div className="flex items-center gap-1.5">
+                    <svg
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                    </svg>
+                    <span>{prompt.likes_count || prompt.likes || 0}</span>
+                  </div>
+                  
+                  {/* 댓글 */}
+                  <div className="flex items-center gap-1.5">
+                    <svg 
+                      className="w-4 h-4" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth={2}
+                    >
+                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                    </svg>
+                    <span>{prompt.commentCount || prompt.comments?.length || 0}</span>
+                  </div>
+                </div>
               </div>
               
               <div className="flex items-center gap-2">
@@ -520,19 +665,54 @@ const PromptDetailPage = () => {
                 )}
                 
                 {isAuthenticated && (
-                  <button
-                    onClick={handleBookmarkToggle}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 font-medium
-                      ${isBookmarked 
-                        ? 'bg-orange-100 text-orange-400 border border-orange-400 hover:bg-orange-200' 
-                        : 'bg-white text-orange-400 border border-orange-400 hover:bg-orange-100'
-                      }`}
-                  >
-                    <svg className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                    {isBookmarked ? '북마크' : '북마크'}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleBookmarkToggle}
+                      className={`w-10 h-10 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center
+                        ${isBookmarked 
+                          ? 'bg-orange-500 text-white border border-orange-500 hover:bg-orange-600' 
+                          : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:text-orange-500 hover:border-orange-500'
+                        }`}
+                      title={isBookmarked ? '북마크 해제' : '북마크'}
+                    >
+                      <svg className="w-5 h-5" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                    </button>
+                    
+                    {!isAuthor && (
+                      <button
+                        onClick={() => setShowReportModal(true)}
+                        className="w-10 h-10 bg-white text-gray-600 border border-gray-300 rounded-full hover:bg-gray-50 hover:text-red-600 hover:border-red-500 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center"
+                        title="신고하기"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5l8.5 15h-17l8.5-15z" />
+                          <line x1="12" y1="10" x2="12" y2="13" strokeLinecap="round" />
+                          <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+                        </svg>
+                      </button>
+                    )}
+                    
+                    {isAdmin && !isAuthor && (
+                      <>
+                        <button
+                          onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
+                          className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                          title="수정 (관리자)"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={handleAdminDelete}
+                          className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                          title="삭제 (관리자)"
+                        >
+                          삭제
+                        </button>
+                      </>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -843,6 +1023,81 @@ const PromptDetailPage = () => {
         imageUrl={modalImageUrl}
         alt={modalImageAlt}
       />
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">프롬프트 신고</h2>
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason('');
+                  setReportCategory('other');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                신고 유형
+              </label>
+              <select
+                value={reportCategory}
+                onChange={(e) => setReportCategory(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="spam">스팸 / 광고</option>
+                <option value="offensive">부적절한 내용</option>
+                <option value="illegal">불법적인 내용</option>
+                <option value="other">기타</option>
+              </select>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                신고 사유
+              </label>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="구체적인 신고 사유를 입력해주세요..."
+              />
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-6">
+              허위 신고는 제재를 받을 수 있습니다. 신중하게 신고해주세요.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason('');
+                  setReportCategory('other');
+                }}
+                className="flex-1 py-2 px-4 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleReport}
+                className="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                신고하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

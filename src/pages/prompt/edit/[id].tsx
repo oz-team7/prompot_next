@@ -33,6 +33,7 @@ const EditPromptPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { user, isAuthenticated } = useAuth();
+  const isAdmin = user?.email === 'prompot7@gmail.com';
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
@@ -55,6 +56,9 @@ const EditPromptPage = () => {
     isPublic: true,
     videoUrl: '',
   });
+  
+  // 프롬프트 원본 데이터 저장
+  const [originalPrompt, setOriginalPrompt] = useState<any>(null);
 
   const categories: { value: CategoryType; label: string; icon: string }[] = [
     { value: 'work', label: '업무/마케팅', icon: '💼' },
@@ -178,8 +182,11 @@ const EditPromptPage = () => {
       const data = await res.json();
       const prompt = data.prompt;
       
-      // 작성자 확인
-      if (prompt.author_id !== user?.id) {
+      // 원본 프롬프트 데이터 저장
+      setOriginalPrompt(prompt);
+      
+      // 작성자 또는 관리자 확인
+      if (prompt.author_id !== user?.id && !isAdmin) {
         setToastMessage('이 프롬프트를 수정할 권한이 없습니다.');
         setToastType('error');
         setShowToast(true);
@@ -223,7 +230,7 @@ const EditPromptPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, user?.id, router]);
+  }, [id, user?.id, router, isAdmin]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -427,7 +434,15 @@ const EditPromptPage = () => {
       );
       const allAdditionalImages = [...existingAdditionalImages, ...additionalImageUrls];
       
-      const updateData = {
+      // 관리자 API와 일반 API의 데이터 형식 맞추기
+      const updateData = isAdmin ? {
+        title: formData.title,
+        description: formData.description,
+        prompt: formData.content,
+        category: formData.category,
+        aiModel: formData.aiModel,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+      } : {
         ...formData,
         preview_image: previewImageUrl,
         additional_images: allAdditionalImages,
@@ -447,7 +462,10 @@ const EditPromptPage = () => {
         throw new Error('토큰이 만료되었습니다. 다시 로그인해주세요.');
       }
 
-      const res = await fetch(`/api/prompts/${id}`, {
+      // 관리자면 admin API 사용, 아니면 일반 API 사용
+      const apiUrl = isAdmin ? `/api/admin/prompts/${id}` : `/api/prompts/${id}`;
+      
+      const res = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -537,7 +555,9 @@ const EditPromptPage = () => {
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 relative">
             {/* 헤더 */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-orange-500 mb-2">프롬프트 수정</h1>
+              <h1 className="text-3xl font-bold text-orange-500 mb-2">
+                프롬프트 수정 {isAdmin && originalPrompt?.author_id !== user?.id && '(관리자)'}
+              </h1>
               <p className="text-orange-500">프롬프트를 수정하고 개선해보세요!</p>
             </div>
             <form onSubmit={handleSubmit} className="space-y-6">

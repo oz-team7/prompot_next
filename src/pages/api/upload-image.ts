@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createSupabaseServiceClient } from '@/lib/supabase-server';
 import { getUserIdFromRequest } from '@/lib/auth-utils';
+import sharp from 'sharp';
 
 // API 응답 타입 정의
 interface ApiResponse<T = any> {
@@ -109,11 +110,56 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const fileExtension = fileName ? fileName.split('.').pop() : 'jpg';
     const finalFileName = `${timestamp}_${randomString}.${fileExtension}`;
 
+    // 이미지 버퍼 생성
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+
+    // 이미지에 워터마크 추가
+    const watermarkText = 'Prompot';
+    const processedImage = await sharp(imageBuffer)
+      .metadata()
+      .then(metadata => {
+        const width = metadata.width || 800;
+        const height = metadata.height || 600;
+        
+        // 워터마크 SVG 생성 (우측 하단)
+        const fontSize = Math.max(16, Math.min(24, width / 40)); // 이미지 크기에 따른 폰트 크기
+        const padding = Math.max(10, width / 100); // 이미지 크기에 따른 패딩
+        
+        const watermarkSVG = Buffer.from(`
+          <svg width="${width}" height="${height}">
+            <text 
+              x="${width - padding}" 
+              y="${height - padding}" 
+              text-anchor="end" 
+              font-family="Arial, sans-serif" 
+              font-size="${fontSize}" 
+              font-weight="bold"
+              fill="white" 
+              stroke="black" 
+              stroke-width="1"
+              opacity="0.8"
+            >
+              ${watermarkText}
+            </text>
+          </svg>
+        `);
+
+        return sharp(imageBuffer)
+          .composite([
+            {
+              input: watermarkSVG,
+              top: 0,
+              left: 0,
+            },
+          ])
+          .toBuffer();
+      });
+
     // Supabase Storage에 업로드
     const supabase = createSupabaseServiceClient();
     const { data, error } = await supabase.storage
       .from('images')
-      .upload(`${folder}/${finalFileName}`, Buffer.from(base64Data, 'base64'), {
+      .upload(`${folder}/${finalFileName}`, processedImage, {
         contentType: 'image/jpeg',
         upsert: false
       });

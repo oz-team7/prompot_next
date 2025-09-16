@@ -1,5 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export default async function handler(
   req: NextApiRequest,
@@ -91,34 +97,111 @@ export default async function handler(
       throw verifyError;
     }
 
-        // 4. 이메일 발송
-    console.log('4. 이메일 발송 시작');
-    const mailOptions = {
+    // 4. 데이터베이스에 문의 저장
+    console.log('4. 데이터베이스에 문의 저장');
+    try {
+      // 인증 정보 확인 (선택적)
+      let userId = null;
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        const { data: authData } = await supabase.auth.getUser(token);
+        userId = authData.user?.id || null;
+      }
+
+      const { data: inquiry, error: dbError } = await supabase
+        .from('inquiries')
+        .insert({
+          email: from,
+          subject,
+          message,
+          user_id: userId,
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('DB 저장 실패:', dbError);
+        // DB 저장 실패해도 이메일은 계속 전송
+      } else {
+        console.log('DB 저장 성공:', inquiry);
+      }
+    } catch (dbError) {
+      console.error('DB 저장 중 오류:', dbError);
+      // DB 저장 실패해도 이메일은 계속 전송
+    }
+
+    // 5. 활성화된 관리자 이메일 목록 조회
+    console.log('5. 관리자 알림 설정 조회');
+    const { data: adminEmails } = await supabase
+      .from('admin_notifications')
+      .select('email')
+      .eq('is_active', true)
+      .eq('notification_types->new_inquiry', true);
+
+    const notificationEmails = adminEmails?.map(item => item.email) || ['support@prompot.com'];
+    console.log('알림 받을 이메일 목록:', notificationEmails);
+
+    // 6. 관리자들에게 이메일 발송
+    console.log('6. 이메일 발송 시작');
+    
+    // 관리자 알림 이메일
+    if (notificationEmails.length > 0) {
+      const adminMailOptions = {
+        from: process.env.SMTP_USER,
+        to: notificationEmails.join(', '),
+        replyTo: from,
+        subject: `[PROMPOT 신규문의] ${subject}`,
+        html: `
+          <h2>새로운 문의가 접수되었습니다</h2>
+          <hr />
+          <p><strong>발신자:</strong> ${from}</p>
+          <p><strong>제목:</strong> ${subject}</p>
+          <p><strong>내용:</strong></p>
+          <div style="white-space: pre-wrap; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${message}</div>
+          <hr />
+          <p>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/admin" 
+               style="display: inline-block; padding: 10px 20px; background-color: #ff6b00; color: white; text-decoration: none; border-radius: 5px;">
+              관리자 페이지에서 답변하기
+            </a>
+          </p>
+        `,
+      };
+      
+      try {
+        const adminInfo = await transporter.sendMail(adminMailOptions);
+        console.log('관리자 알림 전송 완료:', adminInfo.accepted);
+      } catch (adminMailError) {
+        console.error('관리자 알림 전송 실패:', adminMailError);
+        // 관리자 알림 실패해도 계속 진행
+      }
+    }
+
+    // 발신자에게 확인 이메일
+    const userMailOptions = {
       from: process.env.SMTP_USER,
-      to,
-      replyTo: from,
-      subject: `[PROMPOT 문의] ${subject}`,
+      to: from,
+      subject: `[PROMPOT] 문의가 접수되었습니다`,
       html: `
-        <h2>PROMPOT 문의</h2>
-        <p><strong>발신자:</strong> ${from}</p>
-        <p><strong>내용:</strong></p>
-        <div style="white-space: pre-wrap;">${message}</div>
+        <h2>문의가 정상적으로 접수되었습니다</h2>
+        <p>안녕하세요,</p>
+        <p>PROMPOT에 문의해주셔서 감사합니다.</p>
+        <p>빠른 시일 내에 답변드리도록 하겠습니다.</p>
+        <hr />
+        <p><strong>문의 내용:</strong></p>
+        <p><strong>제목:</strong> ${subject}</p>
+        <div style="white-space: pre-wrap; background-color: #f5f5f5; padding: 15px; border-radius: 5px;">${message}</div>
+        <hr />
+        <p style="color: #666; font-size: 14px;">
+          이 메일은 자동으로 발송된 메일입니다.<br />
+          추가 문의사항이 있으시면 언제든지 문의해주세요.
+        </p>
       `,
     };
-    console.log('메일 옵션:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      replyTo: mailOptions.replyTo,
-      subject: mailOptions.subject
-    });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('5. 메일 전송 완료:', {
-      messageId: info.messageId,
-      response: info.response,
-      accepted: info.accepted,
-      rejected: info.rejected
-    });
+    const userInfo = await transporter.sendMail(userMailOptions);
+    console.log('7. 발신자 확인 메일 전송 완료:', userInfo.accepted);
 
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {

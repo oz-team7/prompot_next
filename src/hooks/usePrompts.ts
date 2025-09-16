@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Prompt } from '@/types/prompt';
+import { fetchWithLogging } from '@/lib/api-logger';
 
 export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
@@ -38,7 +39,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       let res;
       try {
         console.log('[DEBUG] usePrompts attempting main API call to:', `/api/prompts${query}`);
-        res = await fetch(`/api/prompts${query}`, {
+        res = await fetchWithLogging(`/api/prompts${query}`, {
           headers,
         });
         
@@ -62,7 +63,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
         // 대체 API 시도
         try {
           console.log('[DEBUG] usePrompts attempting fallback API call to:', `/api/prompts-fallback${query}`);
-          res = await fetch(`/api/prompts-fallback${query}`, {
+          res = await fetchWithLogging(`/api/prompts-fallback${query}`, {
             headers,
           });
           

@@ -1,0 +1,38 @@
+-- API 모니터링 로그 테이블
+CREATE TABLE IF NOT EXISTS api_monitor_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    endpoint VARCHAR(500) NOT NULL,
+    method VARCHAR(10) NOT NULL,
+    status INTEGER NOT NULL,
+    response_time INTEGER, -- 밀리초
+    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    request_body JSONB,
+    response_body JSONB,
+    error_message TEXT,
+    api_type VARCHAR(50), -- prompts, bookmarks, comments, users 등
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 인덱스 생성
+CREATE INDEX idx_api_monitor_logs_created_at ON api_monitor_logs(created_at DESC);
+CREATE INDEX idx_api_monitor_logs_endpoint ON api_monitor_logs(endpoint);
+CREATE INDEX idx_api_monitor_logs_status ON api_monitor_logs(status);
+CREATE INDEX idx_api_monitor_logs_api_type ON api_monitor_logs(api_type);
+CREATE INDEX idx_api_monitor_logs_user_id ON api_monitor_logs(user_id);
+
+-- RLS 정책
+ALTER TABLE api_monitor_logs ENABLE ROW LEVEL SECURITY;
+
+-- 관리자만 조회 가능
+CREATE POLICY "Admin users can view API logs" ON api_monitor_logs
+    FOR SELECT USING (
+        auth.uid() IN (
+            SELECT id FROM profiles WHERE email = 'prompot7@gmail.com'
+        )
+    );
+
+-- 서비스 역할로는 삽입 가능
+CREATE POLICY "Service role can insert API logs" ON api_monitor_logs
+    FOR INSERT WITH CHECK (true);

@@ -1,0 +1,235 @@
+-- 누락된 테이블들 생성
+
+-- likes 테이블 (좋아요)
+CREATE TABLE IF NOT EXISTS likes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    prompt_id UUID NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, prompt_id)
+);
+
+-- likes 인덱스
+CREATE INDEX IF NOT EXISTS idx_likes_prompt_id ON likes(prompt_id);
+CREATE INDEX IF NOT EXISTS idx_likes_user_id ON likes(user_id);
+
+-- likes RLS 정책
+ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
+
+-- 기존 정책 삭제 (있으면)
+DROP POLICY IF EXISTS "Users can view all likes" ON likes;
+DROP POLICY IF EXISTS "Users can manage their own likes" ON likes;
+
+CREATE POLICY "Users can view all likes" ON likes
+    FOR SELECT USING (true);
+
+CREATE POLICY "Users can manage their own likes" ON likes
+    FOR ALL USING (auth.uid() = user_id);
+
+-- admin_logs 테이블 (관리자 활동 로그)
+CREATE TABLE IF NOT EXISTS admin_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    admin_id UUID NOT NULL REFERENCES profiles(id),
+    action VARCHAR(100) NOT NULL,
+    target_type VARCHAR(50),
+    target_id TEXT,
+    details JSONB,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- admin_logs 인덱스
+CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_id ON admin_logs(admin_id);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(action);
+CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at DESC);
+
+-- admin_logs RLS 정책
+ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
+
+-- 기존 정책 삭제 (있으면)
+DROP POLICY IF EXISTS "Admin users can view admin logs" ON admin_logs;
+DROP POLICY IF EXISTS "Admin users can insert admin logs" ON admin_logs;
+
+CREATE POLICY "Admin users can view admin logs" ON admin_logs
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.email = 'prompot7@gmail.com'
+        )
+    );
+
+CREATE POLICY "Admin users can insert admin logs" ON admin_logs
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.email = 'prompot7@gmail.com'
+        )
+    );
+
+-- reports 테이블 (신고)
+CREATE TABLE IF NOT EXISTS reports (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    reporter_id UUID NOT NULL REFERENCES profiles(id),
+    reported_type VARCHAR(50) NOT NULL, -- 'prompt', 'user', 'comment'
+    reported_id UUID NOT NULL,
+    reason VARCHAR(100) NOT NULL,
+    details TEXT,
+    status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'reviewing', 'resolved', 'rejected'
+    resolution_note TEXT,
+    resolved_by UUID REFERENCES profiles(id),
+    resolved_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- reports 인덱스
+CREATE INDEX IF NOT EXISTS idx_reports_reporter_id ON reports(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+CREATE INDEX IF NOT EXISTS idx_reports_reported_type_id ON reports(reported_type, reported_id);
+CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
+
+-- reports RLS 정책
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+
+-- 기존 정책 삭제 (있으면)
+DROP POLICY IF EXISTS "Users can create reports" ON reports;
+DROP POLICY IF EXISTS "Users can view their own reports" ON reports;
+DROP POLICY IF EXISTS "Admin can view all reports" ON reports;
+DROP POLICY IF EXISTS "Admin can update reports" ON reports;
+
+CREATE POLICY "Users can create reports" ON reports
+    FOR INSERT WITH CHECK (auth.uid() = reporter_id);
+
+CREATE POLICY "Users can view their own reports" ON reports
+    FOR SELECT USING (auth.uid() = reporter_id);
+
+CREATE POLICY "Admin can view all reports" ON reports
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.email = 'prompot7@gmail.com'
+        )
+    );
+
+CREATE POLICY "Admin can update reports" ON reports
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.email = 'prompot7@gmail.com'
+        )
+    );
+
+-- api_keys 테이블 (API 키 관리)
+CREATE TABLE IF NOT EXISTS api_keys (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    key_hash VARCHAR(255) NOT NULL UNIQUE,
+    last_used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    expires_at TIMESTAMPTZ,
+    is_active BOOLEAN DEFAULT true
+);
+
+-- api_keys 인덱스
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash);
+
+-- api_keys RLS 정책
+ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+
+-- 기존 정책 삭제 (있으면)
+DROP POLICY IF EXISTS "Users can manage their own API keys" ON api_keys;
+DROP POLICY IF EXISTS "Service role can verify API keys" ON api_keys;
+
+CREATE POLICY "Users can manage their own API keys" ON api_keys
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Service role can verify API keys" ON api_keys
+    FOR SELECT USING (true);
+
+-- api_monitor_logs 테이블이 없으면 생성
+CREATE TABLE IF NOT EXISTS api_monitor_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    endpoint VARCHAR(500) NOT NULL,
+    method VARCHAR(10) NOT NULL,
+    status INTEGER NOT NULL,
+    response_time INTEGER, -- 밀리초
+    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    request_body JSONB,
+    response_body JSONB,
+    error_message TEXT,
+    api_type VARCHAR(50), -- prompts, bookmarks, comments, users 등
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- api_monitor_logs 인덱스
+CREATE INDEX IF NOT EXISTS idx_api_monitor_logs_created_at ON api_monitor_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_monitor_logs_endpoint ON api_monitor_logs(endpoint);
+CREATE INDEX IF NOT EXISTS idx_api_monitor_logs_status ON api_monitor_logs(status);
+CREATE INDEX IF NOT EXISTS idx_api_monitor_logs_api_type ON api_monitor_logs(api_type);
+CREATE INDEX IF NOT EXISTS idx_api_monitor_logs_user_id ON api_monitor_logs(user_id);
+
+-- api_monitor_logs RLS 정책
+ALTER TABLE api_monitor_logs ENABLE ROW LEVEL SECURITY;
+
+-- 기존 정책 삭제 (있으면)
+DROP POLICY IF EXISTS "Admin users can view API logs" ON api_monitor_logs;
+DROP POLICY IF EXISTS "Service role can insert API logs" ON api_monitor_logs;
+
+CREATE POLICY "Admin users can view API logs" ON api_monitor_logs
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.id = auth.uid() 
+            AND profiles.email = 'prompot7@gmail.com'
+        )
+    );
+
+CREATE POLICY "Service role can insert API logs" ON api_monitor_logs
+    FOR INSERT WITH CHECK (true);
+
+-- prompts 테이블에 views 컬럼 추가 (조회수)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_schema = 'public' AND table_name = 'prompts' 
+                   AND column_name = 'views') THEN
+        ALTER TABLE prompts ADD COLUMN views INTEGER DEFAULT 0;
+    END IF;
+EXCEPTION
+    WHEN others THEN
+        RAISE NOTICE 'Error adding views column to prompts: %', SQLERRM;
+END $$;
+
+-- views 인덱스 추가
+CREATE INDEX IF NOT EXISTS idx_prompts_views ON prompts(views DESC);
+
+-- increment 함수 생성 (조회수 증가용)
+DROP FUNCTION IF EXISTS increment(text, text, integer);
+DROP FUNCTION IF EXISTS increment(text, text, uuid);
+
+-- UUID 버전 (prompts 테이블의 id가 UUID인 경우)
+CREATE OR REPLACE FUNCTION increment(table_name text, column_name text, row_id uuid) 
+RETURNS void AS $$
+BEGIN
+    EXECUTE format('UPDATE %I SET %I = %I + 1 WHERE id = $1', table_name, column_name, column_name) 
+    USING row_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- INTEGER 버전 (legacy support)
+CREATE OR REPLACE FUNCTION increment(table_name text, column_name text, row_id integer) 
+RETURNS void AS $$
+BEGIN
+    EXECUTE format('UPDATE %I SET %I = %I + 1 WHERE id = $1', table_name, column_name, column_name) 
+    USING row_id;
+END;
+$$ LANGUAGE plpgsql;

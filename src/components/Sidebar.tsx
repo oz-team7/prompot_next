@@ -76,6 +76,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 >
                   마이페이지
                 </Link>
+                {user?.email === 'prompot7@gmail.com' && (
+                  <Link
+                    href="/admin"
+                    className="block w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-center"
+                    onClick={onClose}
+                  >
+                    관리자 페이지
+                  </Link>
+                )}
                 <button 
                   onClick={async () => {
                     await logout();
