@@ -23,7 +23,8 @@ export default async function handler(
       body: req.body
     });
     
-    // 1. 환경 변수 검증
+    // 1. 환경 변수 검증 (임시 비활성화)
+    /*
     const envCheck = {
       SMTP_USER_EXISTS: !!process.env.SMTP_USER,
       SMTP_PASSWORD_EXISTS: !!process.env.SMTP_PASSWORD,
@@ -43,6 +44,7 @@ export default async function handler(
         error: 'SMTP_CONFIG_MISSING'
       });
     }
+    */
 
     const { from, subject, message, to } = req.body;
     
@@ -65,7 +67,8 @@ export default async function handler(
       });
     }
 
-    // 2. Gmail 전용 설정
+    // 2. Gmail 전용 설정 (임시 비활성화)
+    /*
     console.log('2. Gmail 설정 생성');
     const transportConfig = {
       service: 'gmail',
@@ -96,6 +99,7 @@ export default async function handler(
       });
       throw verifyError;
     }
+    */
 
     // 4. 데이터베이스에 문의 저장
     console.log('4. 데이터베이스에 문의 저장');
@@ -122,16 +126,23 @@ export default async function handler(
 
       if (dbError) {
         console.error('DB 저장 실패:', dbError);
-        // DB 저장 실패해도 이메일은 계속 전송
+        return res.status(500).json({ 
+          message: '문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+          error: 'DB_SAVE_FAILED'
+        });
       } else {
         console.log('DB 저장 성공:', inquiry);
       }
     } catch (dbError) {
       console.error('DB 저장 중 오류:', dbError);
-      // DB 저장 실패해도 이메일은 계속 전송
+      return res.status(500).json({ 
+        message: '문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        error: 'DB_SAVE_FAILED'
+      });
     }
 
-    // 5. 활성화된 관리자 이메일 목록 조회
+    // 5. 활성화된 관리자 이메일 목록 조회 (임시 비활성화)
+    /*
     console.log('5. 관리자 알림 설정 조회');
     const { data: adminEmails } = await supabase
       .from('admin_notifications')
@@ -202,8 +213,12 @@ export default async function handler(
 
     const userInfo = await transporter.sendMail(userMailOptions);
     console.log('7. 발신자 확인 메일 전송 완료:', userInfo.accepted);
+    */
 
-    res.status(200).json({ message: 'Email sent successfully' });
+    // 이메일 전송 대신 DB 저장 성공 메시지 반환
+    res.status(200).json({ 
+      message: '문의가 성공적으로 접수되었습니다. 관리자가 확인 후 답변드리겠습니다.' 
+    });
   } catch (error) {
     console.error('=== 이메일 전송 실패 ===');
     
