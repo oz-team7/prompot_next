@@ -1072,7 +1072,6 @@ const AdminPage = () => {
       { endpoint: '/api/admin/reports', method: 'GET' },
       { endpoint: '/api/admin/logs', method: 'GET' },
       { endpoint: '/api/admin/announcements', method: 'GET' },
-      { endpoint: '/api/auth/validate-token', method: 'POST' },
       { endpoint: '/api/prompts', method: 'GET' },
       { endpoint: '/api/bookmarks', method: 'GET' },
       { endpoint: '/api/current-user', method: 'GET' },

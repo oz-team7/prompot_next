@@ -137,36 +137,12 @@ const EditPromptPage = () => {
     }
   };
 
-  // 토큰 검증 함수
-  const validateToken = async (token: string): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/auth/validate-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      const data = await res.json();
-      return data.ok === true;
-    } catch (error) {
-      console.error('Token validation error:', error);
-      return false;
-    }
-  };
 
   const fetchPrompt = useCallback(async () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       if (!token) {
         throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
-      }
-
-      // 토큰 유효성 검증
-      const isValidToken = await validateToken(token);
-      if (!isValidToken) {
-        throw new Error('토큰이 만료되었습니다. 다시 로그인해주세요.');
       }
 
       const res = await fetch(`/api/prompts/${id}`, {
@@ -176,6 +152,9 @@ const EditPromptPage = () => {
       });
       
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+        }
         throw new Error('프롬프트를 불러올 수 없습니다.');
       }
       
@@ -456,12 +435,6 @@ const EditPromptPage = () => {
         throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
       }
 
-      // 토큰 유효성 검증
-      const isValidToken = await validateToken(token);
-      if (!isValidToken) {
-        throw new Error('토큰이 만료되었습니다. 다시 로그인해주세요.');
-      }
-
       // 관리자면 admin API 사용, 아니면 일반 API 사용
       const apiUrl = isAdmin ? `/api/admin/prompts/${id}` : `/api/prompts/${id}`;
       
@@ -479,6 +452,9 @@ const EditPromptPage = () => {
 
       if (!res.ok) {
         console.error('Update failed:', data);
+        if (res.status === 401) {
+          throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+        }
         const errorMessage = data.error || data.message || '프롬프트 수정에 실패했습니다.';
         throw new Error(errorMessage);
       }
