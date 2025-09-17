@@ -64,31 +64,34 @@ const Header: React.FC = () => {
             {/* Login/Logout Button (Desktop only) */}
             {isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-3">
-                {/* 프로필 사진 */}
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200">
-                    {user?.avatar_url ? (
-                      <img
-                        src={user.avatar_url}
-                        alt={user?.name || ''}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null;
-                          target.src = '/logo.png';
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src="/logo.png"
-                        alt="PROMPOT Logo"
-                        className="w-full h-full object-cover p-1"
-                      />
-                    )}
+                {/* 프로필 사진과 닉네임을 Link로 감싸기 */}
+                <Link href="/mypage" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  {/* 프로필 사진 */}
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200">
+                      {user?.avatar_url ? (
+                        <img
+                          src={user.avatar_url}
+                          alt={user?.name || ''}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = '/logo.png';
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src="/logo.png"
+                          alt="PROMPOT Logo"
+                          className="w-full h-full object-cover p-1"
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                <span className="text-sm text-gray-600">{user?.name}님</span>
+                  
+                  <span className="text-sm text-gray-600">{user?.name}님</span>
+                </Link>
                 <button 
                   onClick={handleLogout}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0"
