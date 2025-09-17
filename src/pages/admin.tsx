@@ -160,6 +160,13 @@ const AdminPage = () => {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [backupType, setBackupType] = useState<'full' | 'data-only'>('data-only');
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  
+  // API 테스트 관련 state
+  const [apiTestResults, setApiTestResults] = useState<Record<string, {
+    status: 'pending' | 'testing' | 'success' | 'error';
+    message?: string;
+    responseTime?: number;
+  }>>({});
 
   useEffect(() => {
     console.log('Admin page - user:', user, 'isAuthenticated:', isAuthenticated, 'authLoading:', authLoading);
@@ -994,6 +1001,95 @@ const AdminPage = () => {
       setApiMonitorStats(data.stats);
     } catch (error) {
       console.error('Fetch API monitor data error:', error);
+    }
+  };
+
+  // API 테스트 함수
+  const testApi = async (endpoint: string, method: string = 'GET', body?: any) => {
+    const startTime = Date.now();
+    
+    setApiTestResults(prev => ({
+      ...prev,
+      [endpoint]: { status: 'testing' }
+    }));
+    
+    try {
+      const options: RequestInit = {
+        method,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      };
+      
+      if (body) {
+        options.body = JSON.stringify(body);
+      }
+      
+      const res = await fetchWithLogging(endpoint, options);
+      const responseTime = Date.now() - startTime;
+      
+      if (res.ok) {
+        const data = await res.json();
+        setApiTestResults(prev => ({
+          ...prev,
+          [endpoint]: { 
+            status: 'success', 
+            message: '정상 작동',
+            responseTime
+          }
+        }));
+      } else {
+        const error = await res.text();
+        setApiTestResults(prev => ({
+          ...prev,
+          [endpoint]: { 
+            status: 'error', 
+            message: `에러 (${res.status}): ${error}`,
+            responseTime
+          }
+        }));
+      }
+    } catch (error) {
+      setApiTestResults(prev => ({
+        ...prev,
+        [endpoint]: { 
+          status: 'error', 
+          message: error instanceof Error ? error.message : '알 수 없는 에러'
+        }
+      }));
+    }
+  };
+
+  // 모든 주요 API 테스트
+  const testAllApis = async () => {
+    const apis = [
+      { endpoint: '/api/admin/stats', method: 'GET' },
+      { endpoint: '/api/admin/users', method: 'GET' },
+      { endpoint: '/api/admin/prompts', method: 'GET' },
+      { endpoint: '/api/admin/system', method: 'GET' },
+      { endpoint: '/api/admin/api-monitor', method: 'GET' },
+      { endpoint: '/api/admin/reports', method: 'GET' },
+      { endpoint: '/api/admin/logs', method: 'GET' },
+      { endpoint: '/api/admin/announcements', method: 'GET' },
+      { endpoint: '/api/auth/validate-token', method: 'POST' },
+      { endpoint: '/api/prompts', method: 'GET' },
+      { endpoint: '/api/bookmarks', method: 'GET' },
+      { endpoint: '/api/current-user', method: 'GET' },
+    ];
+
+    // 모든 테스트 초기화
+    const initialResults: Record<string, any> = {};
+    apis.forEach(api => {
+      initialResults[api.endpoint] = { status: 'pending' };
+    });
+    setApiTestResults(initialResults);
+
+    // 각 API 테스트 실행
+    for (const api of apis) {
+      await testApi(api.endpoint, api.method);
+      // 각 테스트 사이에 약간의 지연
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
   };
 
@@ -2100,6 +2196,69 @@ const AdminPage = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+
+            {/* API 테스트 */}
+            <div className="bg-white rounded-lg shadow p-6 mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">API 테스트</h3>
+                <button 
+                  onClick={testAllApis}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                >
+                  전체 API 테스트
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {Object.entries(apiTestResults).map(([endpoint, result]) => (
+                  <div key={endpoint} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div className="flex-1">
+                      <p className="font-mono text-sm">{endpoint}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {result.responseTime && (
+                        <span className="text-sm text-gray-600">{result.responseTime}ms</span>
+                      )}
+                      {result.status === 'pending' && (
+                        <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">대기중</span>
+                      )}
+                      {result.status === 'testing' && (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm flex items-center gap-2">
+                          <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          테스트 중
+                        </span>
+                      )}
+                      {result.status === 'success' && (
+                        <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-sm flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          {result.message}
+                        </span>
+                      )}
+                      {result.status === 'error' && (
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm">실패</span>
+                          <span className="text-sm text-red-600">{result.message}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => testApi(endpoint, endpoint.includes('POST') ? 'POST' : 'GET')}
+                        className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                      >
+                        테스트
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                {Object.keys(apiTestResults).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    '전체 API 테스트' 버튼을 클릭하여 API 상태를 확인하세요.
+                  </div>
+                )}
               </div>
             </div>
           </div>
