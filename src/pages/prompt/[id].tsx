@@ -13,6 +13,7 @@ import SharePrompt from '@/components/SharePrompt';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import ImageModal from '@/components/ImageModal';
 import FloatingHearts from '@/components/FloatingHearts';
+import { mutate as swrMutate } from 'swr';
 
 // 추가 이미지 컴포넌트
 const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: string; index: number; onImageClick: (imageUrl: string, alt: string) => void }) => {
@@ -102,7 +103,7 @@ const aiModels: AIModel[] = [
 ];
 
 interface PromptDetail {
-  id: number;
+  id: string;
   title: string;
   content: string;
   description?: string;
@@ -232,7 +233,8 @@ const VideoPreview = ({ url }: { url: string }) => {
 
 const PromptDetailPage = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const rawId = router.query.id;
+  const promptId = typeof rawId === 'string' ? rawId : rawId?.[0];
   const { setAuthorFilter, setSearchQuery } = useSearch();
   const { isAuthenticated, user } = useAuth();
   const { bookmarks, addBookmark, removeBookmark } = useBookmarks();
@@ -256,12 +258,11 @@ const PromptDetailPage = () => {
   const [commentCount, setCommentCount] = useState(0);
   
   // useLike 훅 사용
-  const promptId = Array.isArray(id) ? id[0] : id;
-  const { isLiked, likesCount, toggle: toggleLike, isBusy: isLikeBusy } = useLike(promptId);
+  const { isLiked, likesCount, toggle: toggleLike, isBusy: isLikeBusy } = useLike(promptId || '');
 
   const fetchPrompt = useCallback(async () => {
     try {
-      const res = await fetch(`/api/prompts/${id}`);
+      const res = await fetch(`/api/prompts/${promptId}`);
       const data = await res.json();
       
       if (!res.ok) {
@@ -270,10 +271,9 @@ const PromptDetailPage = () => {
       
       setPrompt(data.prompt);
       // SWR 캐시에 초기 데이터 설정
-      const { mutate } = require('swr');
-      mutate(['like', String(id)], {
-        is_liked: data.prompt.is_liked || false,
-        likes_count: data.prompt.likes_count || data.prompt.likes || 0
+      swrMutate(['like', String(promptId)], {
+        isLiked: Boolean(data.prompt.is_liked || false),
+        likesCount: Number(data.prompt.likes_count || data.prompt.likes || 0)
       }, false);
       setCommentCount(data.prompt.comment_count || data.prompt.comments?.length || 0);
       // console.log('[DEBUG] Fetched prompt data:', {
@@ -292,18 +292,18 @@ const PromptDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [promptId]);
 
   // 조회수 증가 함수
   const incrementViews = useCallback(async () => {
     try {
-      await fetch(`/api/prompts/${id}/views`, {
+      await fetch(`/api/prompts/${promptId}/views`, {
         method: 'POST'
       });
     } catch (error) {
       console.error('Error incrementing views:', error);
     }
-  }, [id]);
+  }, [promptId]);
 
   // 좋아요 토글 함수
   const handleLikeToggle = async () => {
@@ -335,12 +335,12 @@ const PromptDetailPage = () => {
   };
 
   useEffect(() => {
-    if (id) {
+    if (promptId) {
       fetchPrompt();
       // 페이지 방문 시 조회수 증가
       incrementViews();
     }
-  }, [id, fetchPrompt, incrementViews]);
+  }, [promptId, fetchPrompt, incrementViews]);
 
 
   if (loading) {
@@ -369,9 +369,9 @@ const PromptDetailPage = () => {
   }
 
   const isBookmarked = bookmarks.some(bookmark => 
-    bookmark && bookmark.prompt && bookmark.prompt.id === prompt?.id
+    bookmark && bookmark.prompt && String(bookmark.prompt.id) === String(prompt?.id)
   );
-  const isAuthor = user?.id === prompt.author?.id;
+  const isAuthor = user?.id === prompt?.author?.id;
   const isAdmin = user?.email === 'prompot7@gmail.com';
 
   const handleBookmarkToggle = async () => {
@@ -593,103 +593,101 @@ const PromptDetailPage = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 relative">
+            {/* 통계 정보 - 우측 상단 고정 */}
+            <div className="absolute top-5 right-6 flex items-center gap-4 text-sm text-gray-600">
+              {/* 조회수 */}
+              <div className="flex items-center gap-1.5">
+                <svg 
+                  className="w-4 h-4" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth={2}
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span>{prompt.views || 0}</span>
+              </div>
+              
+              {/* 좋아요 */}
+              <div className="relative">
+                <button
+                  onClick={handleLikeToggle}
+                  disabled={isLikeBusy}
+                  className="flex items-center gap-1.5 hover:text-red-500 transition-colors"
+                >
+                  <svg
+                    className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-current' : ''}`}
+                    viewBox="0 0 24 24"
+                    fill={isLiked ? 'currentColor' : 'none'}
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                  </svg>
+                  <span className={isLiked ? 'text-red-500' : ''}>{likesCount}</span>
+                </button>
+                <FloatingHearts trigger={showHeartAnimation} />
+              </div>
+              
+              {/* 댓글 */}
+              <div className="flex items-center gap-1.5">
+                <svg 
+                  className="w-4 h-4" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth={2}
+                >
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                </svg>
+                <span>{commentCount}</span>
+              </div>
+            </div>
+
             {/* Content header */}
             <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
+              <div className="flex-1 pr-32"> {/* 통계 정보를 위한 여백 추가 */}
                 <h1 className="text-2xl font-bold mb-3 text-gray-900">{prompt.title}</h1>
                 
-                {/* 작성자 정보 및 통계 */}
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        const authorName = prompt.author?.name || '익명';
-                        setAuthorFilter(authorName);
-                        router.push('/');
-                      }}
-                      className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
-                    >
-                      {prompt.author.avatar_url ? (
-                        <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0">
-                          <Image
-                            src={prompt.author.avatar_url}
-                            alt={prompt.author.name}
-                            width={24}
-                            height={24}
-                            className="w-full h-full object-cover"
-                            unoptimized={true}
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          <Image
-                            src="/logo.png"
-                            alt="프롬팟 로고"
-                            width={24}
-                            height={24}
-                            className="w-full h-full object-contain"
-                            unoptimized={true}
-                          />
-                        </div>
-                      )}
-                      <span className="font-medium group-hover:text-orange-600 transition-colors">{prompt.author.name}</span>
-                    </button>
-                    <span className="text-gray-400">•</span>
-                    <time dateTime={prompt.createdAt} className="text-gray-500">{prompt.date}</time>
-                  </div>
-                  
-                  {/* 조회수, 좋아요, 댓글 정보 */}
-                  <div className="flex items-center gap-4">
-                  {/* 조회수 */}
-                  <div className="flex items-center gap-1.5">
-                    <svg 
-                      className="w-4 h-4" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth={2}
-                    >
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    <span>{prompt.views || 0}</span>
-                  </div>
-                  
-                  {/* 좋아요 */}
-                  <div className="relative">
-                    <button
-                      onClick={handleLikeToggle}
-                      className="flex items-center gap-1.5 hover:text-red-500 transition-colors"
-                      disabled={isLikeBusy}
-                    >
-                      <svg
-                        className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-current' : ''}`}
-                        viewBox="0 0 24 24"
-                        fill={isLiked ? 'currentColor' : 'none'}
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                      </svg>
-                      <span className={isLiked ? 'text-red-500' : ''}>{likesCount}</span>
-                    </button>
-                    <FloatingHearts trigger={showHeartAnimation} />
-                  </div>
-                  
-                  {/* 댓글 */}
-                  <div className="flex items-center gap-1.5">
-                    <svg 
-                      className="w-4 h-4" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth={2}
-                    >
-                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                    </svg>
-                    <span>{commentCount}</span>
-                  </div>
-                  </div>
+                {/* 작성자 정보 */}
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <button
+                    onClick={() => {
+                      const authorName = prompt.author?.name || '익명';
+                      setAuthorFilter(authorName);
+                      router.push('/');
+                    }}
+                    className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
+                  >
+                    {prompt.author.avatar_url ? (
+                      <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0">
+                        <Image
+                          src={prompt.author.avatar_url}
+                          alt={prompt.author.name}
+                          width={24}
+                          height={24}
+                          className="w-full h-full object-cover"
+                          unoptimized={true}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <Image
+                          src="/logo.png"
+                          alt="프롬팟 로고"
+                          width={24}
+                          height={24}
+                          className="w-full h-full object-contain"
+                          unoptimized={true}
+                        />
+                      </div>
+                    )}
+                    <span className="font-medium group-hover:text-orange-600 transition-colors">{prompt.author.name}</span>
+                  </button>
+                  <span className="text-gray-400">•</span>
+                  <time dateTime={prompt.createdAt} className="text-gray-500">{prompt.date}</time>
                 </div>
               </div>
               
@@ -977,7 +975,7 @@ const PromptDetailPage = () => {
               </div>
 
               <div className="mt-4">
-                <SharePrompt promptId={prompt.id.toString()} title={prompt.title} />
+                <SharePrompt promptId={prompt.id} title={prompt.title} />
               </div>
             </div>
 
@@ -985,7 +983,7 @@ const PromptDetailPage = () => {
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-2">댓글</h3>
               <CommentSection 
-                promptId={prompt.id.toString()} 
+                promptId={prompt.id} 
                 onCommentCountUpdate={setCommentCount}
               />
             </div>
@@ -1106,7 +1104,9 @@ const PromptDetailPage = () => {
               </label>
               <select
                 value={reportCategory}
-                onChange={(e) => setReportCategory(e.target.value as any)}
+                onChange={(e) =>
+                  setReportCategory(e.target.value as 'spam' | 'offensive' | 'illegal' | 'other')
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="spam">스팸 / 광고</option>
