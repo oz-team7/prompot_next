@@ -12,6 +12,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import ProfileImageModal from '@/components/ProfileImageModal';
 import BookmarkCategoryManager from '@/components/BookmarkCategoryManager';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
+import BookmarkPanel from '@/components/BookmarkPanel';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 import PromptCardCompact from '@/components/PromptCardCompact';
@@ -103,6 +104,7 @@ const MyPage = () => {
   const { categories: bookmarkCategories, refetch: refetchBookmarkCategories } = useBookmarkCategories();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showBookmarks, setShowBookmarks] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [inquiries, setInquiries] = useState<any[]>([]);
   const [selectedInquiry, setSelectedInquiry] = useState<any>(null);
@@ -1135,7 +1137,12 @@ const MyPage = () => {
                   
                   {/* 카테고리 관리 버튼 */}
                   <button
-                    onClick={() => setShowCategoryManager(true)}
+                    onClick={() => {
+                      setShowBookmarks(true);
+                      setTimeout(() => {
+                        setShowCategoryManager(true);
+                      }, 100);
+                    }}
                     className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-orange-600 transition-colors"
                   >
                     카테고리 관리
@@ -1200,21 +1207,6 @@ const MyPage = () => {
                     </div>
                   )}
                 </div>
-
-                {/* 카테고리 관리 모달 */}
-                <BookmarkCategoryManager
-                  isOpen={showCategoryManager}
-                  onClose={() => setShowCategoryManager(false)}
-                  onCategoryChange={() => {
-                    // 북마크 목록과 카테고리 목록 새로고침
-                    if (refetchBookmarks && typeof refetchBookmarks === "function") {
-                      refetchBookmarks();
-                    }
-                    if (refetchBookmarkCategories && typeof refetchBookmarkCategories === "function") {
-                      refetchBookmarkCategories();
-                    }
-                  }}
-                />
               </div>
             )}
 
@@ -1482,7 +1474,7 @@ const MyPage = () => {
                       href="/faq"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
                     >
-                      FAQ 및 문의하기
+                      FAQ
                     </Link>
                   </div>
                 ) : (
@@ -1586,9 +1578,9 @@ const MyPage = () => {
                 <div>
                   <p className="text-sm font-medium text-green-600 mb-1">유지되는 데이터 (익명화):</p>
                   <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• 작성한 프롬프트 (작성자: "삭제된 사용자")</li>
-                    <li>• 작성한 댓글 (작성자: "삭제된 사용자")</li>
-                    <li>• 남긴 평점 (작성자: "삭제된 사용자")</li>
+                    <li>• 작성한 프롬프트 (작성자: &ldquo;삭제된 사용자&rdquo;)</li>
+                    <li>• 작성한 댓글 (작성자: &ldquo;삭제된 사용자&rdquo;)</li>
+                    <li>• 남긴 평점 (작성자: &ldquo;삭제된 사용자&rdquo;)</li>
                   </ul>
                 </div>
               </div>
@@ -1633,6 +1625,24 @@ const MyPage = () => {
           </div>
         </div>
       )}
+
+      {/* 북마크 패널 */}
+      <BookmarkPanel
+        isOpen={showBookmarks}
+        onClose={() => setShowBookmarks(false)}
+        bookmarks={bookmarks || []}
+        showCategoryManager={showCategoryManager}
+        onOpenCategoryManager={() => setShowCategoryManager(true)}
+        onCloseCategoryManager={() => setShowCategoryManager(false)}
+        onCategoryChange={() => {
+          if (refetchBookmarks && typeof refetchBookmarks === "function") {
+            refetchBookmarks();
+          }
+          if (refetchBookmarkCategories && typeof refetchBookmarkCategories === "function") {
+            refetchBookmarkCategories();
+          }
+        }}
+      />
 
       {/* Toast 알림 */}
       {showToast && (

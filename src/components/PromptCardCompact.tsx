@@ -48,13 +48,14 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   useEffect(() => {
     if (prompt.is_liked !== undefined || prompt.likes_count !== undefined) {
       // mutate를 통해 초기 데이터 설정
-      const { mutate } = require('swr');
-      mutate(['like', String(prompt.id)], {
-        is_liked: prompt.is_liked || false,
-        likes_count: prompt.likes_count || prompt.likes || 0
-      }, false);
+      import('swr').then(({ mutate }) => {
+        mutate(['like', String(prompt.id)], {
+          is_liked: prompt.is_liked || false,
+          likes_count: prompt.likes_count || prompt.likes || 0
+        }, false);
+      });
     }
-  }, [prompt.id]);
+  }, [prompt.id, prompt.is_liked, prompt.likes, prompt.likes_count]);
 
   // 북마크 상태
   const actualIsBookmarked = useMemo(() => {
