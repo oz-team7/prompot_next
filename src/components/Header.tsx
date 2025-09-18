@@ -51,14 +51,24 @@ const Header: React.FC = () => {
               <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-primary">PROMPOT</h1>
             </button>
 
-            {/* Search Bar */}
-            <div className="flex-1 flex justify-center px-2 sm:px-4">
-              <SearchBar className="w-full max-w-lg" />
+            {/* Left side buttons - Trending & New */}
+            <div className="hidden lg:flex items-center gap-2">
+              <TrendingPrompts />
+              {isAuthenticated && (
+                <Link href="/prompt/create">
+                  <button className="flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>New</span>
+                  </button>
+                </Link>
+              )}
             </div>
 
-            {/* Trending Prompts - Only on desktop */}
-            <div className="hidden lg:block">
-              <TrendingPrompts />
+            {/* Search Bar - Center */}
+            <div className="flex-1 flex justify-center px-2 sm:px-4">
+              <SearchBar className="w-full max-w-lg" />
             </div>
 
             {/* Login/Logout Button (Desktop only) */}
