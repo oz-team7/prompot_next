@@ -8,11 +8,11 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
 
   // 캔버스 설정
   const width = 800;
-  const paddingHorizontal = 60; // 좌우 패딩 증가
-  const paddingTop = 60; // 상단 패딩 증가
-  const paddingBottom = 40; // 하단 패딩 (잘려도 됨)
-  const lineHeight = 32; // 줄 간격 약간 증가
-  const fontSize = 20; // 폰트 크기 약간 증가
+  const paddingHorizontal = 40; // 좌우 패딩
+  const paddingTop = 40; // 상단 패딩
+  const paddingBottom = 40; // 하단 패딩
+  const lineHeight = 28; // 줄 간격
+  const fontSize = 18; // 폰트 크기
   
   // 폰트 설정
   ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
