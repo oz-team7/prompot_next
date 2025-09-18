@@ -86,19 +86,34 @@ export default async function handler(
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
         
+        // 댓글 수 가져오기
+        const { count: commentCount } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        // 활동 점수 계산
+        const activityScore = ((promptCount || 0) * 5) + 
+                            ((commentCount || 0) * 3) + 
+                            ((bookmarkCount || 0) * 2) + 
+                            ((likeCount || 0) * 1);
+        
         return {
           id: user.id,
           name: user.name,
           email: user.email,
+          avatar_url: user.avatar_url || null,
           createdAt: new Date(user.created_at),
           is_suspended: user.is_suspended || false,
           suspension_reason: user.suspension_reason || null,
           suspension_end_date: user.suspension_end_date || null,
           warning_count: user.warning_count || 0,
+          activityScore,
           _count: {
             prompts: promptCount || 0,
             likes: likeCount || 0,
             bookmarks: bookmarkCount || 0,
+            comments: commentCount || 0
           }
         };
       })

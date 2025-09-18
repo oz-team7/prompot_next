@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchWithLogging } from '@/lib/api-logger';
+import { calculateLevel, getLevelColorClass } from '@/utils/levelSystem';
 
 interface Comment {
   id: string;
@@ -12,6 +13,13 @@ interface Comment {
     id: string;
     name: string;
     avatar_url?: string;
+  };
+  userStats?: {
+    prompts: number;
+    likes: number;
+    bookmarks: number;
+    comments: number;
+    activityScore: number;
   };
 }
 
@@ -234,8 +242,15 @@ export default function CommentSection({ promptId, className = '', onCommentCoun
                         )}
                       </div>
                       <div>
-                        <span className="font-medium">{comment.profiles.name}</span>
-                        <span className="text-sm text-gray-500 ml-2">
+                        <div className="flex items-center gap-2">
+                          {comment.userStats && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getLevelColorClass(calculateLevel(comment.userStats.activityScore).level)}`}>
+                              Lv.{calculateLevel(comment.userStats.activityScore).level}
+                            </span>
+                          )}
+                          <span className="font-medium">{comment.profiles.name}</span>
+                        </div>
+                        <span className="text-sm text-gray-500">
                           {new Date(comment.created_at).toLocaleDateString()}
                         </span>
                         {comment.updated_at !== comment.created_at && (

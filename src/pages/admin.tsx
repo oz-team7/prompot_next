@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchWithLogging } from '@/lib/api-logger';
+import { calculateLevel, getLevelColorClass } from '@/utils/levelSystem';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import { toast } from 'react-hot-toast';
 import {
   LineChart,
@@ -52,16 +54,19 @@ interface User {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string | null;
   joinDate: string;
   isActive: boolean;
   is_suspended: boolean;
   suspension_reason?: string;
   suspension_end_date?: string;
   warning_count: number;
+  activityScore: number;
   _count: {
     prompts: number;
     likes: number;
     bookmarks: number;
+    comments: number;
   };
 }
 
@@ -155,6 +160,21 @@ const AdminPage = () => {
   
   // 문의사항 관련 state
   const [inquiries, setInquiries] = useState<any[]>([]);
+  // 제재 드롭다운 상태
+  const [sanctionDropdownUserId, setSanctionDropdownUserId] = useState<string | null>(null);
+  
+  // 드롭다운 외부 클릭 처리
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-sanction-dropdown]')) {
+        setSanctionDropdownUserId(null);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
   const [inquiryPage, setInquiryPage] = useState(1);
   const [inquiryFilter, setInquiryFilter] = useState({ status: '', priority: '' });
   const [totalInquiryPages, setTotalInquiryPages] = useState(1);
@@ -1899,9 +1919,31 @@ const AdminPage = () => {
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                          <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                            <img
+                              src={getAvatarUrl(user.avatar_url, user.id)}
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = getAvatarUrl(null, user.id);
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getLevelColorClass(calculateLevel(user.activityScore).level)}`}>
+                                Lv.{calculateLevel(user.activityScore).level}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                            <div className="text-xs text-gray-400">
+                              활동 점수: {user.activityScore}점
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -1917,10 +1959,11 @@ const AdminPage = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex gap-4">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                           <span>프롬프트 {user._count.prompts}</span>
                           <span>좋아요 {user._count.likes}</span>
                           <span>북마크 {user._count.bookmarks}</span>
+                          <span>댓글 {user._count.comments}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1949,51 +1992,75 @@ const AdminPage = () => {
                             상세
                           </button>
                           {!user.is_suspended && (
-                            <div className="relative group">
+                            <div className="relative" data-sanction-dropdown>
                               <button
-                                className="text-red-600 hover:text-red-900"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSanctionDropdownUserId(sanctionDropdownUserId === user.id ? null : user.id);
+                                }}
+                                className="text-red-600 hover:text-red-900 focus:outline-none"
                               >
                                 제재
                               </button>
-                              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
-                                <button
-                                  onClick={() => handleSanction(user.id, 'warning', '경고')}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  경고
-                                </button>
-                                <button
-                                  onClick={() => handleSanction(user.id, 'suspension', '7일 정지', 7)}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  7일 정지
-                                </button>
-                                <button
-                                  onClick={() => handleSanction(user.id, 'suspension', '30일 정지', 30)}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  30일 정지
-                                </button>
-                                <button
-                                  onClick={() => handleSanction(user.id, 'permanent_ban', '영구 정지')}
-                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  영구 정지
-                                </button>
-                                <div className="border-t border-gray-200 my-1"></div>
-                                <button
-                                  onClick={() => handleDeleteUser(user.id, true)}
-                                  className="block px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 w-full text-left"
-                                >
-                                  회원 탈퇴 (콘텐츠 보존)
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteUser(user.id, false)}
-                                  className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left font-semibold"
-                                >
-                                  회원 탈퇴 (전체 삭제)
-                                </button>
-                              </div>
+                              {sanctionDropdownUserId === user.id && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200" data-sanction-dropdown>
+                                  <button
+                                    onClick={() => {
+                                      handleSanction(user.id, 'warning', '경고');
+                                      setSanctionDropdownUserId(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  >
+                                    경고
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleSanction(user.id, 'suspension', '7일 정지', 7);
+                                      setSanctionDropdownUserId(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  >
+                                    7일 정지
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleSanction(user.id, 'suspension', '30일 정지', 30);
+                                      setSanctionDropdownUserId(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  >
+                                    30일 정지
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleSanction(user.id, 'permanent_ban', '영구 정지');
+                                      setSanctionDropdownUserId(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                  >
+                                    영구 정지
+                                  </button>
+                                  <div className="border-t border-gray-200 my-1"></div>
+                                  <button
+                                    onClick={() => {
+                                      handleDeleteUser(user.id, true);
+                                      setSanctionDropdownUserId(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 w-full text-left"
+                                  >
+                                    회원 탈퇴 (콘텐츠 보존)
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleDeleteUser(user.id, false);
+                                      setSanctionDropdownUserId(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left font-semibold"
+                                  >
+                                    회원 탈퇴 (전체 삭제)
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

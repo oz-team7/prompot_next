@@ -15,6 +15,7 @@ import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 import PromptCardCompact from '@/components/PromptCardCompact';
+import { calculateLevel, getLevelColorClass, getLevelTitle } from '@/utils/levelSystem';
 
 // AI 모델 이름에 따른 아이콘 경로 반환 함수
 const getAIModelIcon = (aiModelName: string): string => {
@@ -98,6 +99,7 @@ const MyPage = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [userStats, setUserStats] = useState<any>(null);
   const { categories: bookmarkCategories, refetch: refetchBookmarkCategories } = useBookmarkCategories();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -325,12 +327,28 @@ const MyPage = () => {
     }
   };
 
+  // 사용자 통계 정보 가져오기
+  const fetchUserStats = async () => {
+    try {
+      if (!user?.id) return;
+      
+      const res = await fetch(`/api/users/${user.id}/stats`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserStats(data);
+      }
+    } catch (error) {
+      console.error('사용자 통계 로드 실패:', error);
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
     } else {
       // 인증된 사용자의 경우 프로필 정보 새로고침
       refreshUserProfile();
+      fetchUserStats();
     }
   }, [isAuthenticated, router]);
 
@@ -903,9 +921,58 @@ const MyPage = () => {
                   setActiveTab('settings');
                 }}
               />
-              <div>
-                <h1 className="text-2xl font-bold">{user?.name}</h1>
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-2xl font-bold">{user?.name}</h1>
+                  {userStats && (
+                    <span className={`inline-flex items-center px-3 py-1 rounded text-sm font-bold ${getLevelColorClass(calculateLevel(userStats.activityScore).level)}`}>
+                      Lv.{calculateLevel(userStats.activityScore).level}
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-600">{user?.email}</p>
+                {userStats && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-700 font-medium">
+                      {getLevelTitle(calculateLevel(userStats.activityScore).level)}
+                    </p>
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-500"
+                            style={{ width: `${calculateLevel(userStats.activityScore).progress}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-600">
+                          {calculateLevel(userStats.activityScore).progress}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between mt-1 text-xs text-gray-500">
+                        <span>{userStats.activityScore}점</span>
+                        <span>다음 레벨: {calculateLevel(userStats.activityScore).nextLevelScore}점</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-3 mt-4 text-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{userStats.stats.prompts}</p>
+                        <p className="text-xs text-gray-500">프롬프트</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{userStats.stats.comments}</p>
+                        <p className="text-xs text-gray-500">댓글</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{userStats.stats.bookmarks}</p>
+                        <p className="text-xs text-gray-500">북마크</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">{userStats.stats.likes}</p>
+                        <p className="text-xs text-gray-500">좋아요</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
