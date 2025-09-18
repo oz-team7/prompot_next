@@ -87,11 +87,11 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       }
       
       const data = await res.json();
-      console.log('[DEBUG] usePrompts response data:', data);
+      // console.log('[DEBUG] usePrompts response data:', data);
       
       // API 응답 구조 확인 및 처리
       const promptsData = data.data?.prompts || data.prompts || [];
-      console.log('[DEBUG] Extracted prompts data:', promptsData);
+      // console.log('[DEBUG] Extracted prompts data:', promptsData);
       
       if (!Array.isArray(promptsData)) {
         console.error('[DEBUG] Prompts data is not an array:', promptsData);
@@ -99,7 +99,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       }
       
       const formattedPrompts = promptsData.map((prompt: any) => {
-        console.log('[DEBUG] Processing prompt:', { title: prompt.title, ai_model: prompt.ai_model });
+        // console.log('[DEBUG] Processing prompt:', { title: prompt.title, ai_model: prompt.ai_model });
         return {
           ...prompt,
           aiModel: prompt.ai_model ? {
@@ -109,7 +109,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
         };
       });
       
-      console.log('[DEBUG] Formatted prompts:', formattedPrompts);
+      // console.log('[DEBUG] Formatted prompts:', formattedPrompts);
       setPrompts(formattedPrompts);
       
       // 대체 API 사용 시에만 사용자에게 알림 (메인 API 성공 시에는 알림 제거)
