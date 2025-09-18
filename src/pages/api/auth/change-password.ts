@@ -65,10 +65,11 @@ export default async function handler(
     
     console.log('Password verification successful');
 
-    // 원래 사용자의 세션으로 새 비밀번호 업데이트
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: newPassword
-    });
+    // Service role로 admin API 사용하여 비밀번호 업데이트
+    const { error: updateError } = await supabaseForAuth.auth.admin.updateUserById(
+      authUser.id,
+      { password: newPassword }
+    );
 
     if (updateError) {
       console.log('Password update failed:', updateError.message);
