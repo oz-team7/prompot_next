@@ -7,6 +7,7 @@ import BookmarkCategorySelector from './BookmarkCategorySelector';
 import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail } from '@/utils/videoUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useLike } from '@/hooks/useLike';
 import { useSearch } from '@/contexts/SearchContext';
 import Toast from '@/components/Toast';
 import FloatingHearts from '@/components/FloatingHearts';
@@ -38,10 +39,22 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
-  const [localIsLiked, setLocalIsLiked] = useState(prompt.is_liked || false);
-  const [localLikesCount, setLocalLikesCount] = useState(prompt.likes_count || prompt.likes || 0);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
-  const [isBusy, setIsBusy] = useState(false);
+  
+  // 좋아요 상태 관리 - useLike 훅 사용
+  const { isLiked, likesCount, toggle: toggleLike, isBusy } = useLike(prompt.id);
+  
+  // 초기값을 위한 효과 (서버에서 받은 값을 SWR 캐시에 저장)
+  useEffect(() => {
+    if (prompt.is_liked !== undefined || prompt.likes_count !== undefined) {
+      // mutate를 통해 초기 데이터 설정
+      const { mutate } = require('swr');
+      mutate(['like', String(prompt.id)], {
+        is_liked: prompt.is_liked || false,
+        likes_count: prompt.likes_count || prompt.likes || 0
+      }, false);
+    }
+  }, [prompt.id]);
 
   // 북마크 상태
   const actualIsBookmarked = useMemo(() => {
@@ -102,36 +115,13 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
       return;
     }
     
-    // 중복 호출 방지
-    if (isBusy) return;
-    setIsBusy(true);
-
+    const prevLiked = isLiked;
+    
     try {
-      const method = localIsLiked ? 'DELETE' : 'POST';
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-      
-      const response = await fetch(`/api/prompts/${prompt.id}/likes`, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update like');
-      }
-
-      const data = await response.json();
-      setLocalIsLiked(data.is_liked);
-      setLocalLikesCount(data.likes_count);
+      await toggleLike();
       
       // 좋아요를 눌렀을 때만 애니메이션 표시
-      if (data.is_liked && !localIsLiked) {
+      if (!prevLiked) {
         setShowHeartAnimation(true);
         setTimeout(() => setShowHeartAnimation(false), 100); // 트리거 리셋
       }
@@ -140,8 +130,6 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
       setToastMessage('좋아요 처리 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
-    } finally {
-      setIsBusy(false);
     }
   };
 
@@ -321,16 +309,16 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                       disabled={isBusy}
                     >
                       <svg
-                        className={`w-4 h-4 sm:w-5 sm:h-5 ${localIsLiked ? 'text-red-400 fill-current' : ''}`}
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? 'text-red-400 fill-current' : ''}`}
                         viewBox="0 0 24 24"
-                        fill={localIsLiked ? 'currentColor' : 'none'}
+                        fill={isLiked ? 'currentColor' : 'none'}
                         stroke="currentColor"
                         strokeWidth={2}
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
                       </svg>
-                      <span className={`text-sm sm:text-base font-medium ${localIsLiked ? 'text-red-400' : ''}`}>
-                        {localLikesCount}
+                      <span className={`text-sm sm:text-base font-medium ${isLiked ? 'text-red-400' : ''}`}>
+                        {likesCount}
                       </span>
                     </button>
                     <FloatingHearts trigger={showHeartAnimation} />

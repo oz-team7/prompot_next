@@ -319,12 +319,7 @@ export const useBookmarks = () => {
                    String(b.prompt.id) === String(promptId));
         });
         saveCachedBookmarks(newBookmarks);
-        // UI 업데이트 정보 로깅 제거 {
-          before: prev.length,
-          after: newBookmarks.length,
-          removedId: `${promptId} (${typeof promptId})`,
-          filteredOut: prev.length - newBookmarks.length
-        });
+        // UI 업데이트 정보 로깅 제거
         return newBookmarks;
       });
 
@@ -351,10 +346,7 @@ export const useBookmarks = () => {
             );
             const rolledBack = exists ? prev : [...prev, bookmarkToRemove];
             saveCachedBookmarks(rolledBack);
-            // 롤백 정보 로깅 제거 {
-              restored: !exists,
-              newCount: rolledBack.length
-            });
+            // 롤백 정보 로깅 제거
             return rolledBack;
           });
         }
@@ -406,13 +398,7 @@ export const useBookmarks = () => {
     });
     
     // 디버깅 로그를 조건부로만 출력 (북마크가 있을 때만)
-    if (result && bookmarks.length > 0) {
-      // 북마크 찾기 결과 로깅 제거 {
-        promptId,
-        bookmarkCount: bookmarks.length,
-        found: result
-      });
-    }
+    // 북마크 찾기 결과 로깅 제거
     
     return result;
   }, [bookmarks]);
