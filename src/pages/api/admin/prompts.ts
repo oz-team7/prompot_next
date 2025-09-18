@@ -45,6 +45,7 @@ export default async function handler(
           created_at,
           updated_at,
           author_id,
+          views,
           profiles!prompts_author_id_fkey (
             id,
             name,
@@ -86,12 +87,18 @@ export default async function handler(
             .select('*', { count: 'exact', head: true })
             .eq('prompt_id', prompt.id);
 
+          const { count: commentsCount } = await supabase
+            .from('comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('prompt_id', prompt.id);
+
           return {
             ...prompt,
             author: prompt.profiles,
             _count: {
               likes: likesCount || 0,
-              bookmarks: bookmarksCount || 0
+              bookmarks: bookmarksCount || 0,
+              comments: commentsCount || 0
             }
           };
         })
