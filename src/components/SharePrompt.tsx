@@ -33,9 +33,12 @@ export default function SharePrompt({ promptId, title }: SharePromptProps) {
         />
         <button
           onClick={handleCopyLink}
-          className="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+          className="p-2 text-orange-500 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
+          title={copied ? '복사됨!' : 'URL 복사'}
         >
-          {copied ? '복사됨!' : 'URL 복사'}
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
         </button>
       </div>
     </div>

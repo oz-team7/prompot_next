@@ -373,14 +373,14 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           )}
 
           {/* Category, Sort, and Action Buttons */}
-          <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-6 items-center">
+          <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6 items-start">
             {/* Category Selector */}
-            <div className="flex items-center gap-1 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               <span className="text-xs sm:text-sm font-medium text-orange-600 whitespace-nowrap">카테고리</span>
               <div className="category-dropdown-container relative">
                 <button
                   onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center w-[90px] sm:w-[120px] h-[36px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center w-[85px] sm:w-[120px] h-[34px] sm:h-[40px]"
                 >
                   <span className="text-gray-700">{selectedCategoryOption.label}</span>
                 </button>
@@ -407,12 +407,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             </div>
 
             {/* AI Model Selector */}
-            <div className="flex items-center gap-1 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               <span className="text-xs sm:text-sm font-medium text-orange-600 whitespace-nowrap">AI모델</span>
               <div className="aimodel-dropdown-container relative">
                 <button
                   onClick={() => setShowAIModelDropdown(!showAIModelDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center w-[100px] sm:w-[140px] h-[36px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center w-[85px] sm:w-[140px] h-[34px] sm:h-[40px]"
                 >
                   <span className="text-gray-700 truncate">{activeAIModel === 'all' ? '전체' : activeAIModel}</span>
                 </button>
@@ -439,12 +439,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             </div>
 
             {/* Sort Selector */}
-            <div className="flex items-center gap-1 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               <span className="text-xs sm:text-sm font-medium text-orange-600 whitespace-nowrap">정렬</span>
               <div className="sort-dropdown-container relative">
                 <button
                   onClick={() => setShowSortDropdown(!showSortDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[80px] sm:w-[100px] h-[36px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[75px] sm:w-[100px] h-[34px] sm:h-[40px]"
                 >
                   <span className="text-gray-700 text-xs sm:text-sm">{selectedSortOption.label}</span>
                   <span className="text-gray-700 ml-1 sm:ml-2 text-xs sm:text-sm">{selectedSortOption.icon}</span>
