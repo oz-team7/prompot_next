@@ -8,9 +8,9 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
 
   // 캔버스 설정
   const width = 800;
-  const paddingHorizontal = 40; // 좌우 패딩
-  const paddingTop = 40; // 상단 패딩
-  const paddingBottom = 40; // 하단 패딩
+  const paddingHorizontal = 60; // 좌우 패딩 (40 -> 60으로 증가)
+  const paddingTop = 50; // 상단 패딩 (40 -> 50으로 증가)
+  const paddingBottom = 50; // 하단 패딩 (40 -> 50으로 증가)
   const lineHeight = 28; // 줄 간격
   const fontSize = 18; // 폰트 크기
   
@@ -71,7 +71,7 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
   ctx.fillStyle = '#FB923C'; // orange-400
   ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('Prompot', width - paddingHorizontal, paddingTop - 20);
+  ctx.fillText('Prompot', width - paddingHorizontal, paddingTop - 15);
   
   // 텍스트 그리기
   ctx.fillStyle = '#1F2937'; // gray-800

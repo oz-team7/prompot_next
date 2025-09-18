@@ -206,8 +206,8 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                 }}
               />
             ) : prompt.preview_image ? (
-              // 텍스트 기반 이미지인지 확인 (base64 인코딩된 이미지)
-              prompt.preview_image.startsWith('data:image') ? (
+              // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
+              prompt.resultType === 'text' || prompt.preview_image.startsWith('data:image') ? (
                 <div className="w-full h-full p-4 bg-white flex items-center justify-center">
                   <Image
                     src={prompt.preview_image}
