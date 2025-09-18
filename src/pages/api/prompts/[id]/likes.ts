@@ -26,14 +26,23 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // CORS 헤더 설정
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { id } = req.query;
-  const promptId = parseInt(id as string);
+  const promptId = id as string; // UUID로 처리
 
-  if (isNaN(promptId)) {
+  if (!promptId) {
     return res.status(400).json({ error: 'Invalid prompt ID' });
   }
 
@@ -96,6 +105,7 @@ export default async function handler(
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
+      console.error('User auth error:', userError);
       return res.status(401).json({ error: 'Invalid authentication' });
     }
 
