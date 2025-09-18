@@ -255,6 +255,7 @@ const PromptDetailPage = () => {
   const [likesCount, setLikesCount] = useState(0);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
+  const [isLikeBusy, setIsLikeBusy] = useState(false);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -269,14 +270,14 @@ const PromptDetailPage = () => {
       setIsLiked(data.prompt.is_liked || false);
       setLikesCount(data.prompt.likes_count || data.prompt.likes || 0);
       setCommentCount(data.prompt.comment_count || data.prompt.comments?.length || 0);
-      console.log('[DEBUG] Fetched prompt data:', {
-        id: data.prompt.id,
-        title: data.prompt.title,
-        previewImage: data.prompt.previewImage,
-        hasPreviewImage: !!data.prompt.previewImage,
-        additionalImages: data.prompt.additionalImages,
-        hasAdditionalImages: !!(data.prompt.additionalImages && data.prompt.additionalImages.length > 0)
-      });
+      // console.log('[DEBUG] Fetched prompt data:', {
+      //   id: data.prompt.id,
+      //   title: data.prompt.title,
+      //   previewImage: data.prompt.previewImage,
+      //   hasPreviewImage: !!data.prompt.previewImage,
+      //   additionalImages: data.prompt.additionalImages,
+      //   hasAdditionalImages: !!(data.prompt.additionalImages && data.prompt.additionalImages.length > 0)
+      // });
       setImageError(false); // 이미지 에러 상태 초기화
     } catch (error: any) {
       setToastMessage(error.message);
@@ -304,6 +305,10 @@ const PromptDetailPage = () => {
       setShowLoginModal(true);
       return;
     }
+    
+    // 중복 호출 방지
+    if (isLikeBusy) return;
+    setIsLikeBusy(true);
 
     try {
       const method = isLiked ? 'DELETE' : 'POST';
@@ -343,6 +348,8 @@ const PromptDetailPage = () => {
       setToastMessage('좋아요 처리 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
+    } finally {
+      setIsLikeBusy(false);
     }
   };
 
@@ -671,6 +678,7 @@ const PromptDetailPage = () => {
                     <button
                       onClick={handleLikeToggle}
                       className="flex items-center gap-1.5 hover:text-red-500 transition-colors"
+                      disabled={isLikeBusy}
                     >
                       <svg
                         className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-current' : ''}`}

@@ -110,15 +110,24 @@ export default async function handler(
     }
 
     if (req.method === 'POST') {
-      // 좋아요 추가
+      // 좋아요 추가 (멱등적 처리)
       const { error: insertError } = await supabase
         .from('prompt_likes')
         .insert([{ prompt_id: promptId, user_id: user.id }]);
 
       if (insertError) {
-        // 이미 좋아요한 경우
+        // 이미 좋아요한 경우도 성공으로 처리 (멱등성)
         if (insertError.code === '23505') { // unique constraint violation
-          return res.status(409).json({ error: 'Already liked' });
+          // 이미 존재하므로 성공으로 처리
+          const { count } = await supabase
+            .from('prompt_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('prompt_id', promptId);
+
+          return res.status(200).json({ 
+            likes_count: count || 0,
+            is_liked: true
+          });
         }
         console.error('Error adding like:', insertError);
         return res.status(500).json({ error: 'Failed to add like' });
@@ -135,7 +144,7 @@ export default async function handler(
         is_liked: true
       });
     } else if (req.method === 'DELETE') {
-      // 좋아요 제거
+      // 좋아요 제거 (멱등적 처리)
       const { error: deleteError } = await supabase
         .from('prompt_likes')
         .delete()
@@ -146,6 +155,8 @@ export default async function handler(
         console.error('Error removing like:', deleteError);
         return res.status(500).json({ error: 'Failed to remove like' });
       }
+      
+      // 삭제 성공 또는 이미 없었던 경우 모두 성공으로 처리
 
       // 업데이트된 좋아요 수 반환
       const { count } = await supabase
