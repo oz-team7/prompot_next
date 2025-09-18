@@ -8,9 +8,11 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
 
   // 캔버스 설정
   const width = 800;
-  const padding = 40;
-  const lineHeight = 28;
-  const fontSize = 18;
+  const paddingHorizontal = 60; // 좌우 패딩 증가
+  const paddingTop = 60; // 상단 패딩 증가
+  const paddingBottom = 40; // 하단 패딩 (잘려도 됨)
+  const lineHeight = 32; // 줄 간격 약간 증가
+  const fontSize = 20; // 폰트 크기 약간 증가
   
   // 폰트 설정
   ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
@@ -24,7 +26,7 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
     const testLine = currentLine ? `${currentLine} ${word}` : word;
     const metrics = ctx.measureText(testLine);
     
-    if (metrics.width > width - (padding * 2)) {
+    if (metrics.width > width - (paddingHorizontal * 2)) {
       if (currentLine) {
         lines.push(currentLine);
         currentLine = word;
@@ -49,7 +51,7 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
   }
   
   // 캔버스 크기 설정
-  const height = (lines.length * lineHeight) + (padding * 2) + 20;
+  const height = (lines.length * lineHeight) + paddingTop + paddingBottom + 20;
   canvas.width = width;
   canvas.height = height;
   
@@ -69,7 +71,7 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
   ctx.fillStyle = '#FB923C'; // orange-400
   ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('Prompot', width - padding, padding);
+  ctx.fillText('Prompot', width - paddingHorizontal, paddingTop - 20);
   
   // 텍스트 그리기
   ctx.fillStyle = '#1F2937'; // gray-800
@@ -77,8 +79,8 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
   ctx.textAlign = 'left';
   
   lines.forEach((line, index) => {
-    const y = padding + 30 + (index * lineHeight);
-    ctx.fillText(line, padding, y);
+    const y = paddingTop + 30 + (index * lineHeight);
+    ctx.fillText(line, paddingHorizontal, y);
   });
   
   // 하단에 페이드 효과 (텍스트가 잘렸음을 시각적으로 표시)
