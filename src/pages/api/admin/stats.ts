@@ -72,17 +72,21 @@ export default async function handler(
     const mau = activeUserIds.size;
 
     // 카테고리별 프롬프트 통계
-    const categories = ['marketing', 'business', 'writing', 'coding', 'education', 'other'];
-    const categoryStats = [];
+    const { data: categoryData } = await supabase
+      .from('prompts')
+      .select('category')
+      .not('category', 'is', null);
     
-    for (const category of categories) {
-      const { count } = await supabase
-        .from('prompts')
-        .select('*', { count: 'exact', head: true })
-        .eq('category', category);
-      
-      categoryStats.push({ category, _count: count || 0 });
-    }
+    const categoryCounts = new Map();
+    (categoryData || []).forEach(p => {
+      const category = p.category;
+      categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+    });
+    
+    const categoryStats = Array.from(categoryCounts.entries()).map(([category, count]) => ({
+      category,
+      _count: count
+    }));
 
     // AI 모델별 통계
     const { data: aiModels } = await supabase
@@ -154,6 +158,62 @@ export default async function handler(
       });
     }
 
+    // 활성 유저 순위 계산
+    const { data: allUsers } = await supabase
+      .from('profiles')
+      .select('id, name, email, avatar_url')
+      .limit(100);
+
+    const activeUserRanking = await Promise.all(
+      (allUsers || []).map(async (user) => {
+        // 각 유저의 활동 통계 조회
+        const { count: promptsCount } = await supabase
+          .from('prompts')
+          .select('*', { count: 'exact', head: true })
+          .eq('author_id', user.id);
+        
+        const { count: likesCount } = await supabase
+          .from('likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        const { count: bookmarksCount } = await supabase
+          .from('bookmarks')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        const { count: commentsCount } = await supabase
+          .from('comments')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        
+        // 활동 점수: 프롬프트 작성 5점, 좋아요 1점, 북마크 2점, 댓글 3점
+        const activityScore = ((promptsCount || 0) * 5) + 
+                            (likesCount || 0) + 
+                            ((bookmarksCount || 0) * 2) + 
+                            ((commentsCount || 0) * 3);
+        
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatar_url: user.avatar_url,
+          stats: {
+            prompts: promptsCount || 0,
+            likes: likesCount || 0,
+            bookmarks: bookmarksCount || 0,
+            comments: commentsCount || 0
+          },
+          activityScore
+        };
+      })
+    );
+
+    // 정렬 후 상위 20명만 선택
+    const sortedActiveUserRanking = activeUserRanking
+      .sort((a, b) => b.activityScore - a.activityScore)
+      .slice(0, 20);
+
     res.status(200).json({
       totalUsers: totalUsers || 0,
       totalPrompts: totalPrompts || 0,
@@ -172,6 +232,7 @@ export default async function handler(
       })),
       dailySignups,
       dailyActiveUsers,
+      activeUserRanking: sortedActiveUserRanking,
     });
   } catch (error) {
     console.error('Admin stats error:', error);

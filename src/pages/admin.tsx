@@ -33,6 +33,19 @@ interface Stats {
   aiModelStats: { aiModel: string; _count: number }[];
   dailySignups: { date: string; count: number }[];
   dailyActiveUsers: { date: string; count: number }[];
+  activeUserRanking?: {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url?: string;
+    stats: {
+      prompts: number;
+      likes: number;
+      bookmarks: number;
+      comments: number;
+    };
+    activityScore: number;
+  }[];
 }
 
 interface User {
@@ -1517,6 +1530,118 @@ const AdminPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* 활성 유저 순위 */}
+            {stats.activeUserRanking && stats.activeUserRanking.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-xl font-bold mb-4">활성 유저 순위 (활동 지수 기준)</h3>
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="p-4 bg-gray-50 border-b">
+                    <p className="text-sm text-gray-600">
+                      활동 점수: 프롬프트 작성 5점, 댓글 3점, 북마크 2점, 좋아요 1점
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            순위
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            사용자
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            프롬프트
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            댓글
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            북마크
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            좋아요
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            활동 점수
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {stats.activeUserRanking.map((user, index) => (
+                          <tr key={user.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                {index < 3 ? (
+                                  <span className={`text-2xl ${
+                                    index === 0 ? 'text-yellow-500' :
+                                    index === 1 ? 'text-gray-400' :
+                                    'text-orange-600'
+                                  }`}>
+                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                                  </span>
+                                ) : (
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {index + 1}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center">
+                                {user.avatar_url ? (
+                                  <img
+                                    src={user.avatar_url}
+                                    alt={user.name}
+                                    className="w-8 h-8 rounded-full mr-3"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-gray-300 mr-3 flex items-center justify-center">
+                                    <span className="text-sm font-medium text-gray-600">
+                                      {user.name?.charAt(0).toUpperCase() || '?'}
+                                    </span>
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                  <div className="text-sm text-gray-500">{user.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="text-sm font-semibold text-blue-600">
+                                {user.stats.prompts}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="text-sm font-semibold text-green-600">
+                                {user.stats.comments}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="text-sm font-semibold text-yellow-600">
+                                {user.stats.bookmarks}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="text-sm font-semibold text-red-600">
+                                {user.stats.likes}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="text-lg font-bold text-gray-900">
+                                {user.activityScore}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
