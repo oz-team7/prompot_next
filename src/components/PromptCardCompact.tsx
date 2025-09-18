@@ -206,18 +206,33 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                 }}
               />
             ) : prompt.preview_image ? (
-              <div className="w-full h-full p-4 bg-white flex items-center justify-center">
+              // 텍스트 기반 이미지인지 확인 (base64 인코딩된 이미지)
+              prompt.preview_image.startsWith('data:image') ? (
+                <div className="w-full h-full p-4 bg-white flex items-center justify-center">
+                  <Image
+                    src={prompt.preview_image}
+                    alt={prompt.title}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              ) : (
+                // 일반 이미지는 패딩 없이 전체 화면에 표시
                 <Image
                   src={prompt.preview_image}
                   alt={prompt.title}
                   fill
-                  className="object-contain"
+                  className="object-cover"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                   }}
                 />
-              </div>
+              )
             ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
               <Image
                 src={prompt.additional_images[0]}

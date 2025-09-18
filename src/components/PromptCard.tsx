@@ -284,22 +284,43 @@ const PromptCard: React.FC<PromptCardProps> = ({
               </div>
             </div>
           ) : prompt.preview_image ? (
-            <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer p-3">
-              <Image
-                src={prompt.preview_image}
-                alt={prompt.title}
-                fill
-                className="object-contain"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                onError={(e) => {
-                  console.error('이미지 로드 실패:', prompt.preview_image, e);
-                  e.currentTarget.style.display = 'none';
-                }}
-                onLoad={() => {
-                  console.log('이미지 로드 성공:', prompt.preview_image);
-                }}
-              />
-            </div>
+            // 텍스트 기반 이미지인지 확인 (base64 인코딩된 이미지)
+            prompt.preview_image.startsWith('data:image') ? (
+              <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer p-3">
+                <Image
+                  src={prompt.preview_image}
+                  alt={prompt.title}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  onError={(e) => {
+                    console.error('이미지 로드 실패:', prompt.preview_image, e);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('이미지 로드 성공:', prompt.preview_image);
+                  }}
+                />
+              </div>
+            ) : (
+              // 일반 이미지는 패딩 없이 전체 화면에 표시
+              <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
+                <Image
+                  src={prompt.preview_image}
+                  alt={prompt.title}
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  onError={(e) => {
+                    console.error('이미지 로드 실패:', prompt.preview_image, e);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                  onLoad={() => {
+                    console.log('이미지 로드 성공:', prompt.preview_image);
+                  }}
+                />
+              </div>
+            )
           ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
             <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
               <Image
