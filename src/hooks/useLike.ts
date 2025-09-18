@@ -87,7 +87,10 @@ export function useLike(promptId?: string | number) {
       const body = await res.json() as LikeState;
 
       // 레이스 방지: 오래된 응답이면 무시
-      if (opId.current !== myOp) return;
+      if (opId.current !== myOp) {
+        busy.current = false;
+        return;
+      }
 
       // 서버의 정답으로 동기화
       await mutate(body, false);
@@ -95,7 +98,10 @@ export function useLike(promptId?: string | number) {
       
     } catch (error) {
       // 레이스 방지: 오래된 응답이면 무시
-      if (opId.current !== myOp) return;
+      if (opId.current !== myOp) {
+        busy.current = false;
+        return;
+      }
       
       // 실패 시 롤백
       await mutate(data, false);

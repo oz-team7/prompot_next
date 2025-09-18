@@ -62,6 +62,7 @@ interface Prompt {
   is_public: boolean;
   created_at: string;
   updated_at: string;
+  views?: number;
   author: {
     id: string;
     name: string;
@@ -70,6 +71,19 @@ interface Prompt {
   _count: {
     likes: number;
     bookmarks: number;
+    comments?: number;
+  };
+  comments?: Comment[];
+}
+
+interface Comment {
+  id: number;
+  content: string;
+  created_at: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
   };
 }
 
@@ -116,6 +130,8 @@ const AdminPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [selectedPromptComments, setSelectedPromptComments] = useState<Prompt | null>(null);
   const [userDetail, setUserDetail] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
   const [reportPage, setReportPage] = useState(1);
@@ -354,6 +370,44 @@ const AdminPage = () => {
     } catch (error) {
       console.error('Delete prompt error:', error);
       alert('프롬프트 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleShowComments = async (prompt: Prompt) => {
+    try {
+      const res = await fetchWithLogging(`/api/prompts/${prompt.id}/comments`, {
+        credentials: 'include',
+      });
+      
+      if (!res.ok) throw new Error('댓글을 불러올 수 없습니다.');
+      
+      const data = await res.json();
+      setSelectedPromptComments({ ...prompt, comments: data.comments });
+      setShowCommentsModal(true);
+    } catch (error) {
+      console.error('Fetch comments error:', error);
+      alert('댓글을 불러오는 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleCommentDelete = async (commentId: number, promptId: number) => {
+    if (!confirm('정말 이 댓글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const res = await fetchWithLogging(`/api/admin/comments/${commentId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok) throw new Error('댓글 삭제에 실패했습니다.');
+      
+      // 댓글 목록 새로고침
+      handleShowComments({ id: promptId } as Prompt);
+    } catch (error) {
+      console.error('Delete comment error:', error);
+      alert('댓글 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -1548,7 +1602,21 @@ const AdminPage = () => {
                         {categoryLabels[prompt.category] || prompt.category}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div>❤️ {prompt._count.likes} 🔖 {prompt._count.bookmarks}</div>
+                        <div className="space-y-1">
+                          <div>❤️ {prompt._count.likes} 🔖 {prompt._count.bookmarks}</div>
+                          <div>
+                            👁️ {prompt.views || 0} 
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShowComments(prompt);
+                              }}
+                              className="ml-1 text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              💬 {prompt._count.comments || 0}
+                            </button>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -3664,6 +3732,57 @@ const AdminPage = () => {
                 취소
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 댓글 보기 모달 */}
+      {showCommentsModal && selectedPromptComments && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold">댓글 목록 - {selectedPromptComments.title}</h3>
+              <button
+                onClick={() => {
+                  setShowCommentsModal(false);
+                  setSelectedPromptComments(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {selectedPromptComments.comments && selectedPromptComments.comments.length > 0 ? (
+              <div className="space-y-4">
+                {selectedPromptComments.comments.map((comment) => (
+                  <div key={comment.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium">{comment.user.name}</span>
+                          <span className="text-sm text-gray-500">({comment.user.email})</span>
+                          <span className="text-sm text-gray-400">
+                            {new Date(comment.created_at).toLocaleString('ko-KR')}
+                          </span>
+                        </div>
+                        <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                      </div>
+                      <button
+                        onClick={() => handleCommentDelete(comment.id, selectedPromptComments.id)}
+                        className="ml-4 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-8">댓글이 없습니다.</p>
+            )}
           </div>
         </div>
       )}
