@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { useLike } from '@/hooks/useLike';
 import { useSearch } from '@/contexts/SearchContext';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
@@ -251,11 +252,12 @@ const PromptDetailPage = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportCategory, setReportCategory] = useState<'spam' | 'offensive' | 'illegal' | 'other'>('other');
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
-  const [isLikeBusy, setIsLikeBusy] = useState(false);
+  
+  // useLike 훅 사용
+  const promptId = Array.isArray(id) ? id[0] : id;
+  const { isLiked, likesCount, toggle: toggleLike, isBusy: isLikeBusy } = useLike(promptId);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -267,8 +269,12 @@ const PromptDetailPage = () => {
       }
       
       setPrompt(data.prompt);
-      setIsLiked(data.prompt.is_liked || false);
-      setLikesCount(data.prompt.likes_count || data.prompt.likes || 0);
+      // SWR 캐시에 초기 데이터 설정
+      const { mutate } = require('swr');
+      mutate(['like', String(id)], {
+        is_liked: data.prompt.is_liked || false,
+        likes_count: data.prompt.likes_count || data.prompt.likes || 0
+      }, false);
       setCommentCount(data.prompt.comment_count || data.prompt.comments?.length || 0);
       // console.log('[DEBUG] Fetched prompt data:', {
       //   id: data.prompt.id,
@@ -306,41 +312,18 @@ const PromptDetailPage = () => {
       return;
     }
     
-    // 중복 호출 방지
-    if (isLikeBusy) return;
-    setIsLikeBusy(true);
-
+    const prevLiked = isLiked;
+    
     try {
-      const method = isLiked ? 'DELETE' : 'POST';
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setShowLoginModal(true);
-        return;
-      }
-      
-      const response = await fetch(`/api/prompts/${id}/likes`, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update like');
-      }
-
-      const data = await response.json();
-      setIsLiked(data.is_liked);
-      setLikesCount(data.likes_count);
+      await toggleLike();
       
       // 좋아요를 눌렀을 때만 애니메이션 표시
-      if (data.is_liked && !isLiked) {
+      if (!prevLiked) {
         setShowHeartAnimation(true);
         setTimeout(() => setShowHeartAnimation(false), 100); // 트리거 리셋
       }
       
-      setToastMessage(data.is_liked ? '좋아요를 눌렀습니다!' : '좋아요를 취소했습니다.');
+      setToastMessage(!prevLiked ? '좋아요를 눌렀습니다!' : '좋아요를 취소했습니다.');
       setToastType('success');
       setShowToast(true);
     } catch (error) {
@@ -348,8 +331,6 @@ const PromptDetailPage = () => {
       setToastMessage('좋아요 처리 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
-    } finally {
-      setIsLikeBusy(false);
     }
   };
 
