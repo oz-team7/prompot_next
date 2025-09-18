@@ -1145,7 +1145,7 @@ const MyPage = () => {
                     }}
                     className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-orange-600 transition-colors"
                   >
-                    카테고리 관리
+                    북마크 관리
                   </button>
                 </div>
 
