@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (res.ok) {
         const data = await res.json();
-        console.log('[DEBUG] AuthContext refreshUser - User data received:', data.user);
+        // 보안상 사용자 정보 로깅 제거
         setUser(data.user);
         if (typeof window !== 'undefined') {
           localStorage.setItem('user', JSON.stringify(data.user));
@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (res.ok) {
           const data = await res.json();
-          console.log('[DEBUG] AuthContext - User data received:', data.user);
+          // 보안상 사용자 정보 로깅 제거
           setUser(data.user);
           if (typeof window !== 'undefined') {
             localStorage.setItem('user', JSON.stringify(data.user));
@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const data = await res.json();
-    console.log('Login response:', data);  // 디버깅 로그 추가
+    // 보안상 로그인 응답 로깅 제거
 
     if (!res.ok) {
       throw new Error(data.message || '로그인에 실패했습니다.');
@@ -129,12 +129,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // 토큰 저장
     if (data.token) {
-      console.log('Saving token:', data.token.substring(0, 20) + '...');  // 디버깅 로그 추가
+      // 보안상 토큰 로깅 제거
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', data.token);
       }
     } else {
-      console.warn('No token received from server');  // 디버깅 로그 추가
+      // 토큰 미수신은 에러가 아닌 경우도 있음
     }
   };
 
