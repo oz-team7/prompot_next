@@ -85,7 +85,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
     return json(res, 500, { ok: false, error: 'AUTHOR_NOT_FOUND' })
   }
 
-  // 4) 좋아요/북마크 카운트 (조인 대신 count)
+  // 4) 좋아요/북마크/댓글 카운트 (조인 대신 count)
   const { count: likesCount } = await svc
     .from('prompt_likes')
     .select('user_id', { count: 'exact', head: true })
@@ -94,6 +94,11 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
   const { count: bookmarksCount } = await svc
     .from('prompt_bookmarks')
     .select('user_id', { count: 'exact', head: true })
+    .eq('prompt_id', id)
+    
+  const { count: commentsCount } = await svc
+    .from('prompt_comments')
+    .select('id', { count: 'exact', head: true })
     .eq('prompt_id', id)
 
   // 5) 현재 사용자의 좋아요 여부 확인
@@ -126,6 +131,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, id: string) 
       is_liked: isLiked, // 현재 사용자의 좋아요 여부
       views: prompt.views || 0, // 조회수
       bookmarks: bookmarksCount ?? 0,
+      comment_count: commentsCount ?? 0, // 댓글 수
       rating: 0, // 항상 기본값 0 추가
       date: new Date(prompt.created_at).toISOString().split('T')[0].replace(/-/g, '.'),
       isOwner,

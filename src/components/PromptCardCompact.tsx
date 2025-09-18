@@ -288,7 +288,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                     >
                       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                     </svg>
-                    <span className="text-sm sm:text-base font-medium">{prompt.commentCount || prompt.comments?.length || 0}</span>
+                    <span className="text-sm sm:text-base font-medium">{prompt.comment_count || prompt.commentCount || prompt.comments?.length || 0}</span>
                   </div>
 
                   {/* 조회수 */}
