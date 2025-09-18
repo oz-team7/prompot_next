@@ -32,6 +32,7 @@ export interface Prompt {
   comments?: any[]; // 추가
   averageRating?: number; // 추가
   commentCount?: number; // 추가
+  comment_count?: number; // API 응답용 댓글 수 추가
   views?: number; // 조회수 추가
   likes_count?: number; // 좋아요 수 추가
   is_liked?: boolean; // 현재 사용자의 좋아요 여부 추가
