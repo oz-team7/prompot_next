@@ -22,30 +22,30 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       }
       
       const query = params.toString() ? `?${params.toString()}` : '';
-      console.log('[DEBUG] usePrompts fetching with query:', query);
+      // console.log('[DEBUG] usePrompts fetching with query:', query);
       
       // localStorage에서 토큰 가져오기 (선택) - 클라이언트 사이드에서만
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      console.log('[DEBUG] usePrompts token from localStorage:', token ? 'exists' : 'not found');
+      // console.log('[DEBUG] usePrompts token from localStorage:', token ? 'exists' : 'not found');
       
       const headers: Record<string, string> = {};
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      console.log('[DEBUG] usePrompts request headers:', headers);
+      // console.log('[DEBUG] usePrompts request headers:', headers);
       
       // 메인 API 시도
       let res;
       try {
-        console.log('[DEBUG] usePrompts attempting main API call to:', `/api/prompts${query}`);
+        // console.log('[DEBUG] usePrompts attempting main API call to:', `/api/prompts${query}`);
         res = await fetchWithLogging(`/api/prompts${query}`, {
           headers,
         });
         
-        console.log('[DEBUG] usePrompts main API response status:', res.status);
-        console.log('[DEBUG] usePrompts main API response ok:', res.ok);
-        console.log('[DEBUG] usePrompts main API response headers:', Object.fromEntries(res.headers.entries()));
+        // console.log('[DEBUG] usePrompts main API response status:', res.status);
+        // console.log('[DEBUG] usePrompts main API response ok:', res.ok);
+        // console.log('[DEBUG] usePrompts main API response headers:', Object.fromEntries(res.headers.entries()));
         
         if (!res.ok) {
           const errorText = await res.text();
@@ -62,7 +62,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
         
         // 대체 API 시도
         try {
-          console.log('[DEBUG] usePrompts attempting fallback API call to:', `/api/prompts-fallback${query}`);
+          // console.log('[DEBUG] usePrompts attempting fallback API call to:', `/api/prompts-fallback${query}`);
           res = await fetchWithLogging(`/api/prompts-fallback${query}`, {
             headers,
           });
@@ -122,21 +122,17 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       }
       
     } catch (err: unknown) {
-      console.error('[DEBUG] usePrompts error:', err);
+      console.error('usePrompts error:', err);
       
       // 네트워크 오류나 기타 예외 상황 처리
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        console.error('[DEBUG] Network fetch error detected');
+        // 네트워크 오류 발생
         setError('네트워크 연결을 확인해주세요.');
       } else if (err instanceof Error) {
-        console.error('[DEBUG] Error details:', {
-          name: err.name,
-          message: err.message,
-          stack: err.stack
-        });
+        // 에러 상세 정보는 개발 환경에서만 필요
         setError(err.message);
       } else {
-        console.error('[DEBUG] Unknown error type:', typeof err, err);
+        console.error('Unknown error type:', typeof err);
         setError('알 수 없는 오류가 발생했습니다.');
       }
     } finally {
@@ -149,7 +145,7 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
   }, [fetchPrompts]);
 
   const refetch = useCallback(() => {
-    console.log('[DEBUG] usePrompts refetch called with options:', options);
+    // console.log('[DEBUG] usePrompts refetch called with options:', options);
     fetchPrompts();
   }, [fetchPrompts]);
 

@@ -42,7 +42,7 @@ export const useBookmarks = () => {
     localStorage.setItem(BOOKMARK_SYNC_KEY, JSON.stringify(syncData));
     lastSyncRef.current = now;
     
-    console.log('[SYNC] Triggered sync event:', syncData);
+    // console.log('[SYNC] Triggered sync event:', syncData);
   }, []);
 
   // 캐시된 북마크 로드
@@ -93,7 +93,7 @@ export const useBookmarks = () => {
         return;
       }
 
-      console.log('[DEBUG] Fetching bookmarks from API...');
+      // console.log('[DEBUG] Fetching bookmarks from API...');
       
       const res = await fetch('/api/bookmarks', {
         headers: {
@@ -101,12 +101,12 @@ export const useBookmarks = () => {
         },
       });
 
-      console.log('[DEBUG] Bookmarks API response status:', res.status);
+      // console.log('[DEBUG] Bookmarks API response status:', res.status);
 
       if (!res.ok) {
         const errorData = await res.json();
         if (res.status === 401 || res.status === 403) {
-          console.log('[DEBUG] Authentication required for bookmarks');
+          // console.log('[DEBUG] Authentication required for bookmarks');
           setBookmarks([]);
           saveCachedBookmarks([]);
           return;
@@ -119,29 +119,29 @@ export const useBookmarks = () => {
       if (data && Array.isArray(data.bookmarks)) {
         setBookmarks(data.bookmarks);
         saveCachedBookmarks(data.bookmarks);
-        console.log('[API] Loaded bookmarks from server:', data.bookmarks.length);
+        // console.log('[API] Loaded bookmarks from server:', data.bookmarks.length);
       } else {
         console.warn('[DEBUG] Invalid bookmarks data:', data);
         setBookmarks([]);
         saveCachedBookmarks([]);
       }
     } catch (err: unknown) {
-      console.error('[DEBUG] useBookmarks error:', err);
+      console.error('useBookmarks error:', err);
       
       // 네트워크 오류 처리
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        console.error('[DEBUG] Network fetch error detected');
+        // 네트워크 에러 발생
         setError('네트워크 연결을 확인해주세요. 서버가 실행 중인지 확인해주세요.');
       } else if (err instanceof Error) {
         // "Failed to fetch" 오류 처리
         if (err.message.includes('Failed to fetch')) {
-          console.error('[DEBUG] Failed to fetch error detected');
+          // fetch 실패
           setError('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
         } else {
           setError(err.message);
         }
       } else {
-        console.error('[DEBUG] Unknown error type:', typeof err, err);
+        console.error('Unknown error type:', typeof err);
         setError('알 수 없는 오류가 발생했습니다.');
       }
       
@@ -172,7 +172,7 @@ export const useBookmarks = () => {
       // 이미 북마크되어 있는지 확인
       const existingBookmark = bookmarks.find(b => b.prompt.id === numericPromptId);
       if (existingBookmark) {
-        console.log('[DEBUG] Bookmark already exists for prompt:', numericPromptId);
+        // console.log('[DEBUG] Bookmark already exists for prompt:', numericPromptId);
         return existingBookmark;
       }
 
@@ -207,7 +207,7 @@ export const useBookmarks = () => {
       });
 
       // API 호출
-      console.log('[DEBUG] Adding bookmark via API...');
+      // console.log('[DEBUG] Adding bookmark via API...');
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -217,7 +217,7 @@ export const useBookmarks = () => {
         body: JSON.stringify({ promptId, categoryId }),
       });
       
-      console.log('[DEBUG] Add bookmark API response status:', res.status);
+      // console.log('[DEBUG] Add bookmark API response status:', res.status);
       
       if (!res.ok) {
         // 실패 시 롤백
@@ -274,11 +274,11 @@ export const useBookmarks = () => {
       
       // 네트워크 오류 처리
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        console.error('[DEBUG] Network fetch error in addBookmark');
+        // 북마크 추가 중 네트워크 오류
         throw new Error('네트워크 연결을 확인해주세요.');
       } else if (err instanceof Error) {
         if (err.message.includes('Failed to fetch')) {
-          console.error('[DEBUG] Failed to fetch error in addBookmark');
+          // 북마크 추가 중 fetch 실패
           throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
         }
         throw err;
@@ -297,8 +297,7 @@ export const useBookmarks = () => {
 
       const numericPromptId = Number(promptId);
       
-      console.log('[DEBUG] removeBookmark - removing promptId:', numericPromptId);
-      console.log('[DEBUG] removeBookmark - current bookmarks:', bookmarks.map(b => ({ id: b.prompt.id, title: b.prompt.title })));
+      // 북마크 삭제 정보 로깅 제거
 
       // 제거할 북마크 백업 (더 안전한 찾기)
       const bookmarkToRemove = bookmarks.find(b => {
@@ -307,8 +306,7 @@ export const useBookmarks = () => {
       });
       
       if (!bookmarkToRemove) {
-        console.log('[DEBUG] removeBookmark - bookmark not found for ID:', promptId, 'type:', typeof promptId);
-        console.log('[DEBUG] removeBookmark - available bookmark IDs:', bookmarks.map(b => `${b.prompt.id} (${typeof b.prompt.id})`));
+        // 북마크 ID 정보 로깅 제거
         // 북마크가 없어도 계속 진행 (이미 제거된 경우)
       }
       
@@ -321,7 +319,7 @@ export const useBookmarks = () => {
                    String(b.prompt.id) === String(promptId));
         });
         saveCachedBookmarks(newBookmarks);
-        console.log('[DEBUG] removeBookmark - UI updated:', {
+        // UI 업데이트 정보 로깅 제거 {
           before: prev.length,
           after: newBookmarks.length,
           removedId: `${promptId} (${typeof promptId})`,
@@ -331,7 +329,7 @@ export const useBookmarks = () => {
       });
 
       // API 호출
-      console.log('[DEBUG] Removing bookmark via API...');
+      // console.log('[DEBUG] Removing bookmark via API...');
       const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',
         headers: {
@@ -339,11 +337,11 @@ export const useBookmarks = () => {
         },
       });
       
-      console.log('[DEBUG] Remove bookmark API response status:', res.status);
+      // console.log('[DEBUG] Remove bookmark API response status:', res.status);
 
       if (!res.ok) {
         // 실패 시 롤백 (백업된 북마크가 있는 경우에만)
-        console.log('[DEBUG] removeBookmark - API failed, rolling back');
+        // console.log('[DEBUG] removeBookmark - API failed, rolling back');
         if (bookmarkToRemove) {
           setBookmarks(prev => {
             // 중복 방지: 이미 있는지 확인 후 추가
@@ -353,7 +351,7 @@ export const useBookmarks = () => {
             );
             const rolledBack = exists ? prev : [...prev, bookmarkToRemove];
             saveCachedBookmarks(rolledBack);
-            console.log('[DEBUG] removeBookmark - rollback completed:', {
+            // 롤백 정보 로깅 제거 {
               restored: !exists,
               newCount: rolledBack.length
             });
@@ -367,18 +365,18 @@ export const useBookmarks = () => {
       // 다른 탭에 동기화 신호 전송
       triggerSync('remove', numericPromptId);
       
-      console.log('[DEBUG] removeBookmark - API success');
+      // console.log('[DEBUG] removeBookmark - API success');
       return await res.json();
     } catch (err: unknown) {
       console.error('Remove bookmark error:', err);
       
       // 네트워크 오류 처리
       if (err instanceof TypeError && err.message.includes('fetch')) {
-        console.error('[DEBUG] Network fetch error in removeBookmark');
+        // 북마크 제거 중 네트워크 오류
         throw new Error('네트워크 연결을 확인해주세요.');
       } else if (err instanceof Error) {
         if (err.message.includes('Failed to fetch')) {
-          console.error('[DEBUG] Failed to fetch error in removeBookmark');
+          // 북마크 제거 중 fetch 실팔
           throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
         }
         throw err;
@@ -392,7 +390,7 @@ export const useBookmarks = () => {
     try {
       return await fetchBookmarks(false); // 강제로 서버에서 새로고침
     } catch (err) {
-      console.error('[DEBUG] Refetch error:', err);
+      console.error('Refetch error:', err);
       // refetch 실패 시에도 앱이 멈추지 않도록 처리
       throw err;
     }
@@ -409,7 +407,7 @@ export const useBookmarks = () => {
     
     // 디버깅 로그를 조건부로만 출력 (북마크가 있을 때만)
     if (result && bookmarks.length > 0) {
-      console.log('[DEBUG] Bookmark found:', {
+      // 북마크 찾기 결과 로깅 제거 {
         promptId,
         bookmarkCount: bookmarks.length,
         found: result
@@ -438,7 +436,7 @@ export const useBookmarks = () => {
             return;
           }
           
-          console.log('[SYNC] Received sync event:', syncData);
+          // console.log('[SYNC] Received sync event:', syncData);
           
           // 디바운스를 통한 중복 요청 방지
           if (syncTimeoutRef.current) {
@@ -446,7 +444,7 @@ export const useBookmarks = () => {
           }
           
           syncTimeoutRef.current = setTimeout(() => {
-            console.log('[SYNC] Processing sync event:', action);
+            // console.log('[SYNC] Processing sync event:', action);
             fetchBookmarks(false); // 캐시 무시하고 서버에서 새로고침
           }, 500);
           
@@ -458,7 +456,7 @@ export const useBookmarks = () => {
 
     // 브라우저 포커스 이벤트 (탭 전환 시 동기화)
     const handleFocus = () => {
-      console.log('[SYNC] Window focused, refreshing bookmarks');
+      // console.log('[SYNC] Window focused, refreshing bookmarks');
       try {
         fetchBookmarks(false);
       } catch (err) {
@@ -475,7 +473,7 @@ export const useBookmarks = () => {
     try {
       fetchBookmarks();
     } catch (err) {
-      console.error('[DEBUG] Initial bookmark load error:', err);
+      console.error('Initial bookmark load error:', err);
       // 초기 로드 실패 시에도 앱이 멈추지 않도록 처리
     }
 
