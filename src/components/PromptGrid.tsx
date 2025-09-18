@@ -127,14 +127,14 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       // console.log('[DEBUG] First apiPrompt category and aiModel:', {
       //   category: apiPrompts[0]?.category,
       //   aiModel: apiPrompts[0]?.aiModel
-      });
+      // });
       setPrompts(apiPrompts);
     } else if (!useAPI && initialPrompts) {
-      console.log('[DEBUG] PromptGrid - initialPrompts loaded:', initialPrompts.length);
-      console.log('[DEBUG] First initialPrompt category and aiModel:', {
-        category: initialPrompts[0]?.category,
-        aiModel: initialPrompts[0]?.aiModel
-      });
+      // console.log('[DEBUG] PromptGrid - initialPrompts loaded:', initialPrompts.length);
+      // console.log('[DEBUG] First initialPrompt category and aiModel:', {
+      //   category: initialPrompts[0]?.category,
+      //   aiModel: initialPrompts[0]?.aiModel
+      // });
       setPrompts(initialPrompts);
     }
   }, [apiPrompts, initialPrompts, useAPI]);
