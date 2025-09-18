@@ -305,12 +305,17 @@ const PromptDetailPage = () => {
 
     try {
       const method = isLiked ? 'DELETE' : 'POST';
-      const token = localStorage.getItem('supabase.auth.token');
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setShowLoginModal(true);
+        return;
+      }
       
       const response = await fetch(`/api/prompts/${id}/likes`, {
         method,
         headers: {
-          'Authorization': token ? `Bearer ${JSON.parse(token).access_token}` : ''
+          'Authorization': `Bearer ${token}`
         }
       });
 
