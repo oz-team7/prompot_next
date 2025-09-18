@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
 import PromptCardCompact from './PromptCardCompact';
 import BookmarkPanel from './BookmarkPanel';
+import TrendingPrompts from './TrendingPrompts';
 import { useSearch } from '@/contexts/SearchContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePrompts } from '@/hooks/usePrompts';
@@ -374,6 +376,21 @@ const PromptGrid: React.FC<PromptGridProps> = ({
 
           {/* Category, Sort, and Action Buttons */}
           <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-6 items-start">
+            {/* Trending Prompts and New Button */}
+            <div className="flex items-center gap-2">
+              <TrendingPrompts />
+              {isAuthenticated && (
+                <Link href="/prompt/create">
+                  <button className="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-xs sm:text-sm">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>New</span>
+                  </button>
+                </Link>
+              )}
+            </div>
+
             {/* Category Selector */}
             <div className="flex items-center gap-1 sm:gap-2">
               <span className="text-xs sm:text-sm font-medium text-orange-600 whitespace-nowrap">카테고리</span>
@@ -477,19 +494,6 @@ const PromptGrid: React.FC<PromptGridProps> = ({
 
             {/* Action Buttons */}
             <div className="flex gap-1 sm:gap-2 items-center">
-              {showCreateButton && (
-                <button
-                  onClick={handleCreatePrompt}
-                  className="inline-flex items-center justify-center px-2 sm:px-4 py-2 h-[36px] sm:h-10 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-xs sm:text-sm font-medium"
-                  title="새 프롬프트 만들기"
-                >
-                  <svg className="w-4 sm:w-4 h-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span className="hidden sm:inline ml-1">New</span>
-                </button>
-              )}
-
               {/* 북마크 버튼 - 항상 표시 */}
               <button
                 onClick={() => {

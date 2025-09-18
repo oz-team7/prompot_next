@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import Sidebar from './Sidebar';
-import TrendingPrompts from './TrendingPrompts';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearch } from '@/contexts/SearchContext';
 
@@ -50,21 +49,6 @@ const Header: React.FC = () => {
               <Logo className="hover:scale-105 transition-transform w-8 h-8 sm:w-10 sm:h-10" />
               <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-primary">PROMPOT</h1>
             </button>
-
-            {/* Left side buttons - Trending & New */}
-            <div className="hidden lg:flex items-center gap-2">
-              <TrendingPrompts />
-              {isAuthenticated && (
-                <Link href="/prompt/create">
-                  <button className="flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>New</span>
-                  </button>
-                </Link>
-              )}
-            </div>
 
             {/* Search Bar - Center */}
             <div className="flex-1 flex justify-center px-2 sm:px-4">
