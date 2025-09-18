@@ -289,7 +289,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               프롬프트의 모든 것, <span className="text-primary">PROMPOT</span>
             </h2>
             <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed tracking-wide">
-              당신의 AI 경험을 한층 높여줄 국내 최고의 프롬프트 라이브러리<br />
+              당신의 AI 경험을 한층 높여줄 최고의 프롬프트 라이브러리<br />
               필요한 모든 프롬프트를 찾아보세요
             </p>
           </div>
@@ -475,11 +475,11 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               </div>
             </div>
 
-            {/* Trending Prompts */}
-            <TrendingPrompts />
-
             {/* Spacer to push buttons to the right */}
             <div className="flex-1"></div>
+
+            {/* Trending Prompts */}
+            <TrendingPrompts />
 
             {/* Action Buttons */}
             <div className="flex gap-1 sm:gap-2 items-center">
