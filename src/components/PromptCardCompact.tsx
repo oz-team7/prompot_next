@@ -41,6 +41,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   const [localIsLiked, setLocalIsLiked] = useState(prompt.is_liked || false);
   const [localLikesCount, setLocalLikesCount] = useState(prompt.likes_count || prompt.likes || 0);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
 
   // 북마크 상태
   const actualIsBookmarked = useMemo(() => {
@@ -100,6 +101,10 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
       router.push('/login');
       return;
     }
+    
+    // 중복 호출 방지
+    if (isBusy) return;
+    setIsBusy(true);
 
     try {
       const method = localIsLiked ? 'DELETE' : 'POST';
@@ -135,6 +140,8 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
       setToastMessage('좋아요 처리 중 오류가 발생했습니다.');
       setToastType('error');
       setShowToast(true);
+    } finally {
+      setIsBusy(false);
     }
   };
 
@@ -311,6 +318,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                     <button
                       onClick={handleLikeClick}
                       className="flex items-center gap-1.5 text-white/90 hover:text-red-400 transition-colors"
+                      disabled={isBusy}
                     >
                       <svg
                         className={`w-4 h-4 sm:w-5 sm:h-5 ${localIsLiked ? 'text-red-400 fill-current' : ''}`}
