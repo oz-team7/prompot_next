@@ -286,21 +286,24 @@ const PromptCard: React.FC<PromptCardProps> = ({
           ) : prompt.preview_image ? (
             // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
             prompt.resultType === 'text' || prompt.preview_image.startsWith('data:image') ? (
-              <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer p-4">
-                <Image
-                  src={prompt.preview_image}
-                  alt={prompt.title}
-                  fill
-                  className="object-contain"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  onError={(e) => {
-                    console.error('이미지 로드 실패:', prompt.preview_image, e);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                  onLoad={() => {
-                    console.log('이미지 로드 성공:', prompt.preview_image);
-                  }}
-                />
+              <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer p-6">
+                <div className="relative w-full h-full">
+                  <Image
+                    src={prompt.preview_image}
+                    alt={prompt.title}
+                    fill
+                    className="object-contain !object-scale-down"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    style={{ transform: 'scale(0.85)' }}
+                    onError={(e) => {
+                      console.error('이미지 로드 실패:', prompt.preview_image, e);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('이미지 로드 성공:', prompt.preview_image);
+                    }}
+                  />
+                </div>
               </div>
             ) : (
               // 일반 이미지는 패딩 없이 전체 화면에 표시

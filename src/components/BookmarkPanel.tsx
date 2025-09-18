@@ -83,7 +83,7 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
               }}
               className="px-3 py-1.5 text-sm bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors font-medium shadow-sm"
             >
-              카테고리 관리
+              북마크 관리
             </button>
             <button
               onClick={onClose}
