@@ -284,9 +284,9 @@ const PromptCard: React.FC<PromptCardProps> = ({
               </div>
             </div>
           ) : prompt.preview_image ? (
-            // 텍스트 기반 이미지인지 확인 (base64 인코딩된 이미지)
-            prompt.preview_image.startsWith('data:image') ? (
-              <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer p-3">
+            // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
+            prompt.resultType === 'text' || prompt.preview_image.startsWith('data:image') ? (
+              <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer p-4">
                 <Image
                   src={prompt.preview_image}
                   alt={prompt.title}
