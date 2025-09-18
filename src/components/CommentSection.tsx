@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchWithLogging } from '@/lib/api-logger';
 import { calculateLevel, getLevelColorClass } from '@/utils/levelSystem';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 
 interface Comment {
   id: string;
@@ -219,27 +220,19 @@ export default function CommentSection({ promptId, className = '', onCommentCoun
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
-                        {comment.profiles.avatar_url ? (
-                          <Image
-                            src={comment.profiles.avatar_url}
-                            alt={comment.profiles.name}
-                            width={24}
-                            height={24}
-                            className="w-full h-full object-cover"
-                            unoptimized={true}
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                            <Image
-                              src="/logo.png"
-                              alt="프롬팟 로고"
-                              width={24}
-                              height={24}
-                              className="w-full h-full object-contain"
-                              unoptimized={true}
-                            />
-                          </div>
-                        )}
+                        <Image
+                          src={getAvatarUrl(comment.profiles.avatar_url, comment.profiles.id)}
+                          alt={comment.profiles.name}
+                          width={24}
+                          height={24}
+                          className="w-full h-full object-cover"
+                          unoptimized={true}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = getAvatarUrl(null, comment.profiles.id);
+                          }}
+                        />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">

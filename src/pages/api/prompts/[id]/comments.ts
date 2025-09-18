@@ -35,12 +35,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, promptId: st
       content,
       created_at,
       updated_at,
-      user_id,
-      profiles:user_id (
-        id,
-        name,
-        avatar_url
-      )
+      user_id
     `, { count: 'exact' })
     .eq('prompt_id', promptId)
     .is('deleted_at', null)
@@ -52,9 +47,63 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, promptId: st
     return res.status(500).json({ ok: false, error: 'DB_ERROR' })
   }
 
+  // 각 댓글에 profiles과 userStats 추가
+  const commentsWithStats = await Promise.all(
+    (comments || []).map(async (comment) => {
+      const userId = comment.user_id
+      if (!userId) return comment
+      
+      // 사용자 프로필 가져오기
+      const { data: profile } = await svc
+        .from('profiles')
+        .select('id, name, avatar_url')
+        .eq('id', userId)
+        .single()
+
+      // 사용자 통계 가져오기
+      const { count: promptsCount } = await svc
+        .from('prompts')
+        .select('*', { count: 'exact', head: true })
+        .eq('author_id', userId)
+
+      const { count: likesCount } = await svc
+        .from('likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+
+      const { count: bookmarksCount } = await svc
+        .from('bookmarks')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+
+      const { count: commentsCount } = await svc
+        .from('prompt_comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+
+      const activityScore = ((promptsCount || 0) * 5) + 
+                          ((commentsCount || 0) * 3) + 
+                          ((bookmarksCount || 0) * 2) + 
+                          ((likesCount || 0) * 1)
+
+      return {
+        ...comment,
+        profiles: profile,
+        userStats: {
+          prompts: promptsCount || 0,
+          likes: likesCount || 0,
+          bookmarks: bookmarksCount || 0,
+          comments: commentsCount || 0,
+          activityScore
+        }
+      }
+    })
+  )
+
   return res.status(200).json({
     ok: true,
-    comments,
+    comments: commentsWithStats,
     total: count || 0,
     totalCount: count || 0, // CommentSection에서 사용
     hasMore: count ? offset + limit < count : false
@@ -87,11 +136,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, promptId: s
       content,
       created_at,
       updated_at,
-      profiles:user_id (
-        id,
-        name,
-        avatar_url
-      )
+      user_id
     `)
     .single()
 
@@ -99,8 +144,54 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse, promptId: s
     console.error('[POST comments] insert error:', error)
     return res.status(500).json({ ok: false, error: 'DB_ERROR' })
   }
+  
+  // 사용자 프로필 가져오기
+  const { data: profile } = await svc
+    .from('profiles')
+    .select('id, name, avatar_url')
+    .eq('id', userId)
+    .single()
 
-  return res.status(201).json({ ok: true, comment })
+  // userStats 추가
+  const { count: promptsCount } = await svc
+    .from('prompts')
+    .select('*', { count: 'exact', head: true })
+    .eq('author_id', userId)
+
+  const { count: likesCount } = await svc
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  const { count: bookmarksCount } = await svc
+    .from('bookmarks')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  const { count: commentsCount } = await svc
+    .from('prompt_comments')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+
+  const activityScore = ((promptsCount || 0) * 5) + 
+                      ((commentsCount || 0) * 3) + 
+                      ((bookmarksCount || 0) * 2) + 
+                      ((likesCount || 0) * 1)
+
+  const commentWithStats = {
+    ...comment,
+    profiles: profile,
+    userStats: {
+      prompts: promptsCount || 0,
+      likes: likesCount || 0,
+      bookmarks: bookmarksCount || 0,
+      comments: commentsCount || 0,
+      activityScore
+    }
+  }
+
+  return res.status(201).json({ ok: true, comment: commentWithStats })
 }
 
 // 댓글 수정
@@ -146,11 +237,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, promptId: st
       content,
       created_at,
       updated_at,
-      profiles:user_id (
-        id,
-        name,
-        avatar_url
-      )
+      user_id
     `)
     .single()
 
@@ -158,8 +245,54 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, promptId: st
     console.error('[PUT comments] update error:', error)
     return res.status(500).json({ ok: false, error: 'DB_ERROR' })
   }
+  
+  // 사용자 프로필 가져오기
+  const { data: profile } = await svc
+    .from('profiles')
+    .select('id, name, avatar_url')
+    .eq('id', userId)
+    .single()
 
-  return res.status(200).json({ ok: true, comment })
+  // userStats 추가
+  const { count: promptsCount } = await svc
+    .from('prompts')
+    .select('*', { count: 'exact', head: true })
+    .eq('author_id', userId)
+
+  const { count: likesCount } = await svc
+    .from('likes')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  const { count: bookmarksCount } = await svc
+    .from('bookmarks')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  const { count: commentsCount } = await svc
+    .from('prompt_comments')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+
+  const activityScore = ((promptsCount || 0) * 5) + 
+                      ((commentsCount || 0) * 3) + 
+                      ((bookmarksCount || 0) * 2) + 
+                      ((likesCount || 0) * 1)
+
+  const commentWithStats = {
+    ...comment,
+    profiles: profile,
+    userStats: {
+      prompts: promptsCount || 0,
+      likes: likesCount || 0,
+      bookmarks: bookmarksCount || 0,
+      comments: commentsCount || 0,
+      activityScore
+    }
+  }
+
+  return res.status(200).json({ ok: true, comment: commentWithStats })
 }
 
 // 댓글 삭제 (소프트 딜리트)
