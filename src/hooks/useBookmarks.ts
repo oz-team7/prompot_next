@@ -79,7 +79,7 @@ export const useBookmarks = () => {
     try {
       // 캐시 우선 로드 (성능 최적화)
       if (useCache && loadCachedBookmarks()) {
-        console.log('[CACHE] Loaded bookmarks from cache');
+        // console.log('[CACHE] Loaded bookmarks from cache');
         return;
       }
 

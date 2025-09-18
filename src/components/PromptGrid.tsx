@@ -123,10 +123,10 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   // API에서 데이터를 가져온 경우 prompts 상태 업데이트
   useEffect(() => {
     if (useAPI && apiPrompts.length > 0) {
-      console.log('[DEBUG] PromptGrid - apiPrompts loaded:', apiPrompts.length);
-      console.log('[DEBUG] First apiPrompt category and aiModel:', {
-        category: apiPrompts[0]?.category,
-        aiModel: apiPrompts[0]?.aiModel
+      // console.log('[DEBUG] PromptGrid - apiPrompts loaded:', apiPrompts.length);
+      // console.log('[DEBUG] First apiPrompt category and aiModel:', {
+      //   category: apiPrompts[0]?.category,
+      //   aiModel: apiPrompts[0]?.aiModel
       });
       setPrompts(apiPrompts);
     } else if (!useAPI && initialPrompts) {
