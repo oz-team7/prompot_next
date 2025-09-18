@@ -11,6 +11,7 @@ import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import ImageModal from '@/components/ImageModal';
+import FloatingHearts from '@/components/FloatingHearts';
 
 // 추가 이미지 컴포넌트
 const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: string; index: number; onImageClick: (imageUrl: string, alt: string) => void }) => {
@@ -250,6 +251,9 @@ const PromptDetailPage = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportCategory, setReportCategory] = useState<'spam' | 'offensive' | 'illegal' | 'other'>('other');
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -261,6 +265,8 @@ const PromptDetailPage = () => {
       }
       
       setPrompt(data.prompt);
+      setIsLiked(data.prompt.is_liked || false);
+      setLikesCount(data.prompt.likes_count || data.prompt.likes || 0);
       console.log('[DEBUG] Fetched prompt data:', {
         id: data.prompt.id,
         title: data.prompt.title,
@@ -289,6 +295,49 @@ const PromptDetailPage = () => {
       console.error('Error incrementing views:', error);
     }
   }, [id]);
+
+  // 좋아요 토글 함수
+  const handleLikeToggle = async () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    try {
+      const method = isLiked ? 'DELETE' : 'POST';
+      const token = localStorage.getItem('supabase.auth.token');
+      
+      const response = await fetch(`/api/prompts/${id}/likes`, {
+        method,
+        headers: {
+          'Authorization': token ? `Bearer ${JSON.parse(token).access_token}` : ''
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update like');
+      }
+
+      const data = await response.json();
+      setIsLiked(data.is_liked);
+      setLikesCount(data.likes_count);
+      
+      // 좋아요를 눌렀을 때만 애니메이션 표시
+      if (data.is_liked && !isLiked) {
+        setShowHeartAnimation(true);
+        setTimeout(() => setShowHeartAnimation(false), 100); // 트리거 리셋
+      }
+      
+      setToastMessage(data.is_liked ? '좋아요를 눌렀습니다!' : '좋아요를 취소했습니다.');
+      setToastType('success');
+      setShowToast(true);
+    } catch (error) {
+      console.error('Error updating like:', error);
+      setToastMessage('좋아요 처리 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -611,17 +660,23 @@ const PromptDetailPage = () => {
                   </div>
                   
                   {/* 좋아요 */}
-                  <div className="flex items-center gap-1.5">
-                    <svg
-                      className="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
+                  <div className="relative">
+                    <button
+                      onClick={handleLikeToggle}
+                      className="flex items-center gap-1.5 hover:text-red-500 transition-colors"
                     >
-                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                    </svg>
-                    <span>{prompt.likes_count || prompt.likes || 0}</span>
+                      <svg
+                        className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-current' : ''}`}
+                        viewBox="0 0 24 24"
+                        fill={isLiked ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                      </svg>
+                      <span className={isLiked ? 'text-red-500' : ''}>{likesCount}</span>
+                    </button>
+                    <FloatingHearts trigger={showHeartAnimation} />
                   </div>
                   
                   {/* 댓글 */}
