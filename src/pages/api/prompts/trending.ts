@@ -87,7 +87,7 @@ export default async function handler(
     // 북마크 수 조회
     const promptIds = prompts.map(p => p.id);
     const { data: bookmarkCounts, error: bookmarkError } = await supabase
-      .from('user_bookmarks')
+      .from('prompt_bookmarks')
       .select('prompt_id')
       .in('prompt_id', promptIds);
 

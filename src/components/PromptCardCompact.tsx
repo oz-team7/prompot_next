@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSearch } from '@/contexts/SearchContext';
 import Toast from '@/components/Toast';
+import FloatingHearts from '@/components/FloatingHearts';
 
 interface PromptCardCompactProps {
   prompt: Prompt;
@@ -39,6 +40,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'bookmark'>('success');
   const [localIsLiked, setLocalIsLiked] = useState(prompt.is_liked || false);
   const [localLikesCount, setLocalLikesCount] = useState(prompt.likes_count || prompt.likes || 0);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
 
   // 북마크 상태
   const actualIsBookmarked = useMemo(() => {
@@ -117,6 +119,12 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
       const data = await response.json();
       setLocalIsLiked(data.is_liked);
       setLocalLikesCount(data.likes_count);
+      
+      // 좋아요를 눌렀을 때만 애니메이션 표시
+      if (data.is_liked && !localIsLiked) {
+        setShowHeartAnimation(true);
+        setTimeout(() => setShowHeartAnimation(false), 100); // 트리거 리셋
+      }
     } catch (error) {
       console.error('Error updating like:', error);
       setToastMessage('좋아요 처리 중 오류가 발생했습니다.');
@@ -294,23 +302,26 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   </div>
 
                   {/* 좋아요 */}
-                  <button
-                    onClick={handleLikeClick}
-                    className="flex items-center gap-1.5 text-white/90 hover:text-red-400 transition-colors"
-                  >
-                    <svg
-                      className={`w-4 h-4 sm:w-5 sm:h-5 ${localIsLiked ? 'text-red-400 fill-current' : ''}`}
-                      viewBox="0 0 24 24"
-                      fill={localIsLiked ? 'currentColor' : 'none'}
-                      stroke="currentColor"
-                      strokeWidth={2}
+                  <div className="relative">
+                    <button
+                      onClick={handleLikeClick}
+                      className="flex items-center gap-1.5 text-white/90 hover:text-red-400 transition-colors"
                     >
-                      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                    </svg>
-                    <span className={`text-sm sm:text-base font-medium ${localIsLiked ? 'text-red-400' : ''}`}>
-                      {localLikesCount}
-                    </span>
-                  </button>
+                      <svg
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${localIsLiked ? 'text-red-400 fill-current' : ''}`}
+                        viewBox="0 0 24 24"
+                        fill={localIsLiked ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                      </svg>
+                      <span className={`text-sm sm:text-base font-medium ${localIsLiked ? 'text-red-400' : ''}`}>
+                        {localLikesCount}
+                      </span>
+                    </button>
+                    <FloatingHearts trigger={showHeartAnimation} />
+                  </div>
                 </div>
               </div>
             </div>

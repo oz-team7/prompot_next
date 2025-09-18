@@ -102,7 +102,7 @@ export default async function handler(
     if (prompts && prompts.length > 0) {
       const promptIds = prompts.map(p => p.id);
       const { data: bookmarks, error: bookmarkError } = await supabase
-        .from('user_bookmarks')
+        .from('prompt_bookmarks')
         .select('id')
         .in('prompt_id', promptIds);
       
