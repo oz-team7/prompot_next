@@ -56,6 +56,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, promptId: st
     ok: true,
     comments,
     total: count || 0,
+    totalCount: count || 0, // CommentSection에서 사용
     hasMore: count ? offset + limit < count : false
   })
 }

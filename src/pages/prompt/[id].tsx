@@ -254,6 +254,7 @@ const PromptDetailPage = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
 
   const fetchPrompt = useCallback(async () => {
     try {
@@ -267,6 +268,7 @@ const PromptDetailPage = () => {
       setPrompt(data.prompt);
       setIsLiked(data.prompt.is_liked || false);
       setLikesCount(data.prompt.likes_count || data.prompt.likes || 0);
+      setCommentCount(data.prompt.comment_count || data.prompt.comments?.length || 0);
       console.log('[DEBUG] Fetched prompt data:', {
         id: data.prompt.id,
         title: data.prompt.title,
@@ -695,7 +697,7 @@ const PromptDetailPage = () => {
                     >
                       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                     </svg>
-                    <span>{prompt.commentCount || prompt.comments?.length || 0}</span>
+                    <span>{commentCount}</span>
                   </div>
                 </div>
               </div>
@@ -991,7 +993,10 @@ const PromptDetailPage = () => {
             {/* Comments */}
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-2">댓글</h3>
-              <CommentSection promptId={prompt.id.toString()} />
+              <CommentSection 
+                promptId={prompt.id.toString()} 
+                onCommentCountUpdate={setCommentCount}
+              />
             </div>
           </div>
         </div>

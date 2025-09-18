@@ -83,6 +83,9 @@ export default async function handler(
         views,
         prompt_likes (
           id
+        ),
+        prompt_comments (
+          id
         )
       `)
       .eq('author_id', authorId)
@@ -96,6 +99,7 @@ export default async function handler(
     const promptCount = prompts?.length || 0;
     const totalViews = prompts?.reduce((sum, p) => sum + (p.views || 0), 0) || 0;
     const totalLikes = prompts?.reduce((sum, p) => sum + (p.prompt_likes?.length || 0), 0) || 0;
+    const totalComments = prompts?.reduce((sum, p) => sum + (p.prompt_comments?.length || 0), 0) || 0;
 
     // 북마크 수 조회
     let totalBookmarks = 0;
@@ -124,6 +128,7 @@ export default async function handler(
       total_likes: totalLikes,
       total_views: totalViews,
       total_bookmarks: totalBookmarks,
+      total_comments: totalComments,
     };
 
     return sendSuccess(res, authorData, '작성자 정보를 성공적으로 조회했습니다.');

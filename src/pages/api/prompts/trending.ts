@@ -70,6 +70,9 @@ export default async function handler(
         views,
         prompt_likes (
           id
+        ),
+        prompt_comments (
+          id
         )
       `)
       .eq('is_public', true)
@@ -134,6 +137,9 @@ export default async function handler(
         (viewsCount * 0.01)
       ) * timeWeight;
       
+      // 댓글 수
+      const commentCount = prompt.prompt_comments ? prompt.prompt_comments.length : 0;
+      
       return {
         id: prompt.id,
         title: prompt.title,
@@ -142,6 +148,7 @@ export default async function handler(
         views: viewsCount,
         likes_count: likesCount,
         bookmark_count: bookmarkCount,
+        comment_count: commentCount,
         popularity_score: popularityScore,
         hours_ago: Math.floor(hoursAgo)
       };

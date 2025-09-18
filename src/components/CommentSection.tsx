@@ -18,9 +18,10 @@ interface Comment {
 interface CommentSectionProps {
   promptId: string;
   className?: string;
+  onCommentCountUpdate?: (count: number) => void;
 }
 
-export default function CommentSection({ promptId, className = '' }: CommentSectionProps) {
+export default function CommentSection({ promptId, className = '', onCommentCountUpdate }: CommentSectionProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState('');
@@ -44,6 +45,10 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
       if (data.ok) {
         if (page === 1) {
           setComments(data.comments);
+          // 댓글 수 업데이트 (첫 페이지 로드 시)
+          if (onCommentCountUpdate) {
+            onCommentCountUpdate(data.totalCount || data.comments.length);
+          }
         } else {
           setComments(prev => [...prev, ...data.comments]);
         }
@@ -78,6 +83,10 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
       if (data.ok) {
         setContent('');
         setComments(prev => [data.comment, ...prev]);
+        // 댓글 수 업데이트 (+1)
+        if (onCommentCountUpdate) {
+          onCommentCountUpdate(comments.length + 1);
+        }
       }
     } catch (error) {
       console.error('Comment post error:', error);
@@ -126,6 +135,10 @@ export default function CommentSection({ promptId, className = '' }: CommentSect
 
       if (res.ok) {
         setComments(prev => prev.filter(c => c.id !== commentId));
+        // 댓글 수 업데이트 (-1)
+        if (onCommentCountUpdate) {
+          onCommentCountUpdate(comments.length - 1);
+        }
       }
     } catch (error) {
       console.error('Comment delete error:', error);
