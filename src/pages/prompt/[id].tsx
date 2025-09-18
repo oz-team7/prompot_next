@@ -598,47 +598,48 @@ const PromptDetailPage = () => {
               <div className="flex-1">
                 <h1 className="text-2xl font-bold mb-3 text-gray-900">{prompt.title}</h1>
                 
-                {/* 작성자 정보 */}
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <button
-                    onClick={() => {
-                      const authorName = prompt.author?.name || '익명';
-                      setAuthorFilter(authorName);
-                      router.push('/');
-                    }}
-                    className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
-                  >
-                    {prompt.author.avatar_url ? (
-                      <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0">
-                        <Image
-                          src={prompt.author.avatar_url}
-                          alt={prompt.author.name}
-                          width={24}
-                          height={24}
-                          className="w-full h-full object-cover"
-                          unoptimized={true}
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        <Image
-                          src="/logo.png"
-                          alt="프롬팟 로고"
-                          width={24}
-                          height={24}
-                          className="w-full h-full object-contain"
-                          unoptimized={true}
-                        />
-                      </div>
-                    )}
-                    <span className="font-medium group-hover:text-orange-600 transition-colors">{prompt.author.name}</span>
-                  </button>
-                  <span className="text-gray-400">•</span>
-                  <time dateTime={prompt.createdAt} className="text-gray-500">{prompt.date}</time>
-                </div>
-                
-                {/* 조회수, 좋아요, 댓글 정보 */}
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                {/* 작성자 정보 및 통계 */}
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const authorName = prompt.author?.name || '익명';
+                        setAuthorFilter(authorName);
+                        router.push('/');
+                      }}
+                      className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
+                    >
+                      {prompt.author.avatar_url ? (
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-white flex-shrink-0">
+                          <Image
+                            src={prompt.author.avatar_url}
+                            alt={prompt.author.name}
+                            width={24}
+                            height={24}
+                            className="w-full h-full object-cover"
+                            unoptimized={true}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <Image
+                            src="/logo.png"
+                            alt="프롬팟 로고"
+                            width={24}
+                            height={24}
+                            className="w-full h-full object-contain"
+                            unoptimized={true}
+                          />
+                        </div>
+                      )}
+                      <span className="font-medium group-hover:text-orange-600 transition-colors">{prompt.author.name}</span>
+                    </button>
+                    <span className="text-gray-400">•</span>
+                    <time dateTime={prompt.createdAt} className="text-gray-500">{prompt.date}</time>
+                  </div>
+                  
+                  {/* 조회수, 좋아요, 댓글 정보 */}
+                  <div className="flex items-center gap-4">
                   {/* 조회수 */}
                   <div className="flex items-center gap-1.5">
                     <svg 
@@ -687,6 +688,7 @@ const PromptDetailPage = () => {
                       <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                     </svg>
                     <span>{commentCount}</span>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -905,7 +907,7 @@ const PromptDetailPage = () => {
                       {prompt.category && (
                         <button
                           onClick={handleCategoryClick}
-                          className="inline-block bg-orange-100 text-orange-700 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-200 transition-colors cursor-pointer"
+                          className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer"
                         >
                           {prompt.category === 'work' && '⚡ 업무/마케팅'}
                           {prompt.category === 'dev' && '⚙️ 개발/코드'}

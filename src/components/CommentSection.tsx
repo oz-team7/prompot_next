@@ -190,7 +190,7 @@ export default function CommentSection({ promptId, className = '', onCommentCoun
       ) : comments.length > 0 ? (
         <div className="space-y-4">
           {comments.map(comment => (
-            <div key={comment.id} className="bg-white p-4 rounded-lg shadow-sm">
+            <div key={comment.id} className="bg-white p-3 rounded-lg shadow-sm">
               {editingId === comment.id ? (
                 <div>
                   <textarea
@@ -216,62 +216,67 @@ export default function CommentSection({ promptId, className = '', onCommentCoun
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
-                        <Image
-                          src={getAvatarUrl(comment.profiles.avatar_url, comment.profiles.id)}
-                          alt={comment.profiles.name}
-                          width={24}
-                          height={24}
-                          className="w-full h-full object-cover"
-                          unoptimized={true}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = getAvatarUrl(null, comment.profiles.id);
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          {comment.userStats && (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${getLevelColorClass(calculateLevel(comment.userStats.activityScore).level)}`}>
-                              Lv.{calculateLevel(comment.userStats.activityScore).level}
-                            </span>
-                          )}
-                          <span className="font-medium">{comment.profiles.name}</span>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {new Date(comment.created_at).toLocaleDateString()}
-                        </span>
-                        {comment.updated_at !== comment.created_at && (
-                          <span className="text-xs text-gray-400 ml-2">(수정됨)</span>
-                        )}
-                      </div>
-                    </div>
-                    {user?.id === comment.profiles.id && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => startEdit(comment)}
-                          className="text-sm text-gray-600 hover:text-gray-900"
-                        >
-                          수정
-                        </button>
-                        <button
-                          onClick={() => handleDelete(comment.id)}
-                          className="text-sm text-red-600 hover:text-red-700"
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    )}
+                <div className="flex gap-3">
+                  {/* 프로필 이미지 */}
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                    <Image
+                      src={getAvatarUrl(comment.profiles.avatar_url, comment.profiles.id)}
+                      alt={comment.profiles.name}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                      unoptimized={true}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = getAvatarUrl(null, comment.profiles.id);
+                      }}
+                    />
                   </div>
-                  <p className="mt-2 text-gray-700 whitespace-pre-wrap">
-                    {comment.content}
-                  </p>
-                </>
+                  
+                  {/* 댓글 내용 영역 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      {/* 레벨 */}
+                      {comment.userStats && (
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${getLevelColorClass(calculateLevel(comment.userStats.activityScore).level)}`}>
+                          Lv.{calculateLevel(comment.userStats.activityScore).level}
+                        </span>
+                      )}
+                      {/* 이름 */}
+                      <span className="font-medium text-sm">{comment.profiles.name}</span>
+                      {/* 날짜 */}
+                      <span className="text-xs text-gray-500">
+                        {new Date(comment.created_at).toLocaleDateString()}
+                      </span>
+                      {comment.updated_at !== comment.created_at && (
+                        <span className="text-xs text-gray-400">(수정됨)</span>
+                      )}
+                      
+                      {/* 수정/삭제 버튼 */}
+                      {user?.id === comment.profiles.id && (
+                        <div className="flex gap-2 ml-auto">
+                          <button
+                            onClick={() => startEdit(comment)}
+                            className="text-xs text-gray-600 hover:text-gray-900"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDelete(comment.id)}
+                            className="text-xs text-red-600 hover:text-red-700"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {/* 댓글 내용 */}
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                      {comment.content}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           ))}
