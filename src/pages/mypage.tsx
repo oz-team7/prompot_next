@@ -843,37 +843,6 @@ const MyPage = () => {
 
   return (
     <>
-      {/* Custom Checkbox Styles */}
-      <style jsx>{`
-        .custom-checkbox:checked {
-          background-color: white !important;
-          border-color: #fed7aa !important;
-        }
-        .custom-checkbox:checked:before {
-          content: '✓';
-          color: #f97316;
-          font-size: 12px;
-          font-weight: bold;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-        }
-        .custom-checkbox {
-          position: relative;
-          appearance: none;
-          -webkit-appearance: none;
-          -moz-appearance: none;
-          border: 1.5px solid #fed7aa !important;
-          background-color: white !important;
-        }
-        .custom-checkbox:focus {
-          outline: none !important;
-          box-shadow: none !important;
-          border-color: #fed7aa !important;
-        }
-      `}</style>
-      
       <Header />
       <main className="min-h-screen bg-orange-50/20">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -1214,230 +1183,168 @@ const MyPage = () => {
             {activeTab === 'settings' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 
-                {/* 상단: 프로필 사진과 기본 정보 가로 배치 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                  {/* 왼쪽: 프로필 사진 업로드 섹션 */}
-                  <div className="border-b pb-6">
-                    <h4 className="text-md font-medium text-gray-800 mb-4">프로필 사진</h4>
-                    <div className="flex items-start gap-6">
-                      <AvatarUpload
-                        currentAvatarUrl={userProfile?.avatar_url || user?.avatar_url}
-                        userName={user?.name || ''}
-                        onAvatarChange={handleAvatarChange}
-                        className="flex-shrink-0"
+                {/* 기본 정보 섹션 */}
+                <div className="border-b pb-6 mb-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">기본 정보</h3>
+                  <div className="space-y-4 max-w-2xl">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12">이름</label>
+                        {isEditingName ? (
+                          <>
+                            <input
+                              type="text"
+                              value={editedName}
+                              onChange={(e) => setEditedName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && editedName.trim() && !isUpdatingName) {
+                                  handleUpdateName();
+                                } else if (e.key === 'Escape') {
+                                  handleCancelEditName();
+                                }
+                              }}
+                              className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                              placeholder="이름을 입력하세요"
+                              disabled={isUpdatingName}
+                            />
+                            <button
+                              onClick={handleUpdateName}
+                              disabled={isUpdatingName || !editedName.trim()}
+                              className="px-2 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm whitespace-nowrap disabled:opacity-50"
+                            >
+                              {isUpdatingName ? '저장 중...' : '저장'}
+                            </button>
+                            <button
+                              onClick={handleCancelEditName}
+                              disabled={isUpdatingName}
+                              className="px-2 py-1.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm whitespace-nowrap disabled:opacity-50"
+                            >
+                              취소
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <input
+                              type="text"
+                              value={user.name}
+                              readOnly
+                              className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                            />
+                            <button
+                              onClick={handleStartEditName}
+                              className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
+                            >
+                              수정
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12">이메일</label>
+                        <input
+                          type="email"
+                          value={user.email}
+                          readOnly
+                          className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 프로필 사진 섹션 */}
+                <div className="border-b pb-6 mb-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">프로필 사진</h3>
+                  <div className="flex items-start gap-6">
+                    <AvatarUpload
+                      currentAvatarUrl={userProfile?.avatar_url || user?.avatar_url}
+                      userName={user?.name || ''}
+                      onAvatarChange={handleAvatarChange}
+                      className="flex-shrink-0"
+                    />
+                    <div className="flex-1 max-w-md">
+                      <p className="text-sm text-gray-600 mb-2">
+                        프로필사진 업로드 기준
+                      </p>
+                      <div className="text-xs text-gray-500 space-y-1">
+                        <p>• JPG, PNG 파일만 지원됩니다</p>
+                        <p>• 최대 1MB까지 업로드 가능합니다</p>
+                        <p>• 권장 크기: 200x200 픽셀 이상</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 보안 설정 섹션 */}
+                <div className="border-b pb-6 mb-6">
+                  <h3 className="text-lg font-medium text-gray-800 mb-4">보안 설정</h3>
+                  <div className="space-y-4 max-w-2xl">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
+                      <input
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
+                        className={`w-full max-w-md px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                          passwordErrors.currentPassword 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-primary'
+                        }`}
+                        placeholder="현재 비밀번호를 입력하세요"
+                        disabled={isChangingPassword}
                       />
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-600 mb-2">
-                          프로필사진 업로드 기준
-                        </p>
-                        <div className="text-xs text-gray-500">
-                          <p>• JPG, PNG 파일만 지원됩니다</p>
-                          <p>• 최대 5MB까지 업로드 가능합니다</p>
-                          <p>• 권장 크기: 200x200 픽셀 이상</p>
-                        </div>
-                      </div>
+                      {passwordErrors.currentPassword && (
+                        <p className="mt-1 text-xs text-red-600">{passwordErrors.currentPassword}</p>
+                      )}
                     </div>
-                  </div>
-
-                  {/* 오른쪽: 이름과 이메일 섹션 */}
-                  <div className="border-b pb-6">
-                    <h4 className="text-md font-medium text-gray-800 mb-4">기본 정보</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12">이름</label>
-                          {isEditingName ? (
-                            <>
-                              <input
-                                type="text"
-                                value={editedName}
-                                onChange={(e) => setEditedName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && editedName.trim() && !isUpdatingName) {
-                                    handleUpdateName();
-                                  } else if (e.key === 'Escape') {
-                                    handleCancelEditName();
-                                  }
-                                }}
-                                className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                                placeholder="이름을 입력하세요"
-                                disabled={isUpdatingName}
-                              />
-                              <button
-                                onClick={handleUpdateName}
-                                disabled={isUpdatingName || !editedName.trim()}
-                                className="px-2 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm whitespace-nowrap disabled:opacity-50"
-                              >
-                                {isUpdatingName ? '저장 중...' : '저장'}
-                              </button>
-                              <button
-                                onClick={handleCancelEditName}
-                                disabled={isUpdatingName}
-                                className="px-2 py-1.5 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm whitespace-nowrap disabled:opacity-50"
-                              >
-                                취소
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <input
-                                type="text"
-                                value={user.name}
-                                readOnly
-                                className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
-                              />
-                              <button
-                                onClick={handleStartEditName}
-                                className="w-20 px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
-                              >
-                                이름 수정
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12">이메일</label>
-                          <input
-                            type="email"
-                            value={user.email}
-                            readOnly
-                            className="w-60 px-2 py-1.5 border border-gray-300 rounded-lg bg-gray-50 text-sm"
-                            onFocus={() => console.log('[DEBUG] mypage.tsx - Email value:', user.email)}
-                          />
-                          <button
-                            onClick={() => {
-                              setToastMessage('이메일 인증 기능은 준비 중입니다.');
-                              setToastType('info');
-                              setShowToast(true);
-                            }}
-                            className="w-20 px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap"
-                          >
-                            이메일 인증
-                          </button>
-                        </div>
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+                      <input
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
+                        className={`w-full max-w-md px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                          passwordErrors.newPassword 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-primary'
+                        }`}
+                        placeholder="새 비밀번호를 입력하세요 (6자 이상)"
+                        disabled={isChangingPassword}
+                      />
+                      {passwordErrors.newPassword && (
+                        <p className="mt-1 text-xs text-red-600">{passwordErrors.newPassword}</p>
+                      )}
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
+                      <input
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
+                        className={`w-full max-w-md px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
+                          passwordErrors.confirmPassword 
+                            ? 'border-red-300 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-primary'
+                        }`}
+                        placeholder="새 비밀번호를 다시 입력하세요"
+                        disabled={isChangingPassword}
+                      />
+                      {passwordErrors.confirmPassword && (
+                        <p className="mt-1 text-xs text-red-600">{passwordErrors.confirmPassword}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={handlePasswordChange}
+                      disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isChangingPassword ? '변경 중...' : '비밀번호 변경'}
+                    </button>
                   </div>
                 </div>
 
-                {/* 하단: 비밀번호 변경 섹션 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* 왼쪽: 비밀번호 변경 섹션 */}
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-md font-medium text-gray-800 mb-4">보안 설정</h3>
-                      
-                      {/* 비밀번호 변경 섹션 */}
-                      <div className="border-b pb-6">
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
-                            <input
-                              type="password"
-                              value={passwordData.currentPassword}
-                              onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
-                              className={`w-full px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                                passwordErrors.currentPassword 
-                                  ? 'border-red-300 focus:ring-red-500' 
-                                  : 'border-gray-300 focus:ring-primary'
-                              }`}
-                              placeholder="현재 비밀번호를 입력하세요"
-                              disabled={isChangingPassword}
-                            />
-                            {passwordErrors.currentPassword && (
-                              <p className="mt-1 text-xs text-red-600">{passwordErrors.currentPassword}</p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
-                            <input
-                              type="password"
-                              value={passwordData.newPassword}
-                              onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
-                              className={`w-full px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                                passwordErrors.newPassword 
-                                  ? 'border-red-300 focus:ring-red-500' 
-                                  : 'border-gray-300 focus:ring-primary'
-                              }`}
-                              placeholder="새 비밀번호를 입력하세요 (6자 이상)"
-                              disabled={isChangingPassword}
-                            />
-                            {passwordErrors.newPassword && (
-                              <p className="mt-1 text-xs text-red-600">{passwordErrors.newPassword}</p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 확인</label>
-                            <input
-                              type="password"
-                              value={passwordData.confirmPassword}
-                              onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
-                              className={`w-full px-2 py-1.5 border rounded-lg focus:outline-none focus:ring-2 text-sm ${
-                                passwordErrors.confirmPassword 
-                                  ? 'border-red-300 focus:ring-red-500' 
-                                  : 'border-gray-300 focus:ring-primary'
-                              }`}
-                              placeholder="새 비밀번호를 다시 입력하세요"
-                              disabled={isChangingPassword}
-                            />
-                            {passwordErrors.confirmPassword && (
-                              <p className="mt-1 text-xs text-red-600">{passwordErrors.confirmPassword}</p>
-                            )}
-                          </div>
-                          <button
-                            onClick={handlePasswordChange}
-                            disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
-                            className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {isChangingPassword ? '변경 중...' : '비밀번호 변경'}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* 계정 관리 섹션 */}
-                      <div className="pt-6">
-                        <h4 className="text-sm font-medium text-gray-700 mb-4">계정 관리</h4>
-                        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
-                          <button
-                            onClick={() => setShowDeleteAccountModal(true)}
-                            className="text-xs text-red-600 hover:text-red-800 underline"
-                          >
-                            회원탈퇴
-                          </button>
-                          <p className="text-xs text-red-600">
-                            계정을 삭제하면 개인 정보는 삭제되고 작성한 콘텐츠는 익명으로 유지됩니다.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 오른쪽: 알림 설정 섹션 */}
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-md font-medium text-gray-800 mb-4">알림 설정</h3>
-                      
-                      {/* 알림 설정 섹션 */}
-                      <div>
-                        <div className="space-y-3">
-                          <label className="flex items-center gap-2">
-                            <input type="checkbox" className="w-4 h-4 border-orange-300 rounded focus:outline-none relative z-20 cursor-pointer custom-checkbox" defaultChecked />
-                            <span className="text-sm text-gray-600">내 프롬프트에 좋아요를 받으면 알림</span>
-                          </label>
-                          <label className="flex items-center gap-2">
-                            <input type="checkbox" className="w-4 h-4 border-orange-300 rounded focus:outline-none relative z-20 cursor-pointer custom-checkbox" defaultChecked />
-                            <span className="text-sm text-gray-600">내 프롬프트에 댓글이 달리면 알림</span>
-                          </label>
-                          <button className="px-2 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm whitespace-nowrap">
-                            알림 설정 저장
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
             
@@ -1514,6 +1421,26 @@ const MyPage = () => {
                     ))}
                   </div>
                 )}
+                
+                {/* 계정 관리 섹션 - 고객지원 탭 하단에 추가 */}
+                <div className="mt-8 pt-6 border-t">
+                  <div className="max-w-2xl">
+                    <div className="flex items-center justify-between p-4 bg-gray-100 border border-gray-300 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-1">계정 관리</p>
+                        <p className="text-xs text-gray-600">
+                          계정을 삭제하면 개인 정보는 삭제되고 작성한 콘텐츠는 익명으로 유지됩니다.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowDeleteAccountModal(true)}
+                        className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+                      >
+                        회원탈퇴
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

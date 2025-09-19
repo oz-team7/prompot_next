@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Toast from '@/components/Toast';
+import ThumbnailEditor from '@/components/ThumbnailEditor';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 import { fetchWithLogging } from '@/lib/api-logger';
 import { createTextImage } from '@/utils/textToImage';
@@ -72,7 +73,7 @@ const CreatePromptPage = () => {
     textResult: '',
   });
   
-  const [uploadedImages, setUploadedImages] = useState<Array<{ file: File, url: string, serverUrl: string }>>([]);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ file: File, url: string, serverUrl: string, editedUrl?: string }>>([]);
   const [selectedThumbnailIndex, setSelectedThumbnailIndex] = useState<number>(0);
   const [textImageUrl, setTextImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -87,6 +88,10 @@ const CreatePromptPage = () => {
   
   // 드래그 앤 드롭 상태
   const [isDragOver, setIsDragOver] = useState(false);
+  
+  // 썸네일 편집 상태
+  const [showThumbnailEditor, setShowThumbnailEditor] = useState(false);
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
 
   // 텍스트 결과를 이미지로 변환
   useEffect(() => {
@@ -236,6 +241,57 @@ const CreatePromptPage = () => {
     });
   };
 
+  // 썸네일 편집 핸들러
+  const handleEditThumbnail = (index: number) => {
+    setEditingImageIndex(index);
+    setShowThumbnailEditor(true);
+  };
+
+  const handleSaveThumbnail = async (editedImageUrl: string) => {
+    if (editingImageIndex === null) return;
+    
+    try {
+      // 편집된 이미지를 서버에 업로드
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageData: editedImageUrl,
+          fileName: 'edited-thumbnail.jpg',
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success && result.data) {
+        // 편집된 이미지 URL 저장
+        setUploadedImages(prev => prev.map((img, index) => 
+          index === editingImageIndex 
+            ? { ...img, editedUrl: result.data.url }
+            : img
+        ));
+        
+        setToastMessage('썸네일이 편집되었습니다.');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        throw new Error(result.message || '썸네일 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Thumbnail save error:', error);
+      setToastMessage('썸네일 저장 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setShowThumbnailEditor(false);
+      setEditingImageIndex(null);
+    }
+  };
+
   const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
@@ -317,7 +373,8 @@ const CreatePromptPage = () => {
 
         // 썸네일 이미지와 나머지 이미지 분리
         const thumbnailImage = uploadedImages[selectedThumbnailIndex];
-        thumbnailUrl = thumbnailImage.serverUrl;
+        // 편집된 이미지가 있으면 그것을 사용, 없으면 원본 사용
+        thumbnailUrl = thumbnailImage.editedUrl || thumbnailImage.serverUrl;
         additionalImageUrls = uploadedImages
           .filter((_, index) => index !== selectedThumbnailIndex)
           .map(img => img.serverUrl);
@@ -744,7 +801,7 @@ const CreatePromptPage = () => {
                             onClick={() => setSelectedThumbnailIndex(index)}
                           >
                             <Image
-                              src={img.url}
+                              src={img.editedUrl || img.url}
                               alt={`이미지 ${index + 1}`}
                               fill
                               className="object-cover"
@@ -759,10 +816,32 @@ const CreatePromptPage = () => {
                                 </div>
                               </div>
                             )}
+                            {img.editedUrl && (
+                              <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1 rounded">
+                                편집됨
+                              </div>
+                            )}
                           </div>
+                          {/* 편집 버튼 */}
                           <button
                             type="button"
-                            onClick={() => removeImage(index)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditThumbnail(index);
+                            }}
+                            className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="썸네일 편집"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeImage(index);
+                            }}
                             className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -772,6 +851,22 @@ const CreatePromptPage = () => {
                         </div>
                       ))}
                     </div>
+                    
+                    {/* 썸네일 미리보기 */}
+                    {selectedThumbnailIndex !== null && uploadedImages[selectedThumbnailIndex] && (
+                      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">썸네일 미리보기</h4>
+                        <div className="relative w-full max-w-md mx-auto aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={uploadedImages[selectedThumbnailIndex].editedUrl || uploadedImages[selectedThumbnailIndex].url}
+                            alt="썸네일 미리보기"
+                            fill
+                            className="object-cover"
+                            unoptimized={true}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 </div>
@@ -928,6 +1023,18 @@ const CreatePromptPage = () => {
           message={toastMessage}
           type={toastType}
           onClose={() => setShowToast(false)}
+        />
+      )}
+      
+      {/* 썸네일 편집기 */}
+      {showThumbnailEditor && editingImageIndex !== null && uploadedImages[editingImageIndex] && (
+        <ThumbnailEditor
+          imageUrl={uploadedImages[editingImageIndex].url}
+          onSave={handleSaveThumbnail}
+          onCancel={() => {
+            setShowThumbnailEditor(false);
+            setEditingImageIndex(null);
+          }}
         />
       )}
     </div>
