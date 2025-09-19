@@ -22,9 +22,9 @@ export default function AvatarUpload({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 파일 크기 체크 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('파일 크기는 5MB 이하여야 합니다.');
+    // 파일 크기 체크 (1MB)
+    if (file.size > 1 * 1024 * 1024) {
+      alert('파일 크기는 1MB 이하여야 합니다.');
       return;
     }
 
@@ -34,10 +34,33 @@ export default function AvatarUpload({
       return;
     }
 
+    // 이미지 크기 체크를 위한 Image 객체 생성
+    const img = new Image();
     const reader = new FileReader();
+    
     reader.onload = (e) => {
       const result = e.target?.result as string;
-      setPreviewUrl(result);
+      
+      img.onload = () => {
+        // 이미지 크기 체크 (최소 200x200)
+        if (img.width < 200 || img.height < 200) {
+          alert('이미지 크기는 최소 200x200 픽셀 이상이어야 합니다.');
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          return;
+        }
+        setPreviewUrl(result);
+      };
+      
+      img.onerror = () => {
+        alert('이미지 파일을 읽을 수 없습니다.');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      };
+      
+      img.src = result;
     };
     reader.readAsDataURL(file);
   };
