@@ -174,17 +174,20 @@ const VideoPreview = ({ url }: { url: string }) => {
 
   if (videoError) {
     return (
-      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl text-gray-400 mb-2">🎥</div>
-          <p className="text-sm text-gray-500 mb-2">동영상을 불러올 수 없습니다</p>
+      <div className="bg-gray-100 rounded-lg p-4 flex items-center gap-3">
+        <div className="text-2xl">🎥</div>
+        <div className="flex-1">
+          <p className="text-sm text-gray-600">동영상을 불러올 수 없습니다</p>
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-blue-500 hover:text-blue-700 underline"
+            className="text-sm text-blue-500 hover:text-blue-700 underline inline-flex items-center gap-1"
           >
-            원본 링크로 이동
+            동영상 보기
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
           </a>
         </div>
       </div>
@@ -193,17 +196,20 @@ const VideoPreview = ({ url }: { url: string }) => {
 
   if (!embedUrl) {
     return (
-      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl text-gray-400 mb-2">🎥</div>
-          <p className="text-sm text-gray-500 mb-2">지원되지 않는 동영상 형식입니다</p>
+      <div className="bg-gray-100 rounded-lg p-4 flex items-center gap-3">
+        <div className="text-2xl">🎥</div>
+        <div className="flex-1">
+          <p className="text-sm text-gray-600">동영상 미리보기를 사용할 수 없습니다</p>
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-blue-500 hover:text-blue-700 underline"
+            className="text-sm text-blue-500 hover:text-blue-700 underline inline-flex items-center gap-1"
           >
-            원본 링크로 이동
+            동영상 보기
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
           </a>
         </div>
       </div>
@@ -593,62 +599,9 @@ const PromptDetailPage = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 relative">
-            {/* 통계 정보 - 우측 상단 고정 */}
-            <div className="absolute top-5 right-6 flex items-center gap-4 text-sm text-gray-600">
-              {/* 조회수 */}
-              <div className="flex items-center gap-1.5">
-                <svg 
-                  className="w-4 h-4" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth={2}
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                <span>{prompt.views || 0}</span>
-              </div>
-              
-              {/* 좋아요 */}
-              <div className="relative">
-                <button
-                  onClick={handleLikeToggle}
-                  disabled={isLikeBusy}
-                  className="flex items-center gap-1.5 hover:text-red-500 transition-colors"
-                >
-                  <svg
-                    className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-current' : ''}`}
-                    viewBox="0 0 24 24"
-                    fill={isLiked ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                  </svg>
-                  <span className={isLiked ? 'text-red-500' : ''}>{likesCount}</span>
-                </button>
-                <FloatingHearts trigger={showHeartAnimation} />
-              </div>
-              
-              {/* 댓글 */}
-              <div className="flex items-center gap-1.5">
-                <svg 
-                  className="w-4 h-4" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth={2}
-                >
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                </svg>
-                <span>{commentCount}</span>
-              </div>
-            </div>
-
             {/* Content header */}
             <div className="flex justify-between items-start mb-4">
-              <div className="flex-1 pr-32"> {/* 통계 정보를 위한 여백 추가 */}
+              <div className="flex-1">
                 <h1 className="text-2xl font-bold mb-3 text-gray-900">{prompt.title}</h1>
                 
                 {/* 작성자 정보 */}
@@ -691,80 +644,135 @@ const PromptDetailPage = () => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                {isAuthor && (
-                  <>
-                    <button
-                      onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
-                      className="px-3 py-2 text-sm bg-white text-orange-600 border border-orange-500 rounded-lg hover:bg-orange-50 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
-                      title="수정"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="px-3 py-2 text-sm bg-white text-red-600 border border-red-500 rounded-lg hover:bg-red-50 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
-                      title="삭제"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-                
-                {isAuthenticated && (
-                  <>
-                    <button
-                      onClick={handleBookmarkToggle}
-                      className={`w-10 h-10 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center
-                        ${isBookmarked 
-                          ? 'bg-orange-500 text-white border border-orange-500 hover:bg-orange-600' 
-                          : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:text-orange-500 hover:border-orange-500'
-                        }`}
-                      title={isBookmarked ? '북마크 해제' : '북마크'}
-                    >
-                      <svg className="w-5 h-5" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                      </svg>
-                    </button>
-                    
-                    {!isAuthor && (
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  {isAuthor && (
+                    <>
                       <button
-                        onClick={() => setShowReportModal(true)}
-                        className="w-10 h-10 bg-white text-gray-600 border border-gray-300 rounded-full hover:bg-gray-50 hover:text-red-600 hover:border-red-500 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center"
-                        title="신고하기"
+                        onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
+                        className="px-3 py-2 text-sm bg-white text-orange-600 border border-orange-500 rounded-lg hover:bg-orange-50 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
+                        title="수정"
                       >
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5l8.5 15h-17l8.5-15z" />
-                          <line x1="12" y1="10" x2="12" y2="13" strokeLinecap="round" />
-                          <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
-                    )}
-                    
-                    {isAdmin && !isAuthor && (
-                      <>
+                      <button
+                        onClick={handleDelete}
+                        className="px-3 py-2 text-sm bg-white text-red-600 border border-red-500 rounded-lg hover:bg-red-50 transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
+                        title="삭제"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                  
+                  {isAuthenticated && (
+                    <>
+                      <button
+                        onClick={handleBookmarkToggle}
+                        className={`w-10 h-10 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center
+                          ${isBookmarked 
+                            ? 'bg-orange-500 text-white border border-orange-500 hover:bg-orange-600' 
+                            : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:text-orange-500 hover:border-orange-500'
+                          }`}
+                        title={isBookmarked ? '북마크 해제' : '북마크'}
+                      >
+                        <svg className="w-5 h-5" fill={isBookmarked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                      </button>
+                      
+                      {!isAuthor && (
                         <button
-                          onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
-                          className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
-                          title="수정 (관리자)"
+                          onClick={() => setShowReportModal(true)}
+                          className="w-10 h-10 bg-white text-gray-600 border border-gray-300 rounded-full hover:bg-gray-50 hover:text-red-600 hover:border-red-500 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center"
+                          title="신고하기"
                         >
-                          수정
+                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5l8.5 15h-17l8.5-15z" />
+                            <line x1="12" y1="10" x2="12" y2="13" strokeLinecap="round" />
+                            <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+                          </svg>
                         </button>
-                        <button
-                          onClick={handleAdminDelete}
-                          className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
-                          title="삭제 (관리자)"
-                        >
-                          삭제
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
+                      )}
+                      
+                      {isAdmin && !isAuthor && (
+                        <>
+                          <button
+                            onClick={() => router.push(`/prompt/edit/${prompt.id}`)}
+                            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                            title="수정 (관리자)"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={handleAdminDelete}
+                            className="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                            title="삭제 (관리자)"
+                          >
+                            삭제
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                {/* 통계 정보 - 수정/삭제 버튼 하단 */}
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  {/* 조회수 */}
+                  <div className="flex items-center gap-1.5">
+                    <svg 
+                      className="w-4 h-4" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth={2}
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <span>{prompt.views || 0}</span>
+                  </div>
+                  
+                  {/* 좋아요 */}
+                  <div className="relative">
+                    <button
+                      onClick={handleLikeToggle}
+                      disabled={isLikeBusy}
+                      className="flex items-center gap-1.5 hover:text-red-500 transition-colors"
+                    >
+                      <svg
+                        className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-current' : ''}`}
+                        viewBox="0 0 24 24"
+                        fill={isLiked ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                      </svg>
+                      <span className={isLiked ? 'text-red-500' : ''}>{likesCount}</span>
+                    </button>
+                    <FloatingHearts trigger={showHeartAnimation} />
+                  </div>
+                  
+                  {/* 댓글 */}
+                  <div className="flex items-center gap-1.5">
+                    <svg 
+                      className="w-4 h-4" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth={2}
+                    >
+                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                    </svg>
+                    <span>{commentCount}</span>
+                  </div>
+                </div>
               </div>
             </div>
 

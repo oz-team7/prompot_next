@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
@@ -66,8 +66,17 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     { value: 'bookmarks', label: '북마크순', icon: '↓' },
   ];
   
-  const { prompts: apiPrompts, loading, error, refetch } = usePrompts({ 
-    sort: sortBy 
+  const { 
+    prompts: apiPrompts, 
+    loading, 
+    loadingMore,
+    error, 
+    refetch, 
+    loadMore,
+    hasMore 
+  } = usePrompts({ 
+    sort: sortBy,
+    limit: 20
   });
   
   // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
@@ -75,6 +84,10 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   const [prompts, setPrompts] = useState<Prompt[]>(promptsData);
   const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>(promptsData);
+  
+  // Infinite scroll을 위한 observer
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const categories: { value: CategoryType; label: string }[] = [
     { value: 'all', label: '전체' },
@@ -140,6 +153,37 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       setPrompts(initialPrompts);
     }
   }, [apiPrompts, initialPrompts, useAPI]);
+
+  // Intersection Observer 설정
+  useEffect(() => {
+    if (!useAPI) return; // API를 사용하지 않는 경우 무한 스크롤 비활성화
+
+    const handleObserver = (entries: IntersectionObserverEntry[]) => {
+      const [target] = entries;
+      if (target.isIntersecting && hasMore && !loadingMore && !loading) {
+        loadMore();
+      }
+    };
+
+    observerRef.current = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    });
+
+    const currentObserver = observerRef.current;
+    const currentLoadMoreRef = loadMoreRef.current;
+
+    if (currentLoadMoreRef) {
+      currentObserver.observe(currentLoadMoreRef);
+    }
+
+    return () => {
+      if (currentObserver && currentLoadMoreRef) {
+        currentObserver.unobserve(currentLoadMoreRef);
+      }
+    };
+  }, [hasMore, loadingMore, loading, loadMore, useAPI]);
 
 
   const handleLike = (id: number) => {
@@ -572,6 +616,19 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                 </button>
               )}
             </div>
+          )}
+
+          {/* 더 많은 프롬프트를 로드하는 중 표시 */}
+          {useAPI && loadingMore && (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-gray-600">더 많은 프롬프트를 불러오는 중...</p>
+            </div>
+          )}
+
+          {/* 무한 스크롤 트리거 */}
+          {useAPI && hasMore && !loading && (
+            <div ref={loadMoreRef} className="h-10" />
           )}
 
           {/* Bookmark Panel - 로그인한 사용자만 표시 */}
