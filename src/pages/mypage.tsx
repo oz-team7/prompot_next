@@ -1424,21 +1424,13 @@ const MyPage = () => {
                 
                 {/* 계정 관리 섹션 - 고객지원 탭 하단에 추가 */}
                 <div className="mt-8 pt-6 border-t">
-                  <div className="max-w-2xl">
-                    <div className="flex items-center justify-between p-4 bg-gray-100 border border-gray-300 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-700 mb-1">계정 관리</p>
-                        <p className="text-xs text-gray-600">
-                          계정을 삭제하면 개인 정보는 삭제되고 작성한 콘텐츠는 익명으로 유지됩니다.
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setShowDeleteAccountModal(true)}
-                        className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-                      >
-                        회원탈퇴
-                      </button>
-                    </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setShowDeleteAccountModal(true)}
+                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      회원탈퇴
+                    </button>
                   </div>
                 </div>
               </div>

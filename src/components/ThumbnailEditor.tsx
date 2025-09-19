@@ -16,10 +16,21 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // 이미지 URL이 외부 URL인지 확인
+  const getProxiedImageUrl = (url: string) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      // 외부 URL인 경우 프록시를 통해 로드
+      return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
 
   // 이미지 로드 시 초기 스케일 설정
   useEffect(() => {
     const img = new window.Image();
+    const proxiedUrl = getProxiedImageUrl(imageUrl);
+    
     img.onload = () => {
       setImageSize({ width: img.width, height: img.height });
       
@@ -41,7 +52,7 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
         setScale(initialScale);
       }
     };
-    img.src = imageUrl;
+    img.src = proxiedUrl;
   }, [imageUrl]);
 
   // 전역 마우스 이벤트를 위한 useEffect
@@ -104,6 +115,8 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
     
     // 이미지 로드 및 그리기
     const img = new window.Image();
+    const proxiedUrl = getProxiedImageUrl(imageUrl);
+    
     img.onload = () => {
       // 배경을 흰색으로 채우기
       ctx.fillStyle = '#ffffff';
@@ -133,7 +146,14 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
         reader.readAsDataURL(blob);
       }, 'image/jpeg', 0.9);
     };
-    img.src = imageUrl;
+    
+    // 에러 처리
+    img.onerror = () => {
+      console.error('Image loading failed.');
+      alert('이미지를 로드할 수 없습니다. 다시 시도해주세요.');
+    };
+    
+    img.src = proxiedUrl;
   };
 
   return (
@@ -157,7 +177,7 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
               {/* 이미지 */}
               <img
                 ref={imageRef}
-                src={imageUrl}
+                src={getProxiedImageUrl(imageUrl)}
                 alt="Thumbnail"
                 className="absolute"
                 draggable={false}

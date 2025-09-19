@@ -829,10 +829,10 @@ const CreatePromptPage = () => {
                               e.stopPropagation();
                               handleEditThumbnail(index);
                             }}
-                            className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1 left-1 w-7 h-7 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md z-10 transition-all"
                             title="썸네일 편집"
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
@@ -855,7 +855,20 @@ const CreatePromptPage = () => {
                     {/* 썸네일 미리보기 */}
                     {selectedThumbnailIndex !== null && uploadedImages[selectedThumbnailIndex] && (
                       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">썸네일 미리보기</h4>
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="text-sm font-medium text-gray-700">썸네일 미리보기</h4>
+                          <button
+                            type="button"
+                            onClick={() => handleEditThumbnail(selectedThumbnailIndex)}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-2 transition-colors shadow-md"
+                            title="썸네일 편집"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span className="text-sm font-medium">편집</span>
+                          </button>
+                        </div>
                         <div className="relative w-full max-w-md mx-auto aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden">
                           <Image
                             src={uploadedImages[selectedThumbnailIndex].editedUrl || uploadedImages[selectedThumbnailIndex].url}
