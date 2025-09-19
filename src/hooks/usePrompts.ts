@@ -2,14 +2,36 @@ import { useState, useEffect, useCallback } from 'react';
 import { Prompt } from '@/types/prompt';
 import { fetchWithLogging } from '@/lib/api-logger';
 
-export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
+interface UsePromptsOptions {
+  author?: boolean;
+  sort?: string;
+  page?: number;
+  limit?: number;
+}
+
+interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export const usePrompts = (options?: UsePromptsOptions) => {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
-  const fetchPrompts = useCallback(async () => {
+  const fetchPrompts = useCallback(async (append: boolean = false, page?: number) => {
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null); // 요청 시작 시 에러 상태 초기화
       
       // 쿼리 파라미터 구성
@@ -20,6 +42,12 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       if (options?.sort) {
         params.append('sort', options.sort);
       }
+      
+      // 페이지네이션 파라미터 추가
+      const currentPage = page || options?.page || 1;
+      const limit = options?.limit || 20;
+      params.append('page', currentPage.toString());
+      params.append('limit', limit.toString());
       
       const query = params.toString() ? `?${params.toString()}` : '';
       // console.log('[DEBUG] usePrompts fetching with query:', query);
@@ -90,7 +118,10 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       // console.log('[DEBUG] usePrompts response data:', data);
       
       // API 응답 구조 확인 및 처리
-      const promptsData = data.data?.prompts || data.prompts || [];
+      const responseData = data.data || data;
+      const promptsData = responseData.prompts || [];
+      const paginationData = responseData.pagination;
+      
       // console.log('[DEBUG] Extracted prompts data:', promptsData);
       
       if (!Array.isArray(promptsData)) {
@@ -110,7 +141,18 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       });
       
       // console.log('[DEBUG] Formatted prompts:', formattedPrompts);
-      setPrompts(formattedPrompts);
+      
+      // append가 true면 기존 프롬프트에 추가, false면 교체
+      if (append) {
+        setPrompts(prevPrompts => [...prevPrompts, ...formattedPrompts]);
+      } else {
+        setPrompts(formattedPrompts);
+      }
+      
+      // 페이지네이션 정보 설정
+      if (paginationData) {
+        setPagination(paginationData);
+      }
       
       // 대체 API 사용 시에만 사용자에게 알림 (메인 API 성공 시에는 알림 제거)
       if (data.warning && data.warning.includes('mock data')) {
@@ -137,8 +179,9 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
       }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [options?.sort, options?.author]);
+  }, [options?.sort, options?.author, options?.page, options?.limit]);
 
   useEffect(() => {
     fetchPrompts();
@@ -149,7 +192,22 @@ export const usePrompts = (options?: { author?: boolean; sort?: string }) => {
     fetchPrompts();
   }, [fetchPrompts]);
 
-  return { prompts, loading, error, refetch };
+  const loadMore = useCallback(() => {
+    if (pagination && pagination.hasNext && !loadingMore) {
+      fetchPrompts(true, pagination.page + 1);
+    }
+  }, [pagination, loadingMore, fetchPrompts]);
+
+  return { 
+    prompts, 
+    loading, 
+    loadingMore,
+    error, 
+    refetch, 
+    loadMore,
+    pagination,
+    hasMore: pagination?.hasNext || false
+  };
 };
 
 // AI 모델 매핑 함수들
