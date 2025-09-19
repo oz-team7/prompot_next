@@ -12,6 +12,7 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,6 +21,8 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
   useEffect(() => {
     const img = new window.Image();
     img.onload = () => {
+      setImageSize({ width: img.width, height: img.height });
+      
       if (containerRef.current) {
         const containerWidth = 400; // 고정 크기
         const containerHeight = 300; // 4:3 비율
@@ -27,20 +30,51 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
         const containerAspect = containerWidth / containerHeight;
         
         // 이미지가 컨테이너를 채우도록 초기 스케일 설정
+        let initialScale = 1;
         if (imgAspect > containerAspect) {
           // 이미지가 더 넓음 - 높이 기준으로 맞춤
-          setScale(containerHeight / img.height);
+          initialScale = containerHeight / img.height;
         } else {
           // 이미지가 더 높음 - 너비 기준으로 맞춤
-          setScale(containerWidth / img.width);
+          initialScale = containerWidth / img.width;
         }
+        setScale(initialScale);
       }
     };
     img.src = imageUrl;
   }, [imageUrl]);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // 전역 마우스 이벤트를 위한 useEffect
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+      }
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, dragStart]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -48,23 +82,12 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    
-    const newX = e.clientX - dragStart.x;
-    const newY = e.clientY - dragStart.y;
-    
-    setPosition({ x: newX, y: newY });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const delta = e.deltaY * -0.001;
-    const newScale = Math.min(Math.max(0.5, scale + delta), 3);
+    e.stopPropagation();
+    
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.min(Math.max(0.5, scale * delta), 3);
     setScale(newScale);
   };
 
@@ -123,34 +146,28 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
           <div className="mb-4">
             <div 
               ref={containerRef}
-              className="relative w-full mx-auto bg-gray-100 rounded-lg overflow-hidden cursor-move"
-              style={{ height: '300px', maxWidth: '400px' }}
+              className="relative w-full mx-auto bg-gray-100 rounded-lg overflow-hidden"
+              style={{ height: '300px', maxWidth: '400px', cursor: isDragging ? 'grabbing' : 'grab' }}
               onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
               onWheel={handleWheel}
             >
               {/* 편집 가이드라인 */}
               <div className="absolute inset-0 border-2 border-dashed border-gray-400 pointer-events-none z-10" />
               
               {/* 이미지 */}
-              <div 
+              <img
+                ref={imageRef}
+                src={imageUrl}
+                alt="Thumbnail"
                 className="absolute"
+                draggable={false}
                 style={{
                   transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                  transformOrigin: 'top left',
+                  transformOrigin: '0 0',
+                  maxWidth: 'none',
                   transition: isDragging ? 'none' : 'transform 0.1s ease-out'
                 }}
-              >
-                <img
-                  ref={imageRef}
-                  src={imageUrl}
-                  alt="Thumbnail"
-                  className="max-w-none"
-                  draggable={false}
-                />
-              </div>
+              />
             </div>
           </div>
           
