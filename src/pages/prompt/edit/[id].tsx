@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import Toast from '@/components/Toast';
+import ThumbnailEditor from '@/components/ThumbnailEditor';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 
 type CategoryType = 'work' | 'dev' | 'design' | 'edu' | 'image';
@@ -45,6 +46,10 @@ const EditPromptPage = () => {
   // 드롭다운 상태 추가
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showAIModelDropdown, setShowAIModelDropdown] = useState(false);
+  
+  // 썸네일 편집 상태
+  const [showThumbnailEditor, setShowThumbnailEditor] = useState(false);
+  const [editedThumbnail, setEditedThumbnail] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -305,9 +310,53 @@ const EditPromptPage = () => {
     setAdditionalPreviewUrls(prev => {
       const newUrls = prev.filter((_, i) => i !== index);
       // URL 해제
-      URL.revokeObjectURL(prev[index]);
+      if (prev[index].startsWith('blob:')) {
+        URL.revokeObjectURL(prev[index]);
+      }
       return newUrls;
     });
+  };
+
+  // 썸네일 편집 핸들러
+  const handleEditThumbnail = () => {
+    setShowThumbnailEditor(true);
+  };
+
+  const handleSaveThumbnail = async (editedImageUrl: string) => {
+    try {
+      // 편집된 이미지를 서버에 업로드
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageData: editedImageUrl,
+          fileName: 'edited-thumbnail.jpg',
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        // 편집된 이미지 URL 저장
+        setEditedThumbnail(result.imageUrl);
+        setToastMessage('썸네일이 편집되었습니다.');
+        setToastType('success');
+        setShowToast(true);
+      } else {
+        throw new Error(result.message || '썸네일 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Thumbnail save error:', error);
+      setToastMessage('썸네일 저장 중 오류가 발생했습니다.');
+      setToastType('error');
+      setShowToast(true);
+    } finally {
+      setShowThumbnailEditor(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -337,11 +386,12 @@ const EditPromptPage = () => {
     try {
       console.log('Sending update request for prompt:', id);
       
-      let previewImageUrl = previewImage;
+      // 편집된 썸네일이 있으면 그것을 사용, 없으면 기존 이미지 사용
+      let previewImageUrl = editedThumbnail || previewImage;
       const additionalImageUrls: string[] = [];
       
       // 미리보기 이미지 업로드 (새로 업로드된 경우)
-      if (previewImage && previewImage.startsWith('data:')) {
+      if (previewImageUrl && previewImageUrl.startsWith('data:') && !editedThumbnail) {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) {
           throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
@@ -555,14 +605,22 @@ const EditPromptPage = () => {
                         <div className="space-y-2">
                           <div className="relative w-32 h-32 mx-auto">
                             <Image
-                              src={previewImage}
+                              src={editedThumbnail || previewImage}
                               alt="미리보기"
                               fill
                               className="object-cover rounded-lg"
                             />
+                            {editedThumbnail && (
+                              <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1 rounded">
+                                편집됨
+                              </div>
+                            )}
                             <button
                               type="button"
-                              onClick={() => setPreviewImage(null)}
+                              onClick={() => {
+                                setPreviewImage(null);
+                                setEditedThumbnail(null);
+                              }}
                               className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -571,6 +629,13 @@ const EditPromptPage = () => {
                             </button>
                           </div>
                           <p className="text-sm text-gray-600">클릭하여 이미지 변경</p>
+                          <button
+                            type="button"
+                            onClick={handleEditThumbnail}
+                            className="text-xs text-blue-500 hover:text-blue-700"
+                          >
+                            썸네일 편집
+                          </button>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -958,6 +1023,15 @@ const EditPromptPage = () => {
           message={toastMessage}
           type={toastType}
           onClose={() => setShowToast(false)}
+        />
+      )}
+      
+      {/* 썸네일 편집기 */}
+      {showThumbnailEditor && previewImage && (
+        <ThumbnailEditor
+          imageUrl={previewImage}
+          onSave={handleSaveThumbnail}
+          onCancel={() => setShowThumbnailEditor(false)}
         />
       )}
     </>
