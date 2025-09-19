@@ -673,10 +673,10 @@ const PromptDetailPage = () => {
                     <>
                       <button
                         onClick={handleBookmarkToggle}
-                        className={`w-10 h-10 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center
+                        className={`w-10 h-10 rounded-full transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center
                           ${isBookmarked 
-                            ? 'bg-orange-500 text-white border border-orange-500 hover:bg-orange-600' 
-                            : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:text-orange-500 hover:border-orange-500'
+                            ? 'bg-orange-500 text-white hover:bg-orange-600' 
+                            : 'bg-gray-100 text-gray-500 hover:bg-orange-100 hover:text-orange-500'
                           }`}
                         title={isBookmarked ? '북마크 해제' : '북마크'}
                       >
@@ -688,7 +688,7 @@ const PromptDetailPage = () => {
                       {!isAuthor && (
                         <button
                           onClick={() => setShowReportModal(true)}
-                          className="w-10 h-10 bg-white text-gray-600 border border-gray-300 rounded-full hover:bg-gray-50 hover:text-red-600 hover:border-red-500 transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center"
+                          className="w-10 h-10 bg-gray-100 text-gray-500 rounded-full hover:bg-red-100 hover:text-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center"
                           title="신고하기"
                         >
                           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
