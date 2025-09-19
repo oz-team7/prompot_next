@@ -1269,7 +1269,7 @@ const EditPromptPage = () => {
           onCancel={() => setShowThumbnailEditor(false)}
         />
       )}
-    </>
+    </div>
   );
 };
 
