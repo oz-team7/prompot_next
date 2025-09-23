@@ -266,16 +266,42 @@ const EditPromptPage = () => {
       isProcessingTag.current = true;
       
       setFormData(prev => ({ ...prev, tags: [...prev.tags, inputValue] }));
-      setTagInputValue('');
-      if (tagInputRef.current) {
-        tagInputRef.current.value = '';
-      }
+      
+      // 다단계 입력 필드 초기화
+      clearInputField();
       
       // 처리 완료 후 플래그 해제
       setTimeout(() => {
         isProcessingTag.current = false;
-      }, 100);
+      }, 150);
     }
+  };
+
+  const clearInputField = () => {
+    // 1단계: React 상태 초기화
+    setTagInputValue('');
+    
+    // 2단계: DOM 직접 조작으로 즉시 초기화
+    if (tagInputRef.current) {
+      tagInputRef.current.value = '';
+      tagInputRef.current.focus();
+    }
+    
+    // 3단계: 다음 렌더링 사이클에서 재확인
+    setTimeout(() => {
+      if (tagInputRef.current && tagInputRef.current.value !== '') {
+        tagInputRef.current.value = '';
+        setTagInputValue('');
+      }
+    }, 0);
+    
+    // 4단계: 추가 안전장치
+    setTimeout(() => {
+      if (tagInputRef.current && tagInputRef.current.value !== '') {
+        tagInputRef.current.value = '';
+        setTagInputValue('');
+      }
+    }, 50);
   };
 
   const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -291,6 +317,30 @@ const EditPromptPage = () => {
   const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTagInputValue(e.target.value);
   };
+
+  const handleTagInputInput = (e: React.FormEvent<HTMLInputElement>) => {
+    // onInput 이벤트로 실시간 동기화
+    const value = (e.target as HTMLInputElement).value;
+    setTagInputValue(value);
+  };
+
+  const handleTagInputBlur = () => {
+    // 포커스를 잃을 때 남은 텍스트가 있으면 태그로 추가
+    const currentValue = tagInputRef.current?.value?.trim();
+    if (currentValue && !formData.tags.includes(currentValue) && formData.tags.length < 5) {
+      addTagFromInput(currentValue);
+    } else {
+      // 태그로 추가할 수 없으면 강제 초기화
+      clearInputField();
+    }
+  };
+
+  // 태그 입력값과 DOM 동기화
+  useEffect(() => {
+    if (tagInputRef.current && tagInputRef.current.value !== tagInputValue) {
+      tagInputRef.current.value = tagInputValue;
+    }
+  }, [tagInputValue]);
 
   const removeTag = (tagToRemove: string) => {
     const updatedTags = formData.tags.filter(tag => tag !== tagToRemove);
@@ -1354,7 +1404,9 @@ const EditPromptPage = () => {
                   id="tags"
                   value={tagInputValue}
                   onChange={handleTagInputChange}
+                  onInput={handleTagInputInput}
                   onKeyDown={handleTagInputKeyDown}
+                  onBlur={handleTagInputBlur}
                   placeholder="태그를 입력하고 Enter를 누르세요. 최대 5개의 태그를 추가할 수 있습니다. (예: AI, 생산성, 팁)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
