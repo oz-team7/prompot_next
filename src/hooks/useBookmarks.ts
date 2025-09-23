@@ -93,13 +93,34 @@ export const useBookmarks = () => {
         return;
       }
 
+      // 서버 연결 상태 확인
+      try {
+        const healthCheck = await fetch('/api/test-basic', {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000) // 5초 타임아웃
+        });
+        
+        if (!healthCheck.ok) {
+          throw new Error('서버가 응답하지 않습니다.');
+        }
+      } catch (healthError) {
+        console.warn('[HEALTH] Server health check failed:', healthError);
+        // 서버가 응답하지 않아도 계속 진행 (캐시된 데이터 사용)
+      }
+
       // console.log('[DEBUG] Fetching bookmarks from API...');
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
       
       const res = await fetch('/api/bookmarks', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       // console.log('[DEBUG] Bookmarks API response status:', res.status);
 
@@ -141,9 +162,12 @@ export const useBookmarks = () => {
         setError('네트워크 연결을 확인해주세요. 서버가 실행 중인지 확인해주세요.');
       } else if (err instanceof Error) {
         // "Failed to fetch" 오류 처리
-        if (err.message.includes('Failed to fetch')) {
+        if (err.message.includes('Failed to fetch') || err.message.includes('fetch')) {
           // fetch 실패
           setError('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+        } else if (err.name === 'AbortError') {
+          // 타임아웃 오류
+          setError('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
         } else {
           setError(err.message);
         }
@@ -215,6 +239,9 @@ export const useBookmarks = () => {
 
       // API 호출
       // console.log('[DEBUG] Adding bookmark via API...');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+      
       const res = await fetch('/api/bookmarks', {
         method: 'POST',
         headers: {
@@ -222,7 +249,10 @@ export const useBookmarks = () => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ promptId, categoryId }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       // console.log('[DEBUG] Add bookmark API response status:', res.status);
       
@@ -292,9 +322,12 @@ export const useBookmarks = () => {
         // 북마크 추가 중 네트워크 오류
         throw new Error('네트워크 연결을 확인해주세요.');
       } else if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch')) {
+        if (err.message.includes('Failed to fetch') || err.message.includes('fetch')) {
           // 북마크 추가 중 fetch 실패
           throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+        } else if (err.name === 'AbortError') {
+          // 타임아웃 오류
+          throw new Error('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
         }
         throw err;
       } else {
@@ -340,12 +373,18 @@ export const useBookmarks = () => {
 
       // API 호출
       // console.log('[DEBUG] Removing bookmark via API...');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+      
       const res = await fetch(`/api/bookmarks?promptId=${promptId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       // console.log('[DEBUG] Remove bookmark API response status:', res.status);
 
@@ -390,9 +429,12 @@ export const useBookmarks = () => {
         // 북마크 제거 중 네트워크 오류
         throw new Error('네트워크 연결을 확인해주세요.');
       } else if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch')) {
-          // 북마크 제거 중 fetch 실팔
+        if (err.message.includes('Failed to fetch') || err.message.includes('fetch')) {
+          // 북마크 제거 중 fetch 실패
           throw new Error('서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.');
+        } else if (err.name === 'AbortError') {
+          // 타임아웃 오류
+          throw new Error('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
         }
         throw err;
       } else {
@@ -471,6 +513,7 @@ export const useBookmarks = () => {
       } catch (err) {
         console.error('[SYNC] Error during focus refresh:', err);
         // 에러가 발생해도 앱이 멈추지 않도록 처리
+        // 사용자에게는 조용히 실패 (백그라운드 동기화이므로)
       }
     };
 

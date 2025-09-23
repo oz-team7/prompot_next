@@ -255,14 +255,26 @@ const EditPromptPage = () => {
   };
 
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const [tagInputValue, setTagInputValue] = useState('');
+  const isProcessingTag = useRef(false);
 
-  const addTagFromInput = () => {
-    if (!tagInputRef.current) return;
+  const addTagFromInput = (value?: string) => {
+    if (isProcessingTag.current) return; // 중복 처리 방지
     
-    const inputValue = tagInputRef.current.value.trim();
+    const inputValue = (value || tagInputRef.current?.value || '').trim();
     if (inputValue && !formData.tags.includes(inputValue) && formData.tags.length < 5) {
+      isProcessingTag.current = true;
+      
       setFormData(prev => ({ ...prev, tags: [...prev.tags, inputValue] }));
-      tagInputRef.current.value = '';
+      setTagInputValue('');
+      if (tagInputRef.current) {
+        tagInputRef.current.value = '';
+      }
+      
+      // 처리 완료 후 플래그 해제
+      setTimeout(() => {
+        isProcessingTag.current = false;
+      }, 100);
     }
   };
 
@@ -270,8 +282,14 @@ const EditPromptPage = () => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       e.stopPropagation();
-      addTagFromInput();
+      // 현재 입력값을 직접 사용하여 즉시 처리
+      const currentValue = e.currentTarget.value.trim();
+      addTagFromInput(currentValue);
     }
+  };
+
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTagInputValue(e.target.value);
   };
 
   const removeTag = (tagToRemove: string) => {
@@ -1334,6 +1352,8 @@ const EditPromptPage = () => {
                   ref={tagInputRef}
                   type="text"
                   id="tags"
+                  value={tagInputValue}
+                  onChange={handleTagInputChange}
                   onKeyDown={handleTagInputKeyDown}
                   placeholder="태그를 입력하고 Enter를 누르세요. 최대 5개의 태그를 추가할 수 있습니다. (예: AI, 생산성, 팁)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"

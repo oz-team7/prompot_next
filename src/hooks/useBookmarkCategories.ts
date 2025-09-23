@@ -59,7 +59,9 @@ export const useBookmarkCategories = () => {
       if (data && Array.isArray(data.categories)) {
         setCategories(data.categories);
         cache.current = { data: data.categories, timestamp: now };
-        console.log('[DEBUG] Categories fetched and cached:', data.categories.length);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[DEBUG] Categories fetched and cached:', data.categories.length);
+        }
       } else {
         console.warn('[DEBUG] Invalid categories data:', data);
         setCategories([]);

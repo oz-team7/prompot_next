@@ -17,6 +17,7 @@ const ForgotPasswordPage = () => {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isSuccess, setIsSuccess] = useState(false);
   const [tempPassword, setTempPassword] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // 필드별 유효성 검사 상태
   const [fieldErrors, setFieldErrors] = useState({
@@ -136,6 +137,25 @@ const ForgotPasswordPage = () => {
     router.push('/login');
   };
 
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(tempPassword);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000); // 2초 후 복사 성공 상태 해제
+    } catch (err) {
+      console.error('복사 실패:', err);
+      // 폴백: 텍스트 선택 방식
+      const textArea = document.createElement('textarea');
+      textArea.value = tempPassword;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
   if (isSuccess) {
     return (
       <>
@@ -162,9 +182,29 @@ const ForgotPasswordPage = () => {
 
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                 <h3 className="font-semibold text-orange-800 mb-2">임시 비밀번호</h3>
-                <div className="bg-white border border-orange-300 rounded p-3 mb-3">
-                  <code className="text-lg font-mono text-gray-800 break-all">{tempPassword}</code>
+                <div className="bg-white border border-orange-300 rounded p-3 mb-3 flex items-center justify-between">
+                  <code className="text-lg font-mono text-gray-800 break-all flex-1">{tempPassword}</code>
+                  <button
+                    onClick={copyToClipboard}
+                    className="ml-3 p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                    title="복사하기"
+                  >
+                    {copySuccess ? (
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
+                {copySuccess && (
+                  <p className="text-sm text-green-600 mb-2">
+                    ✅ 클립보드에 복사되었습니다!
+                  </p>
+                )}
                 <p className="text-sm text-orange-700">
                   ⚠️ 보안을 위해 로그인 후 반드시 비밀번호를 변경해주세요.
                 </p>
