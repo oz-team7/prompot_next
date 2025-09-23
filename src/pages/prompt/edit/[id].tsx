@@ -457,6 +457,7 @@ const EditPromptPage = () => {
         body: JSON.stringify({
           imageData: editedImageUrl,
           fileName: 'edited-thumbnail.jpg',
+          resultType: formData.resultType,
         }),
       });
 

@@ -102,7 +102,7 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
   ctx.lineWidth = 2;
   ctx.strokeRect(1, 1, width - 2, height - 2);
   
-  // Prompot 로고 워터마크 (우측 상단)
+  // Prompot 아트워크 (우측 상단)
   ctx.fillStyle = '#FB923C'; // orange-400
   ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'right';

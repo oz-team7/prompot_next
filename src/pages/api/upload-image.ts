@@ -76,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const { imageData, fileName, folder = 'prompts' } = req.body;
+    const { imageData, fileName, folder = 'prompts', resultType } = req.body;
 
     if (!imageData) {
       return res.status(400).json({ 
@@ -118,47 +118,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // 동적으로 sharp 임포트 (Vercel 환경 대응)
       const sharp = (await import('sharp')).default;
       
-      // 이미지에 워터마크 추가
-      const watermarkText = 'Prompot';
-      processedImage = await sharp(imageBuffer)
-        .metadata()
-        .then(async (metadata) => {
-          const width = metadata.width || 800;
-          const height = metadata.height || 600;
-          
-          // 워터마크 SVG 생성 (우측 하단)
-          const fontSize = Math.max(16, Math.min(24, width / 40)); // 이미지 크기에 따른 폰트 크기
-          const padding = Math.max(10, width / 100); // 이미지 크기에 따른 패딩
-          
-          const watermarkSVG = Buffer.from(`
-            <svg width="${width}" height="${height}">
-              <text 
-                x="${width - padding}" 
-                y="${height - padding}" 
-                text-anchor="end" 
-                font-family="Arial, sans-serif" 
-                font-size="${fontSize}" 
-                font-weight="bold"
-                fill="white" 
-                stroke="black" 
-                stroke-width="1"
-                opacity="0.8"
-              >
-                ${watermarkText}
-              </text>
-            </svg>
-          `);
+      // 텍스트 유형이 아닌 경우에만 워터마크 추가
+      if (resultType !== 'text') {
+        const watermarkText = 'Prompot';
+        processedImage = await sharp(imageBuffer)
+          .metadata()
+          .then(async (metadata) => {
+            const width = metadata.width || 800;
+            const height = metadata.height || 600;
+            
+            // 워터마크 SVG 생성 (우측 하단)
+            const fontSize = Math.max(16, Math.min(24, width / 40)); // 이미지 크기에 따른 폰트 크기
+            const padding = Math.max(10, width / 100); // 이미지 크기에 따른 패딩
+            
+            const watermarkSVG = Buffer.from(`
+              <svg width="${width}" height="${height}">
+                <text 
+                  x="${width - padding}" 
+                  y="${height - padding}" 
+                  text-anchor="end" 
+                  font-family="Arial, sans-serif" 
+                  font-size="${fontSize}" 
+                  font-weight="bold"
+                  fill="white" 
+                  stroke="black" 
+                  stroke-width="1"
+                  opacity="0.8"
+                >
+                  ${watermarkText}
+                </text>
+              </svg>
+            `);
 
-          return sharp(imageBuffer)
-            .composite([
-              {
-                input: watermarkSVG,
-                top: 0,
-                left: 0,
-              },
-            ])
-            .toBuffer();
-        });
+            return sharp(imageBuffer)
+              .composite([
+                {
+                  input: watermarkSVG,
+                  top: 0,
+                  left: 0,
+                },
+              ])
+              .toBuffer();
+          });
+      } else {
+        // 텍스트 유형인 경우 워터마크 없이 처리
+        processedImage = imageBuffer;
+      }
     } catch (sharpError: any) {
       console.error('Sharp 처리 중 에러:', sharpError);
       console.error('Sharp 에러 상세:', sharpError.stack);

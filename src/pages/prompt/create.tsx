@@ -199,6 +199,7 @@ const CreatePromptPage = () => {
             body: JSON.stringify({
               imageData: imageData,
               fileName: file.name,
+              resultType: formData.resultType,
             }),
           });
 
@@ -480,6 +481,7 @@ const CreatePromptPage = () => {
             body: JSON.stringify({
               imageData: textImageData,
               fileName: 'text-result.png',
+              resultType: formData.resultType,
             }),
           });
 

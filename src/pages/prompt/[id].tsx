@@ -15,6 +15,7 @@ import ImageModal from '@/components/ImageModal';
 import FloatingHearts from '@/components/FloatingHearts';
 import { mutate as swrMutate } from 'swr';
 import { getVideoTitle, getVideoThumbnail, getFallbackThumbnail } from '@/utils/videoUtils';
+import { createTextImage } from '@/utils/textToImage';
 
 // 추가 이미지 컴포넌트
 const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: string; index: number; onImageClick: (imageUrl: string, alt: string) => void }) => {
@@ -378,6 +379,7 @@ const PromptDetailPage = () => {
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [isTextResultExpanded, setIsTextResultExpanded] = useState(false);
+  const [textImageUrl, setTextImageUrl] = useState<string>('');
   
   // useLike 훅 사용
   const { isLiked, likesCount, toggle: toggleLike, isBusy: isLikeBusy } = useLike(promptId || '');
@@ -463,6 +465,23 @@ const PromptDetailPage = () => {
       incrementViews();
     }
   }, [promptId, fetchPrompt, incrementViews]);
+
+  // 텍스트 결과를 이미지로 변환
+  useEffect(() => {
+    if (prompt?.resultType === 'text' && prompt?.textResult) {
+      const generateTextImage = async () => {
+        try {
+          const imageUrl = await createTextImage(prompt.textResult);
+          setTextImageUrl(imageUrl);
+        } catch (error) {
+          console.error('텍스트 이미지 생성 오류:', error);
+        }
+      };
+      generateTextImage();
+    } else {
+      setTextImageUrl('');
+    }
+  }, [prompt?.textResult, prompt?.resultType]);
 
 
   if (loading) {
@@ -1082,7 +1101,6 @@ const PromptDetailPage = () => {
                           </div>
                         )}
                       </div>
-                      
                     </div>
                   </div>
                 )}
