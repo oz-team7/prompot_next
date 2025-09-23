@@ -151,7 +151,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <div className="absolute left-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-colors font-medium text-xs"
+            className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-colors font-medium text-xs whitespace-nowrap"
             aria-expanded={isExpanded}
           >
             <span className="text-xs">🔥</span>
@@ -169,7 +169,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           {/* 롤링 뉴스 영역 */}
           {!isExpanded && currentPrompt && (
             <div className="flex items-center overflow-hidden">
-              <div className="relative h-6 overflow-hidden w-[300px]">
+              <div className="relative h-6 overflow-hidden w-[600px]">
                 <div className="absolute inset-0 flex flex-col">
                   {trendingPrompts.map((prompt, index) => (
                     <div 
@@ -192,7 +192,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                         <span className="text-orange-500 font-bold text-xs">
                           {index + 1}위
                         </span>
-                        <span className="text-gray-700 truncate max-w-[200px]">
+                        <span className="text-gray-700 whitespace-nowrap">
                           {prompt.title}
                         </span>
                         <span className="text-gray-400 text-xs">
