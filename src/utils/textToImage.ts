@@ -8,46 +8,81 @@ export const createTextImage = async (text: string, maxLines: number = 10): Prom
 
   // 캔버스 설정
   const width = 800;
-  const paddingHorizontal = 60; // 좌우 패딩 (40 -> 60으로 증가)
-  const paddingTop = 50; // 상단 패딩 (40 -> 50으로 증가)
-  const paddingBottom = 50; // 하단 패딩 (40 -> 50으로 증가)
-  const lineHeight = 28; // 줄 간격
-  const fontSize = 18; // 폰트 크기
+  const paddingHorizontal = 60;
+  const paddingTop = 50;
+  const paddingBottom = 50;
+  const lineHeight = 28;
+  const fontSize = 18;
   
   // 폰트 설정
   ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
   
-  // 텍스트를 줄 단위로 분할
-  const words = text.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-  
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const metrics = ctx.measureText(testLine);
+  // 텍스트를 줄 단위로 분할하는 함수
+  const splitTextIntoLines = (text: string, maxWidth: number): string[] => {
+    const lines: string[] = [];
     
-    if (metrics.width > width - (paddingHorizontal * 2)) {
-      if (currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        // 단어가 너무 길면 강제로 자르기
-        lines.push(word);
-        currentLine = '';
+    // 모든 줄바꿈 문자를 \n으로 정규화
+    const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
+    // 줄바꿈으로 분할
+    const paragraphs = normalizedText.split('\n');
+    
+    for (const paragraph of paragraphs) {
+      if (lines.length >= maxLines) break;
+      
+      // 빈 문단인 경우 빈 줄 추가
+      if (paragraph.trim() === '') {
+        lines.push('');
+        continue;
       }
-    } else {
-      currentLine = testLine;
+      
+      // 문단을 단어 단위로 분할
+      const words = paragraph.split(/\s+/).filter(word => word.length > 0);
+      let currentLine = '';
+      
+      for (const word of words) {
+        if (lines.length >= maxLines) break;
+        
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const metrics = ctx.measureText(testLine);
+        
+        if (metrics.width > maxWidth) {
+          if (currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            // 단어가 너무 길면 강제로 자르기
+            let truncatedWord = word;
+            while (ctx.measureText(truncatedWord).width > maxWidth && truncatedWord.length > 1) {
+              truncatedWord = truncatedWord.slice(0, -1);
+            }
+            lines.push(truncatedWord);
+            currentLine = '';
+          }
+        } else {
+          currentLine = testLine;
+        }
+      }
+      
+      // 현재 줄이 남아있으면 추가
+      if (currentLine && lines.length < maxLines) {
+        lines.push(currentLine);
+      }
     }
     
-    // 최대 줄 수 제한
-    if (lines.length >= maxLines - 1 && currentLine) {
-      lines.push(currentLine + '...');
-      break;
-    }
-  }
+    return lines;
+  };
   
-  if (currentLine && lines.length < maxLines) {
-    lines.push(currentLine);
+  // 텍스트를 줄 단위로 분할
+  const maxTextWidth = width - (paddingHorizontal * 2);
+  const lines = splitTextIntoLines(text, maxTextWidth);
+  
+  // 최대 줄 수 제한 적용
+  if (lines.length > maxLines) {
+    lines.splice(maxLines);
+    if (lines.length > 0) {
+      lines[lines.length - 1] = lines[lines.length - 1] + '...';
+    }
   }
   
   // 캔버스 크기 설정

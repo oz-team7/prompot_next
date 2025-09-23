@@ -92,6 +92,9 @@ const CreatePromptPage = () => {
   // 썸네일 편집 상태
   const [showThumbnailEditor, setShowThumbnailEditor] = useState(false);
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
+  
+  // 텍스트 결과 펼쳐보기 상태
+  const [isTextResultExpanded, setIsTextResultExpanded] = useState(false);
 
   // 텍스트 결과를 이미지로 변환
   useEffect(() => {
@@ -943,14 +946,39 @@ const CreatePromptPage = () => {
                   <h3 className="text-lg font-semibold mb-3 text-gray-900">
                     프롬프트 결과
                   </h3>
-                  <textarea
-                    id="textResult"
-                    value={formData.textResult}
-                    onChange={(e) => handleInputChange('textResult', e.target.value)}
-                    placeholder="AI가 생성한 프롬프트 결과를 입력하세요. 결과 값이 미리보기로 보여집니다."
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <textarea
+                      id="textResult"
+                      value={formData.textResult}
+                      onChange={(e) => handleInputChange('textResult', e.target.value)}
+                      placeholder="AI가 생성한 프롬프트 결과를 입력하세요. 결과 값이 미리보기로 보여집니다."
+                      rows={isTextResultExpanded ? 12 : 6}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    />
+                    
+                    {/* 펼쳐보기/접어보기 버튼 */}
+                    {formData.textResult && formData.textResult.length > 200 && (
+                      <div className="absolute bottom-2 right-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsTextResultExpanded(!isTextResultExpanded)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs text-orange-500 hover:text-orange-700 bg-white border border-orange-200 rounded hover:bg-orange-50 transition-colors"
+                        >
+                          <span>{isTextResultExpanded ? '접기' : '펼치기'}</span>
+                          <svg 
+                            className={`w-3 h-3 transition-transform duration-200 ${
+                              isTextResultExpanded ? 'rotate-180' : ''
+                            }`} 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   
                   {/* 텍스트 이미지 미리보기 */}
                   {formData.textResult && textImageUrl && (

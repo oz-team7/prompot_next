@@ -1,0 +1,640 @@
+
+> prompot@1.0.0 dev
+> next dev -p 3000
+
+   ▲ Next.js 15.5.3
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.219.104:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ optimizeCss
+     · optimizePackageImports
+
+ ✓ Starting...
+ ⚠ Duplicate page detected. src/pages/api/admin/reports.ts and src/pages/api/admin/reports/index.ts resolve to /api/admin/reports
+ ⚠ Duplicate page detected. src/pages/api/admin/reports.ts and src/pages/api/admin/reports/index.ts resolve to /api/admin/reports
+ ✓ Ready in 1143ms
+ ✓ Compiled /middleware in 87ms (111 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 926ms (357 modules)
+ ✓ Compiled in 97ms (357 modules)
+Time 3.965792
+ GET /login 200 in 1345ms
+[API Request] POST /api/auth/login {
+  requestId: 'aaa142dd-ecad-4d22-95b0-cd57557a534f',
+  timestamp: '2025-09-23T03:12:58.754Z',
+  method: 'POST',
+  path: '/api/auth/login',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ ✓ Compiled /api/auth/login in 155ms (201 modules)
+ POST /api/auth/login 401 in 609ms
+[API Request] POST /api/auth/login {
+  requestId: 'bf510b1a-d17c-4c96-a1a8-49b5207c8097',
+  timestamp: '2025-09-23T03:13:04.167Z',
+  method: 'POST',
+  path: '/api/auth/login',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ POST /api/auth/login 401 in 248ms
+ ✓ Compiled / in 383ms (466 modules)
+Time 3.139708
+ GET /_next/data/development/index.json?reset=true 200 in 707ms
+[API Request] GET /api/prompts/trending {
+  requestId: '08b4ab23-5531-477e-9c45-f86991f2e34b',
+  timestamp: '2025-09-23T03:13:09.649Z',
+  method: 'GET',
+  path: '/api/prompts/trending',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts {
+  requestId: '06488995-1122-42b0-9f40-9fb67c1b876f',
+  timestamp: '2025-09-23T03:13:09.651Z',
+  method: 'GET',
+  path: '/api/prompts',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ ✓ Compiled /api/prompts in 44ms (237 modules)
+ ✓ Compiled (241 modules)
+[DEBUG] API /api/prompts called with query: { sort: 'latest', page: '1', limit: '20' }
+[DEBUG] Environment check:
+- NODE_ENV: development
+- NEXT_PUBLIC_SUPABASE_URL exists: true
+- SUPABASE_SERVICE_ROLE_KEY exists: true
+Development mode: No token, returning current user
+[DEBUG] Authenticated user ID: 7b03565d-b472-477c-9321-75bb442ae60e
+[DEBUG] Supabase client created successfully
+[DEBUG] Retrieved prompts count: 20
+ GET /api/prompts/trending 200 in 275ms
+[API Request] GET /api/prompts/trending {
+  requestId: '95a51d58-6986-4ac1-9bfd-5b8ba57f3dca',
+  timestamp: '2025-09-23T03:13:09.937Z',
+  method: 'GET',
+  path: '/api/prompts/trending',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts?sort=latest&page=1&limit=20 200 in 297ms
+[API Request] GET /api/prompts {
+  requestId: 'f87d0f63-afb5-424c-abc3-18cf7c82b95d',
+  timestamp: '2025-09-23T03:13:09.955Z',
+  method: 'GET',
+  path: '/api/prompts',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] POST /api/log-api-call {
+  requestId: '7024a14d-0bcd-466d-a257-d3e7523ae4eb',
+  timestamp: '2025-09-23T03:13:09.956Z',
+  method: 'POST',
+  path: '/api/log-api-call',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[DEBUG] API /api/prompts called with query: { sort: 'latest', page: '1', limit: '20' }
+[DEBUG] Environment check:
+- NODE_ENV: development
+- NEXT_PUBLIC_SUPABASE_URL exists: true
+- SUPABASE_SERVICE_ROLE_KEY exists: true
+Development mode: No token, returning current user
+[DEBUG] Authenticated user ID: 7b03565d-b472-477c-9321-75bb442ae60e
+[DEBUG] Supabase client created successfully
+[API Request] GET /api/prompts {
+  requestId: 'b32d7613-89a4-40c1-a70c-e222cd5339b9',
+  timestamp: '2025-09-23T03:13:09.968Z',
+  method: 'GET',
+  path: '/api/prompts',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ ✓ Compiled /api/log-api-call in 27ms (243 modules)
+[DEBUG] API /api/prompts called with query: { sort: 'latest', page: '2', limit: '20' }
+[DEBUG] Environment check:
+- NODE_ENV: development
+- NEXT_PUBLIC_SUPABASE_URL exists: true
+- SUPABASE_SERVICE_ROLE_KEY exists: true
+Development mode: No token, returning current user
+[DEBUG] Authenticated user ID: 7b03565d-b472-477c-9321-75bb442ae60e
+[DEBUG] Supabase client created successfully
+ GET /api/prompts/trending 200 in 93ms
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/likes {
+  requestId: 'f76dd9e2-24dc-48ea-9049-126eeca073b9',
+  timestamp: '2025-09-23T03:13:10.036Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/28c6e10d-6f10-42a7-9382-a542c192a504/likes {
+  requestId: '3155e3b0-cda3-46b7-b8a2-6f86dbf1b4bc',
+  timestamp: '2025-09-23T03:13:10.041Z',
+  method: 'GET',
+  path: '/api/prompts/28c6e10d-6f10-42a7-9382-a542c192a504/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/a84cfaee-8a2b-429d-9e02-58450849da8b/likes {
+  requestId: 'd522336e-638f-4a44-a4e9-216dbb7f28f2',
+  timestamp: '2025-09-23T03:13:10.042Z',
+  method: 'GET',
+  path: '/api/prompts/a84cfaee-8a2b-429d-9e02-58450849da8b/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[DEBUG] Retrieved prompts count: 20
+ ✓ Compiled /api/prompts/[id]/likes in 31ms (245 modules)
+ POST /api/log-api-call 200 in 226ms
+ GET /api/prompts/28c6e10d-6f10-42a7-9382-a542c192a504/likes 200 in 138ms
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/likes 200 in 146ms
+[DEBUG] Retrieved prompts count: 17
+[API Request] GET /api/prompts/a6506d3b-bfae-4ebb-8f92-42b1f6deaea5/likes {
+  requestId: 'b251b92f-6223-4ecb-98aa-a66f5be820f8',
+  timestamp: '2025-09-23T03:13:10.213Z',
+  method: 'GET',
+  path: '/api/prompts/a6506d3b-bfae-4ebb-8f92-42b1f6deaea5/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/856da67a-dd41-45ff-be9b-5b0c85895746/likes {
+  requestId: '6e2643b5-2832-4044-8ac7-8614e8bbf54c',
+  timestamp: '2025-09-23T03:13:10.214Z',
+  method: 'GET',
+  path: '/api/prompts/856da67a-dd41-45ff-be9b-5b0c85895746/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/f8403006-8c73-480d-83d7-2c5d9b2ac159/likes {
+  requestId: '4a6d7c8c-68df-4ad9-9f74-331ff0eb7978',
+  timestamp: '2025-09-23T03:13:10.214Z',
+  method: 'GET',
+  path: '/api/prompts/f8403006-8c73-480d-83d7-2c5d9b2ac159/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/a84cfaee-8a2b-429d-9e02-58450849da8b/likes 200 in 176ms
+ GET /api/prompts?sort=latest&page=1&limit=20 304 in 274ms
+[API Request] GET /api/prompts/7e50c05c-d406-4257-b1ce-2bda2ec87e54/likes {
+  requestId: 'fc89e51d-ac51-4549-8cb1-cdabf4cf4877',
+  timestamp: '2025-09-23T03:13:10.243Z',
+  method: 'GET',
+  path: '/api/prompts/7e50c05c-d406-4257-b1ce-2bda2ec87e54/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/a62f9b18-f4c9-4bed-a787-817660846b2e/likes {
+  requestId: '42d4eb25-758d-4741-af3e-b46878f77f9a',
+  timestamp: '2025-09-23T03:13:10.243Z',
+  method: 'GET',
+  path: '/api/prompts/a62f9b18-f4c9-4bed-a787-817660846b2e/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/a6506d3b-bfae-4ebb-8f92-42b1f6deaea5/likes 200 in 51ms
+ GET /api/prompts/856da67a-dd41-45ff-be9b-5b0c85895746/likes 200 in 52ms
+[API Request] GET /api/prompts/444148fe-6a6e-4a91-a135-ad5940beeca5/likes {
+  requestId: '5c45bff4-1339-4c49-b2bf-610cfbf4364f',
+  timestamp: '2025-09-23T03:13:10.272Z',
+  method: 'GET',
+  path: '/api/prompts/444148fe-6a6e-4a91-a135-ad5940beeca5/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/a3387e8b-6acb-4898-aed0-5e8b551786d0/likes {
+  requestId: 'd24f4bfb-2d84-4f21-9d8c-907a19eedb39',
+  timestamp: '2025-09-23T03:13:10.273Z',
+  method: 'GET',
+  path: '/api/prompts/a3387e8b-6acb-4898-aed0-5e8b551786d0/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/f8403006-8c73-480d-83d7-2c5d9b2ac159/likes 200 in 78ms
+[API Request] GET /api/prompts/aa87b605-c3f2-4ed9-812f-1842a3f36cce/likes {
+  requestId: 'f6514ff7-a9f0-40ce-afa8-b8f94c7afbf0',
+  timestamp: '2025-09-23T03:13:10.299Z',
+  method: 'GET',
+  path: '/api/prompts/aa87b605-c3f2-4ed9-812f-1842a3f36cce/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/7e50c05c-d406-4257-b1ce-2bda2ec87e54/likes 200 in 65ms
+ GET /api/prompts?sort=latest&page=2&limit=20 200 in 338ms
+[API Request] GET /api/prompts/4a98dee6-c46b-4ab0-9862-ad3f3ad2bbfe/likes {
+  requestId: 'eac3d416-fa5a-48a3-b59e-b9ef63dc415c',
+  timestamp: '2025-09-23T03:13:10.314Z',
+  method: 'GET',
+  path: '/api/prompts/4a98dee6-c46b-4ab0-9862-ad3f3ad2bbfe/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/505850dd-3b8f-4fe6-bde3-fbafe2abf3db/likes {
+  requestId: 'c6deda49-5665-4241-be0d-0e600c73d7e2',
+  timestamp: '2025-09-23T03:13:10.315Z',
+  method: 'GET',
+  path: '/api/prompts/505850dd-3b8f-4fe6-bde3-fbafe2abf3db/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/a62f9b18-f4c9-4bed-a787-817660846b2e/likes 200 in 75ms
+[API Request] GET /api/prompts/b90ec2d0-4000-4255-b819-335b33c413ee/likes {
+  requestId: '1840564c-8be6-4088-9b9e-866a9450a85e',
+  timestamp: '2025-09-23T03:13:10.324Z',
+  method: 'GET',
+  path: '/api/prompts/b90ec2d0-4000-4255-b819-335b33c413ee/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/a3387e8b-6acb-4898-aed0-5e8b551786d0/likes 200 in 73ms
+ GET /api/prompts/444148fe-6a6e-4a91-a135-ad5940beeca5/likes 200 in 74ms
+[API Request] GET /api/prompts/327850d7-8089-4285-8e50-326d5d46675b/likes {
+  requestId: '89390dd2-485b-4ecf-a25b-2999db565c77',
+  timestamp: '2025-09-23T03:13:10.353Z',
+  method: 'GET',
+  path: '/api/prompts/327850d7-8089-4285-8e50-326d5d46675b/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/97059f56-15d1-400c-84bf-b3f3fa02807c/likes {
+  requestId: '0527135c-31ef-493d-87f6-7f159939d496',
+  timestamp: '2025-09-23T03:13:10.354Z',
+  method: 'GET',
+  path: '/api/prompts/97059f56-15d1-400c-84bf-b3f3fa02807c/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/aa87b605-c3f2-4ed9-812f-1842a3f36cce/likes 200 in 62ms
+[API Request] GET /api/prompts/23512caf-0ec2-421c-983b-8de307e8be29/likes {
+  requestId: '0b1bb00a-63ef-4116-8db8-91f5c30023c3',
+  timestamp: '2025-09-23T03:13:10.366Z',
+  method: 'GET',
+  path: '/api/prompts/23512caf-0ec2-421c-983b-8de307e8be29/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/505850dd-3b8f-4fe6-bde3-fbafe2abf3db/likes 200 in 70ms
+[API Request] GET /api/prompts/08a2f7ac-ebf7-4721-9770-4077712005a0/likes {
+  requestId: '61d509cb-08f5-496d-b41d-fc4b8550971a',
+  timestamp: '2025-09-23T03:13:10.389Z',
+  method: 'GET',
+  path: '/api/prompts/08a2f7ac-ebf7-4721-9770-4077712005a0/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/4a98dee6-c46b-4ab0-9862-ad3f3ad2bbfe/likes 200 in 74ms
+[API Request] GET /api/prompts/668daba7-2d08-4f08-93e3-7a0f7ae09eab/likes {
+  requestId: 'c4d0cac8-ebb2-403f-865f-27f7286446b0',
+  timestamp: '2025-09-23T03:13:10.395Z',
+  method: 'GET',
+  path: '/api/prompts/668daba7-2d08-4f08-93e3-7a0f7ae09eab/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/b90ec2d0-4000-4255-b819-335b33c413ee/likes 200 in 80ms
+[API Request] GET /api/prompts/a08ff02f-9743-457b-aa24-7752002883b0/likes {
+  requestId: '179e2bb3-89d4-4c08-acb9-3d72015da0bd',
+  timestamp: '2025-09-23T03:13:10.407Z',
+  method: 'GET',
+  path: '/api/prompts/a08ff02f-9743-457b-aa24-7752002883b0/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/327850d7-8089-4285-8e50-326d5d46675b/likes 200 in 66ms
+ ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
+ GET /api/prompts/97059f56-15d1-400c-84bf-b3f3fa02807c/likes 200 in 78ms
+[API Request] POST /api/log-api-call {
+  requestId: '161f4647-f339-4ab9-87bf-18b0961cd98e',
+  timestamp: '2025-09-23T03:13:10.473Z',
+  method: 'POST',
+  path: '/api/log-api-call',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/668daba7-2d08-4f08-93e3-7a0f7ae09eab/likes 200 in 76ms
+ GET /api/prompts/23512caf-0ec2-421c-983b-8de307e8be29/likes 200 in 108ms
+[API Request] POST /api/log-api-call {
+  requestId: 'ec447ec7-35a1-49cd-96c9-2c1d07b5d417',
+  timestamp: '2025-09-23T03:13:10.481Z',
+  method: 'POST',
+  path: '/api/log-api-call',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/9307de60-8271-4652-885b-73c3c18abbd2/likes {
+  requestId: 'ac51fc90-54df-4e61-9564-4754a1b420f1',
+  timestamp: '2025-09-23T03:13:10.481Z',
+  method: 'GET',
+  path: '/api/prompts/9307de60-8271-4652-885b-73c3c18abbd2/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/a08ff02f-9743-457b-aa24-7752002883b0/likes 304 in 77ms
+[API Request] GET /api/prompts/80d7cff7-fa9a-451d-81cd-b0cfb39ce586/likes {
+  requestId: 'f4a66ae4-bb77-4ea7-aeaf-f76a92b1ad56',
+  timestamp: '2025-09-23T03:13:10.490Z',
+  method: 'GET',
+  path: '/api/prompts/80d7cff7-fa9a-451d-81cd-b0cfb39ce586/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/08a2f7ac-ebf7-4721-9770-4077712005a0/likes 200 in 98ms
+[API Request] GET /api/prompts/b7da4e04-92cd-41e3-9cdb-987c30177a30/likes {
+  requestId: '7d10ec8a-e85e-499f-9307-6575ef45ff99',
+  timestamp: '2025-09-23T03:13:10.496Z',
+  method: 'GET',
+  path: '/api/prompts/b7da4e04-92cd-41e3-9cdb-987c30177a30/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/44ace1ea-7309-46ee-858d-4bb76b70faee/likes {
+  requestId: '11717fc5-2e60-4bce-9482-7e7c63e0bc92',
+  timestamp: '2025-09-23T03:13:10.496Z',
+  method: 'GET',
+  path: '/api/prompts/44ace1ea-7309-46ee-858d-4bb76b70faee/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ POST /api/log-api-call 200 in 68ms
+[API Request] GET /api/prompts/02f37a4d-f52d-4423-b74d-6e83c0b8cca7/likes {
+  requestId: '8048e8f7-473a-4003-b72a-a90e46908f21',
+  timestamp: '2025-09-23T03:13:10.547Z',
+  method: 'GET',
+  path: '/api/prompts/02f37a4d-f52d-4423-b74d-6e83c0b8cca7/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/9307de60-8271-4652-885b-73c3c18abbd2/likes 200 in 73ms
+ POST /api/log-api-call 200 in 74ms
+[API Request] GET /api/prompts/42f27b2e-9498-4a3a-aad2-641329583403/likes {
+  requestId: '064a721b-348b-4d68-8662-6dcf5ee0c932',
+  timestamp: '2025-09-23T03:13:10.560Z',
+  method: 'GET',
+  path: '/api/prompts/42f27b2e-9498-4a3a-aad2-641329583403/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/67c6d853-3d74-4383-8f99-01c13960d1de/likes {
+  requestId: '6f4c0498-ba3e-44d3-8bcd-111601125b33',
+  timestamp: '2025-09-23T03:13:10.560Z',
+  method: 'GET',
+  path: '/api/prompts/67c6d853-3d74-4383-8f99-01c13960d1de/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/b7da4e04-92cd-41e3-9cdb-987c30177a30/likes 200 in 66ms
+[API Request] GET /api/prompts/9aaa5052-c6e2-4754-b801-ee6ca740482b/likes {
+  requestId: '0c29ec9d-394a-4005-935f-b0677af32608',
+  timestamp: '2025-09-23T03:13:10.568Z',
+  method: 'GET',
+  path: '/api/prompts/9aaa5052-c6e2-4754-b801-ee6ca740482b/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/80d7cff7-fa9a-451d-81cd-b0cfb39ce586/likes 200 in 75ms
+[API Request] GET /api/prompts/5ee9177f-db59-4851-94b3-26d646dc572f/likes {
+  requestId: '1d5039e3-a23d-45da-9901-adabd422a9ea',
+  timestamp: '2025-09-23T03:13:10.573Z',
+  method: 'GET',
+  path: '/api/prompts/5ee9177f-db59-4851-94b3-26d646dc572f/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/44ace1ea-7309-46ee-858d-4bb76b70faee/likes 200 in 77ms
+[API Request] GET /api/prompts/a5d76f32-b8a3-496a-a4f9-6aeb8e3ac1d4/likes {
+  requestId: '16d0b91b-77c2-48d5-987f-8488571232f3',
+  timestamp: '2025-09-23T03:13:10.579Z',
+  method: 'GET',
+  path: '/api/prompts/a5d76f32-b8a3-496a-a4f9-6aeb8e3ac1d4/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/02f37a4d-f52d-4423-b74d-6e83c0b8cca7/likes 200 in 46ms
+[API Request] GET /api/prompts/c735546c-9a53-4bc5-91af-ccf70937bfdf/likes {
+  requestId: 'c62670e6-bf05-4432-815c-6315551a7e0d',
+  timestamp: '2025-09-23T03:13:10.597Z',
+  method: 'GET',
+  path: '/api/prompts/c735546c-9a53-4bc5-91af-ccf70937bfdf/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/42f27b2e-9498-4a3a-aad2-641329583403/likes 200 in 41ms
+[API Request] GET /api/prompts/8a3ea337-fbd6-49e4-bdd8-730900eae6e6/likes {
+  requestId: '37619c76-be96-4988-a2bb-2fd9376466f7',
+  timestamp: '2025-09-23T03:13:10.606Z',
+  method: 'GET',
+  path: '/api/prompts/8a3ea337-fbd6-49e4-bdd8-730900eae6e6/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/a5d76f32-b8a3-496a-a4f9-6aeb8e3ac1d4/likes 200 in 62ms
+ GET /api/prompts/5ee9177f-db59-4851-94b3-26d646dc572f/likes 200 in 69ms
+ GET /api/prompts/9aaa5052-c6e2-4754-b801-ee6ca740482b/likes 200 in 76ms
+ GET /api/prompts/67c6d853-3d74-4383-8f99-01c13960d1de/likes 200 in 85ms
+[API Request] GET /api/prompts/6b1ba0e1-d0f3-4c47-bd7a-55c47d181519/likes {
+  requestId: 'f107e1aa-e571-4f32-a9fa-bca89e5ac1bb',
+  timestamp: '2025-09-23T03:13:10.649Z',
+  method: 'GET',
+  path: '/api/prompts/6b1ba0e1-d0f3-4c47-bd7a-55c47d181519/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/27901f42-2807-49d9-b4e2-6570487783ce/likes {
+  requestId: '25727eff-6f59-402c-8638-388d02e5735b',
+  timestamp: '2025-09-23T03:13:10.649Z',
+  method: 'GET',
+  path: '/api/prompts/27901f42-2807-49d9-b4e2-6570487783ce/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/3f3e239c-a22d-46c9-94de-829490a89101/likes {
+  requestId: '52cf607f-43f5-499e-af58-66c41a90069e',
+  timestamp: '2025-09-23T03:13:10.650Z',
+  method: 'GET',
+  path: '/api/prompts/3f3e239c-a22d-46c9-94de-829490a89101/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/83e990e6-15ad-439b-9250-11ca60f5d7b6/likes {
+  requestId: '46b5cb5d-f2e8-4cf1-98f5-07b9ade64c36',
+  timestamp: '2025-09-23T03:13:10.653Z',
+  method: 'GET',
+  path: '/api/prompts/83e990e6-15ad-439b-9250-11ca60f5d7b6/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/c735546c-9a53-4bc5-91af-ccf70937bfdf/likes 200 in 70ms
+[API Request] GET /api/prompts/c2fed7fa-c9d7-4194-8a40-f0c4ba332714/likes {
+  requestId: 'a86e7d1b-5ca6-46cc-9748-62585a00bc7b',
+  timestamp: '2025-09-23T03:13:10.671Z',
+  method: 'GET',
+  path: '/api/prompts/c2fed7fa-c9d7-4194-8a40-f0c4ba332714/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/8a3ea337-fbd6-49e4-bdd8-730900eae6e6/likes 200 in 69ms
+ GET /api/prompts/83e990e6-15ad-439b-9250-11ca60f5d7b6/likes 200 in 62ms
+ GET /api/prompts/6b1ba0e1-d0f3-4c47-bd7a-55c47d181519/likes 200 in 68ms
+ GET /api/prompts/27901f42-2807-49d9-b4e2-6570487783ce/likes 200 in 70ms
+ GET /api/prompts/3f3e239c-a22d-46c9-94de-829490a89101/likes 200 in 70ms
+ GET /api/prompts/c2fed7fa-c9d7-4194-8a40-f0c4ba332714/likes 200 in 69ms
+ ✓ Compiled /prompt/[id] in 167ms (490 modules)
+Time 1.379292
+ GET /_next/data/development/prompt/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4.json?id=ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 200 in 466ms
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/likes {
+  requestId: 'a976e81a-9067-4560-9f8f-b0cfdde21518',
+  timestamp: '2025-09-23T03:13:14.493Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/likes',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views {
+  requestId: 'ec2bac9b-59b6-4ee9-b2d0-9ac55913d162',
+  timestamp: '2025-09-23T03:13:14.495Z',
+  method: 'POST',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 {
+  requestId: '6dafd2a3-d316-489e-8583-92b5844d7181',
+  timestamp: '2025-09-23T03:13:14.495Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views {
+  requestId: 'c0115658-3832-4f25-b17f-6eb9e84ed93b',
+  timestamp: '2025-09-23T03:13:14.495Z',
+  method: 'POST',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ ✓ Compiled /api/prompts/[id] in 27ms (254 modules)
+ ✓ Compiled (256 modules)
+Development mode: No token, returning current user
+Development mode: No token, returning current user
+[Views] Track view: {
+  promptId: 'ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userId: '7b03565d-b472-477c-9321-75bb442ae60e',
+  clientIp: '127.0.0.1'
+}
+[Views] Track view: {
+  promptId: 'ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userId: '7b03565d-b472-477c-9321-75bb442ae60e',
+  clientIp: '127.0.0.1'
+}
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/likes 304 in 88ms
+Development mode: No token, returning current user
+[Views] Error inserting view record: {
+  code: '23505',
+  details: 'Key (prompt_id, user_id)=(ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4, 7b03565d-b472-477c-9321-75bb442ae60e) already exists.',
+  hint: null,
+  message: 'duplicate key value violates unique constraint "unique_user_view"'
+}
+ POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views 200 in 260ms
+[Views] Incremented for prompt ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4: 0 -> 1
+ POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views 200 in 308ms
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 200 in 443ms
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 {
+  requestId: '3f3fddd3-2cc3-4d44-a823-7d5c428a6f64',
+  timestamp: '2025-09-23T03:13:14.947Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/comments {
+  requestId: '45f71c58-78a2-4c0f-ae84-1e030cafcd38',
+  timestamp: '2025-09-23T03:13:14.954Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/comments',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ ✓ Compiled /api/prompts/[id]/comments in 27ms (258 modules)
+Development mode: No token, returning current user
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/comments?page=1 200 in 92ms
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/comments {
+  requestId: 'aa8771bf-bd33-4744-b9f8-486d6b4e8990',
+  timestamp: '2025-09-23T03:13:15.052Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/comments',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] POST /api/log-api-call {
+  requestId: '79500c12-1915-436b-9d14-3eb5b8d6fb16',
+  timestamp: '2025-09-23T03:13:15.052Z',
+  method: 'POST',
+  path: '/api/log-api-call',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ POST /api/log-api-call 200 in 35ms
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/comments?page=1 304 in 453ms
+[API Request] POST /api/log-api-call {
+  requestId: 'dcd3602e-6039-4e78-ae4e-dc32180bbcb7',
+  timestamp: '2025-09-23T03:13:15.517Z',
+  method: 'POST',
+  path: '/api/log-api-call',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 200 in 601ms
+ POST /api/log-api-call 200 in 67ms
+[API Request] POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views {
+  requestId: 'd39d0bcf-f1b3-4ffe-b24e-8076776ffa2b',
+  timestamp: '2025-09-23T03:14:20.278Z',
+  method: 'POST',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 {
+  requestId: 'c243e86f-f6e6-4497-baa4-eb4957a8b694',
+  timestamp: '2025-09-23T03:14:20.278Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ ✓ Compiled /api/prompts/[id] in 367ms (440 modules)
+ ✓ Compiled /api/prompts/[id]/views in 0ms (244 modules)
+ ✓ Compiled (246 modules)
+Development mode: No token, returning current user
+[Views] Track view: {
+  promptId: 'ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userId: '7b03565d-b472-477c-9321-75bb442ae60e',
+  clientIp: '127.0.0.1'
+}
+[Views] User already viewed this prompt
+Development mode: No token, returning current user
+ POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views 200 in 545ms
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 304 in 827ms
+ ✓ Compiled in 274ms (482 modules)
+[API Request] POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views {
+  requestId: 'ff583d0e-59ca-49b8-a897-38335c6a2988',
+  timestamp: '2025-09-23T03:14:32.393Z',
+  method: 'POST',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 {
+  requestId: '252b7579-5559-4fa5-8f56-dbbef5677824',
+  timestamp: '2025-09-23T03:14:32.394Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+Development mode: No token, returning current user
+[Views] Track view: {
+  promptId: 'ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userId: '7b03565d-b472-477c-9321-75bb442ae60e',
+  clientIp: '127.0.0.1'
+}
+[Views] User already viewed this prompt
+Development mode: No token, returning current user
+ POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views 200 in 436ms
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 304 in 848ms
+[API Request] POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views {
+  requestId: '87274db9-a8c5-4aca-90e6-0f58a9621bf3',
+  timestamp: '2025-09-23T03:15:01.915Z',
+  method: 'POST',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+[API Request] GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 {
+  requestId: 'ff3dda84-11bb-4a74-92e9-039a2a2a819c',
+  timestamp: '2025-09-23T03:15:01.915Z',
+  method: 'GET',
+  path: '/api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+}
+ ✓ Compiled in 255ms (482 modules)
+Development mode: No token, returning current user
+[Views] Track view: {
+  promptId: 'ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4',
+  userId: '7b03565d-b472-477c-9321-75bb442ae60e',
+  clientIp: '127.0.0.1'
+}
+[Views] User already viewed this prompt
+Development mode: No token, returning current user
+ POST /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4/views 200 in 422ms
+ GET /api/prompts/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 304 in 691ms
+ ✓ Compiled in 142ms (482 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/oze/Desktop/Dev/prompot_next/.next/server/pages/prompt/[id].js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/oze/Desktop/Dev/prompot_next/.next/server/pages/prompt/[id].js',
+  page: '/prompt/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4'
+}
+ ✓ Compiled /_error in 165ms (482 modules)
+ ⨯ Error: Cannot find module './chunks/vendor-chunks/next.js'
+Require stack:
+- /Users/oze/Desktop/Dev/prompot_next/.next/server/webpack-runtime.js
+- /Users/oze/Desktop/Dev/prompot_next/.next/server/pages/_document.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/server/require.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/server/load-components.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/build/utils.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/build/swc/options.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/build/swc/index.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/build/analysis/parse-module.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/server/lib/router-server.js
+- /Users/oze/Desktop/Dev/prompot_next/node_modules/next/dist/server/lib/start-server.js
+    at Array.map (<anonymous>) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+Time 1.434417
+ GET /prompt/ffa5fa2b-42cd-4fba-8201-fe07d83cb6c4 500 in 529ms
+[?25h

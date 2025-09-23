@@ -51,6 +51,9 @@ const EditPromptPage = () => {
   const [showThumbnailEditor, setShowThumbnailEditor] = useState(false);
   const [editedThumbnail, setEditedThumbnail] = useState<string | null>(null);
   const [selectedThumbnailFromAdditional, setSelectedThumbnailFromAdditional] = useState<number | null>(null);
+  
+  // 텍스트 결과 펼쳐보기 상태
+  const [isTextResultExpanded, setIsTextResultExpanded] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -61,6 +64,8 @@ const EditPromptPage = () => {
     content: '',
     isPublic: true,
     videoUrl: '',
+    resultType: 'image' as 'image' | 'text',
+    textResult: '',
   });
   
   // 프롬프트 원본 데이터 저장
@@ -190,6 +195,8 @@ const EditPromptPage = () => {
         content: prompt.content,
         isPublic: prompt.is_public,
         videoUrl: prompt.video_url || '',
+        resultType: prompt.resultType || 'image',
+        textResult: prompt.textResult || '',
       });
       
       if (prompt.preview_image) {
@@ -486,14 +493,18 @@ const EditPromptPage = () => {
         prompt: formData.content,
         category: formData.category,
         aiModel: formData.aiModel,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        resultType: formData.resultType,
+        textResult: formData.textResult
       } : {
         ...formData,
         preview_image: previewImageUrl,
         additional_images: allAdditionalImages,
         video_url: formData.videoUrl,
         is_public: formData.isPublic,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        resultType: formData.resultType,
+        textResult: formData.textResult
       };
       
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -1001,7 +1012,101 @@ const EditPromptPage = () => {
                 />
               </div>
 
+              {/* 결과 구분 선택 */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                  유형
+                </h3>
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="resultType"
+                      value="image"
+                      checked={formData.resultType === 'image'}
+                      onChange={() => setFormData(prev => ({ ...prev, resultType: 'image' }))}
+                      className="sr-only"
+                    />
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      formData.resultType === 'image' ? 'border-orange-500' : 'border-gray-300'
+                    }`}>
+                      {formData.resultType === 'image' && (
+                        <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                      )}
+                    </span>
+                    <span className={`ml-2 text-base ${
+                      formData.resultType === 'image' ? 'text-gray-900 font-medium' : 'text-gray-700'
+                    }`}>
+                      이미지/동영상
+                    </span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="resultType"
+                      value="text"
+                      checked={formData.resultType === 'text'}
+                      onChange={() => setFormData(prev => ({ ...prev, resultType: 'text' }))}
+                      className="sr-only"
+                    />
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      formData.resultType === 'text' ? 'border-orange-500' : 'border-gray-300'
+                    }`}>
+                      {formData.resultType === 'text' && (
+                        <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                      )}
+                    </span>
+                    <span className={`ml-2 text-base ${
+                      formData.resultType === 'text' ? 'text-gray-900 font-medium' : 'text-gray-700'
+                    }`}>
+                      텍스트
+                    </span>
+                  </label>
+                </div>
+              </div>
 
+              {/* 텍스트 결과 입력 (결과 타입이 텍스트일 때만 표시) */}
+              {formData.resultType === 'text' && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 text-gray-900">
+                    프롬프트 결과
+                  </h3>
+                  <div className="relative">
+                    <textarea
+                      id="textResult"
+                      name="textResult"
+                      value={formData.textResult}
+                      onChange={handleChange}
+                      placeholder="AI가 생성한 프롬프트 결과를 입력하세요"
+                      rows={isTextResultExpanded ? 12 : 6}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                    />
+                    
+                    {/* 펼쳐보기/접어보기 버튼 */}
+                    {formData.textResult && formData.textResult.length > 200 && (
+                      <div className="absolute bottom-2 right-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsTextResultExpanded(!isTextResultExpanded)}
+                          className="flex items-center gap-1 px-2 py-1 text-xs text-orange-500 hover:text-orange-700 bg-white border border-orange-200 rounded hover:bg-orange-50 transition-colors"
+                        >
+                          <span>{isTextResultExpanded ? '접기' : '펼치기'}</span>
+                          <svg 
+                            className={`w-3 h-3 transition-transform duration-200 ${
+                              isTextResultExpanded ? 'rotate-180' : ''
+                            }`} 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* 동영상 URL */}
               <div>

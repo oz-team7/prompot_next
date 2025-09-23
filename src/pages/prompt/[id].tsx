@@ -126,6 +126,8 @@ interface PromptDetail {
   likes_count?: number;
   comments?: any[];
   commentCount?: number;
+  resultType?: 'image' | 'text';
+  textResult?: string;
 }
 
 // 동영상 미리보기 컴포넌트
@@ -262,6 +264,7 @@ const PromptDetailPage = () => {
   const [reportCategory, setReportCategory] = useState<'spam' | 'offensive' | 'illegal' | 'other'>('other');
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
+  const [isTextResultExpanded, setIsTextResultExpanded] = useState(false);
   
   // useLike 훅 사용
   const { isLiked, likesCount, toggle: toggleLike, isBusy: isLikeBusy } = useLike(promptId || '');
@@ -901,6 +904,75 @@ const PromptDetailPage = () => {
                     )}
                   </div>
                 </div>
+
+                {/* 텍스트 결과 */}
+                {prompt.resultType === 'text' && prompt.textResult && (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        프롬프트 결과
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(prompt.textResult || '');
+                              setToastMessage('텍스트 결과가 클립보드에 복사되었습니다!');
+                              setToastType('success');
+                              setShowToast(true);
+                            } catch (error) {
+                              console.error('복사 실패:', error);
+                              setToastMessage('복사에 실패했습니다. 다시 시도해주세요.');
+                              setToastType('error');
+                              setShowToast(true);
+                            }
+                          }}
+                          className="p-2 text-orange-500 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors"
+                          title="텍스트 결과 복사"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <div className={`w-full border rounded-lg bg-white text-gray-800 leading-relaxed ${!isAuthenticated ? 'blur-sm select-none' : ''}`}>
+                        {/* 텍스트 내용 */}
+                        <div className={`p-4 whitespace-pre-wrap break-words overflow-wrap-anywhere transition-all duration-300 ${
+                          !isTextResultExpanded && prompt.textResult && prompt.textResult.length > 500 
+                            ? 'max-h-32 overflow-hidden' 
+                            : ''
+                        }`}>
+                          {prompt.textResult}
+                        </div>
+                        
+                        {/* 펼쳐보기/접어보기 버튼 */}
+                        {prompt.textResult && prompt.textResult.length > 500 && (
+                          <div className="px-4 pb-4">
+                            <button
+                              onClick={() => setIsTextResultExpanded(!isTextResultExpanded)}
+                              className="flex items-center gap-2 text-orange-500 hover:text-orange-700 font-medium transition-colors"
+                            >
+                              <span>{isTextResultExpanded ? '접어보기' : '펼쳐보기'}</span>
+                              <svg 
+                                className={`w-4 h-4 transition-transform duration-200 ${
+                                  isTextResultExpanded ? 'rotate-180' : ''
+                                }`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                    </div>
+                  </div>
+                )}
 
                 {/* 카테고리, AI 모델, 공개 설정 및 태그 */}
                 <div>

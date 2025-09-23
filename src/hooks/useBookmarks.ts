@@ -104,14 +104,21 @@ export const useBookmarks = () => {
       // console.log('[DEBUG] Bookmarks API response status:', res.status);
 
       if (!res.ok) {
-        const errorData = await res.json();
-        if (res.status === 401 || res.status === 403) {
-          // console.log('[DEBUG] Authentication required for bookmarks');
-          setBookmarks([]);
-          saveCachedBookmarks([]);
-          return;
+        // 응답이 JSON인지 확인
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await res.json();
+          if (res.status === 401 || res.status === 403) {
+            // console.log('[DEBUG] Authentication required for bookmarks');
+            setBookmarks([]);
+            saveCachedBookmarks([]);
+            return;
+          }
+          throw new Error(errorData.message || '북마크를 가져오는데 실패했습니다.');
+        } else {
+          // HTML 응답인 경우 (에러 페이지 등)
+          throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
         }
-        throw new Error(errorData.message || '북마크를 가져오는데 실패했습니다.');
       }
 
       const data = await res.json();
@@ -226,8 +233,16 @@ export const useBookmarks = () => {
           saveCachedBookmarks(rolledBack);
           return rolledBack;
         });
-        const errorData = await res.json();
-        throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
+        
+        // 응답이 JSON인지 확인
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
+        } else {
+          // HTML 응답인 경우 (에러 페이지 등)
+          throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+        }
       }
 
       const result = await res.json();
@@ -350,8 +365,16 @@ export const useBookmarks = () => {
             return rolledBack;
           });
         }
-        const errorData = await res.json();
-        throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
+        
+        // 응답이 JSON인지 확인
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
+        } else {
+          // HTML 응답인 경우 (에러 페이지 등)
+          throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+        }
       }
       
       // 다른 탭에 동기화 신호 전송
