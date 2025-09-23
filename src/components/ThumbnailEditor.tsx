@@ -98,7 +98,7 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
     e.stopPropagation();
     
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.min(Math.max(0.5, scale * delta), 3);
+    const newScale = Math.min(Math.max(0.1, scale * delta), 5);
     setScale(newScale);
   };
 
@@ -199,8 +199,8 @@ const ThumbnailEditor: React.FC<ThumbnailEditorProps> = ({ imageUrl, onSave, onC
             </div>
             <input
               type="range"
-              min="50"
-              max="300"
+              min="10"
+              max="500"
               value={scale * 100}
               onChange={(e) => setScale(parseInt(e.target.value) / 100)}
               className="w-full"

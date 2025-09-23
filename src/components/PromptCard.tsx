@@ -321,46 +321,54 @@ const PromptCard: React.FC<PromptCardProps> = ({
                 return null;
               })()}
             </div>
-          ) : prompt.preview_image ? (
-            // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
-            prompt.resultType === 'text' || prompt.preview_image.startsWith('data:image') ? (
-              <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer">
-                <Image
-                  src={prompt.preview_image}
-                  alt={prompt.title}
-                  fill
-                  className="object-cover"
-                  style={{ objectPosition: 'left top' }}
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  onError={(e) => {
-                    console.error('이미지 로드 실패:', prompt.preview_image, e);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                  onLoad={() => {
-                    console.log('이미지 로드 성공:', prompt.preview_image);
-                  }}
-                />
-              </div>
-            ) : (
-              // 일반 이미지는 패딩 없이 전체 화면에 표시
-              <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
-                <Image
-                  src={prompt.preview_image}
-                  alt={prompt.title}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                  style={{ objectPosition: 'left top' }}
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  onError={(e) => {
-                    console.error('이미지 로드 실패:', prompt.preview_image, e);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                  onLoad={() => {
-                    console.log('이미지 로드 성공:', prompt.preview_image);
-                  }}
-                />
-              </div>
-            )
+          ) : (prompt.thumbnail_image || prompt.preview_image) ? (
+            // 썸네일 편집 이미지가 있으면 우선 사용, 없으면 원본 미리보기 이미지 사용
+            (() => {
+              const imageUrl = prompt.thumbnail_image || prompt.preview_image;
+              if (!imageUrl) return null;
+              
+              // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
+              const isTextImage = prompt.resultType === 'text' || imageUrl.startsWith('data:image');
+              
+              return isTextImage ? (
+                <div className="relative w-full h-full bg-white rounded-lg overflow-hidden group cursor-pointer">
+                  <Image
+                    src={imageUrl}
+                    alt={prompt.title}
+                    fill
+                    className="object-cover"
+                    style={{ objectPosition: 'left top' }}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    onError={(e) => {
+                      console.error('이미지 로드 실패:', imageUrl, e);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('이미지 로드 성공:', imageUrl);
+                    }}
+                  />
+                </div>
+              ) : (
+                // 일반 이미지는 패딩 없이 전체 화면에 표시
+                <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
+                  <Image
+                    src={imageUrl}
+                    alt={prompt.title}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                    style={{ objectPosition: 'left top' }}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    onError={(e) => {
+                      console.error('이미지 로드 실패:', imageUrl, e);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('이미지 로드 성공:', imageUrl);
+                    }}
+                  />
+                </div>
+              );
+            })()
           ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
             <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden group cursor-pointer">
               <Image

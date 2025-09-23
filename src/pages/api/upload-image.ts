@@ -61,14 +61,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    console.log('[DEBUG] Image upload request received');
+    console.log('[DEBUG] Request headers:', req.headers);
+    console.log('[DEBUG] Request body keys:', Object.keys(req.body || {}));
+    
     // 인증 확인
     let userId = await getUserIdFromRequest(req);
+    console.log('[DEBUG] User ID from request:', userId);
     
     if (!userId) {
       if (process.env.NODE_ENV === 'development') {
         console.log('Development mode: Using current user for image upload');
         userId = '7b03565d-b472-477c-9321-75bb442ae60e'; // 개발용 사용자 ID
       } else {
+        console.log('[DEBUG] No user ID found, returning 401');
         return res.status(401).json({ 
           success: false, 
           error: '인증이 필요합니다.' 
@@ -77,8 +83,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { imageData, fileName, folder = 'prompts', resultType } = req.body;
+    console.log('[DEBUG] Request body data:', { 
+      hasImageData: !!imageData, 
+      fileName, 
+      folder, 
+      resultType,
+      imageDataLength: imageData?.length 
+    });
 
     if (!imageData) {
+      console.log('[DEBUG] No image data provided');
       return res.status(400).json({ 
         success: false, 
         error: '이미지 데이터가 필요합니다.' 
@@ -173,6 +187,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Supabase Storage에 업로드
+    console.log('[DEBUG] Uploading to Supabase storage...');
     const supabase = createSupabaseServiceClient();
     const { data, error } = await supabase.storage
       .from('prompt-images')
@@ -183,8 +198,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (error) {
       console.error('Supabase upload error:', error);
-      throw new Error('이미지 업로드에 실패했습니다.');
+      console.error('Supabase error details:', JSON.stringify(error, null, 2));
+      throw new Error(`이미지 업로드에 실패했습니다: ${error.message}`);
     }
+    
+    console.log('[DEBUG] Upload successful:', data);
 
     // 공개 URL 생성
     const { data: urlData } = supabase.storage

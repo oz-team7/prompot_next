@@ -21,6 +21,7 @@ export interface Prompt {
   isBookmarked?: boolean;
   category?: "work" | "dev" | "design" | "edu" | "image";
   preview_image?: string;
+  thumbnail_image?: string;
   video_url?: string;
   videoUrl?: string;
   additional_images?: string[];

@@ -272,12 +272,33 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   return null;
                 })()}
               </div>
-            ) : prompt.preview_image ? (
-              // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
-              prompt.resultType === 'text' || prompt.preview_image.startsWith('data:image') ? (
-                <div className="w-full h-full bg-white">
+            ) : (prompt.thumbnail_image || prompt.preview_image) ? (
+              // 썸네일 편집 이미지가 있으면 우선 사용, 없으면 원본 미리보기 이미지 사용
+              (() => {
+                const imageUrl = prompt.thumbnail_image || prompt.preview_image;
+                if (!imageUrl) return null;
+                
+                // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
+                const isTextImage = prompt.resultType === 'text' || imageUrl.startsWith('data:image');
+                
+                return isTextImage ? (
+                  <div className="w-full h-full bg-white">
+                    <Image
+                      src={imageUrl}
+                      alt={prompt.title}
+                      fill
+                      className="object-cover"
+                      style={{ objectPosition: 'left top' }}
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  // 일반 이미지는 패딩 없이 전체 화면에 표시
                   <Image
-                    src={prompt.preview_image}
+                    src={imageUrl}
                     alt={prompt.title}
                     fill
                     className="object-cover"
@@ -287,21 +308,8 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                </div>
-              ) : (
-                // 일반 이미지는 패딩 없이 전체 화면에 표시
-                <Image
-                  src={prompt.preview_image}
-                  alt={prompt.title}
-                  fill
-                  className="object-cover"
-                  style={{ objectPosition: 'left top' }}
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              )
+                );
+              })()
             ) : prompt.additional_images && prompt.additional_images.length > 0 ? (
               <Image
                 src={prompt.additional_images[0]}

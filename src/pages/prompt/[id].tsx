@@ -121,6 +121,7 @@ interface PromptDetail {
   date: string;
   isPublic?: boolean;
   previewImage?: string;
+  thumbnailImage?: string;
   additionalImages?: string[];
   videoUrl?: string;
   video_url?: string;
@@ -923,8 +924,8 @@ const PromptDetailPage = () => {
                 </div>
               )}
 
-              {/* 미리보기 이미지 */}
-              {prompt.previewImage && (
+              {/* 미리보기 이미지 - 원본 업로드 이미지만 표시 (썸네일 편집 이미지 제외) */}
+              {prompt.previewImage && !prompt.thumbnailImage && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">미리보기</h3>
                   <div 

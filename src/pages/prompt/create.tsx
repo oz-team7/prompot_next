@@ -190,6 +190,8 @@ const CreatePromptPage = () => {
           
           // 서버에 이미지 업로드
           const token = localStorage.getItem('token');
+          console.log('[DEBUG] Uploading image:', { fileName: file.name, hasToken: !!token, resultType: formData.resultType });
+          
           const response = await fetch('/api/upload-image', {
             method: 'POST',
             headers: {
@@ -203,7 +205,9 @@ const CreatePromptPage = () => {
             }),
           });
 
+          console.log('[DEBUG] Upload response status:', response.status);
           const result = await response.json();
+          console.log('[DEBUG] Upload response:', result);
           
           if (response.ok && result.success && result.data) {
             newImages.push({
@@ -212,7 +216,7 @@ const CreatePromptPage = () => {
               serverUrl: result.data.url
             });
           } else {
-            throw new Error(result.message || '이미지 업로드에 실패했습니다.');
+            throw new Error(result.error || result.message || '이미지 업로드에 실패했습니다.');
           }
         } catch (error) {
           console.error('Image upload error:', error);
@@ -325,7 +329,7 @@ const CreatePromptPage = () => {
     // 2단계: DOM 직접 조작으로 즉시 초기화
     if (tagInputRef.current) {
       tagInputRef.current.value = '';
-      tagInputRef.current.focus();
+      // focus() 제거 - 마우스가 다른 입력칸으로 이동할 수 있도록 함
     }
     
     // 3단계: 다음 렌더링 사이클에서 재확인
