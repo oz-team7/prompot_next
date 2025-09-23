@@ -63,10 +63,8 @@ const SignupPage = () => {
 
     // 비밀번호 검증
     if (touched.password) {
-      if (formData.password.length < 8) {
-        newErrors.password = '비밀번호는 8자 이상으로 설정해주세요.';
-      } else if (!/(?=.*[a-zA-Z])(?=.*[0-9])/.test(formData.password)) {
-        newErrors.password = '비밀번호는 영문과 숫자를 포함해야 합니다.';
+      if (formData.password.length < 6) {
+        newErrors.password = '비밀번호는 6자 이상으로 설정해주세요.';
       }
     }
 
@@ -117,13 +115,8 @@ const SignupPage = () => {
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError('비밀번호는 8자 이상으로 설정해주세요.');
-      return;
-    }
-
-    if (!/(?=.*[a-zA-Z])(?=.*[0-9])/.test(formData.password)) {
-      setError('비밀번호는 영문과 숫자를 포함해야 합니다.');
+    if (formData.password.length < 6) {
+      setError('비밀번호는 6자 이상으로 설정해주세요.');
       return;
     }
 
@@ -267,7 +260,7 @@ const SignupPage = () => {
                   className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                     fieldErrors.password && touched.password ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="비밀번호를 입력하세요 (8자 이상, 영문+숫자)"
+                  placeholder="비밀번호를 입력하세요 (6자 이상)"
                 />
                 {fieldErrors.password && touched.password && (
                   <p className="mt-1 text-sm text-red-500">{fieldErrors.password}</p>

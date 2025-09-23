@@ -50,7 +50,7 @@ const LoginPage = () => {
 
     // 비밀번호 검증
     if (touched.password && formData.password.length > 0 && formData.password.length < 6) {
-      newErrors.password = '비밀번호를 확인해주세요.';
+      newErrors.password = '비밀번호는 6자 이상이어야 합니다.';
     }
 
     setFieldErrors(newErrors);
