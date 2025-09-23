@@ -60,10 +60,10 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   
   // 정렬 옵션 정의
   const sortOptions = [
-    { value: 'latest', label: '최신순', icon: '↓' },
-    { value: 'likes', label: '좋아요순', icon: '↓' },
-    { value: 'views', label: '조회수순', icon: '↓' },
-    { value: 'bookmarks', label: '북마크순', icon: '↓' },
+    { value: 'latest', label: '최신순', icon: '' },
+    { value: 'likes', label: '좋아요순', icon: '' },
+    { value: 'views', label: '조회수순', icon: '' },
+    { value: 'bookmarks', label: '북마크순', icon: '' },
   ];
   
   const { 
@@ -89,26 +89,52 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const categories: { value: CategoryType; label: string }[] = [
-    { value: 'all', label: '전체' },
-    { value: 'work', label: '업무/마케팅' },
-    { value: 'dev', label: '개발/코드' },
-    { value: 'design', label: '디자인/브랜드' },
-    { value: 'edu', label: '교육/학습' },
-    { value: 'image', label: '이미지/동영상' },
+  const categories: { value: CategoryType; label: string; icon: string }[] = [
+    { value: 'all', label: '전체', icon: '' },
+    { value: 'work', label: '업무/마케팅', icon: '💼' },
+    { value: 'dev', label: '개발/코드', icon: '💻' },
+    { value: 'design', label: '디자인/브랜드', icon: '🎨' },
+    { value: 'edu', label: '교육/학습', icon: '📚' },
+    { value: 'image', label: '이미지/동영상', icon: '🎬' },
   ];
 
-  // AI 모델 목록 (프롬프트 데이터에서 추출된 고유 AI 모델들)
+  // AI 모델 목록 (프롬프트 생성 페이지와 동일)
+  const aiModels = [
+    // 텍스트 생성 AI
+    { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
+    { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
+    { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
+    { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
+    
+    // 코딩 AI
+    { id: 'copilot', name: 'GitHub Copilot', icon: '/image/icon_gpt-4_code.png' },
+    { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
+    { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
+    { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
+    
+    // 이미지 생성 AI
+    { id: 'dalle', name: 'DALL-E', icon: '/image/icon_dall_e_3.png' },
+    { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
+    { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
+    { id: 'leonardo', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
+    
+    // 비디오 생성 AI
+    { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
+    { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
+    { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
+    { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
+    
+    // 기타 AI 도구
+    { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
+    { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
+    { id: 'copy-ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
+    { id: 'other', name: '기타', icon: '🔧' },
+  ];
+
+  // AI 모델 목록 (전체 + 프롬프트 생성 페이지와 동일한 목록)
   const uniqueAIModels = React.useMemo(() => {
-    const models = new Set<string>();
-    prompts.forEach(prompt => {
-      if (prompt.aiModel) {
-        const modelName = typeof prompt.aiModel === 'object' ? prompt.aiModel.name : prompt.aiModel;
-        models.add(modelName);
-      }
-    });
-    return ['all', ...Array.from(models)].sort();
-  }, [prompts]);
+    return ['all', ...aiModels.map(model => model.name)];
+  }, []);
 
   const selectedSortOption = sortOptions.find(option => option.value === sortBy) || sortOptions[0];
   const selectedCategoryOption = categories.find(category => category.value === activeCategory) || categories[0];
@@ -427,9 +453,10 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               <div className="category-dropdown-container relative">
                 <button
                   onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center w-[85px] sm:w-[120px] h-[34px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-2 w-[100px] sm:w-[130px] h-[34px] sm:h-[40px]"
                 >
-                  <span className="text-gray-700">{selectedCategoryOption.label}</span>
+                  <span className="text-sm">{selectedCategoryOption.icon}</span>
+                  <span className="text-gray-700 truncate">{selectedCategoryOption.label}</span>
                 </button>
 
                 {showCategoryDropdown && (
@@ -441,10 +468,11 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                           setActiveCategory(category.value as CategoryType);
                           setShowCategoryDropdown(false);
                         }}
-                        className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                        className={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
                           selectedCategoryOption.value === category.value ? 'bg-orange-50 text-orange-700' : ''
                         }`}
                       >
+                        <span className="text-sm">{category.icon}</span>
                         <span className="text-sm font-medium text-gray-700">{category.label}</span>
                       </button>
                     ))}
@@ -459,9 +487,29 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               <div className="aimodel-dropdown-container relative">
                 <button
                   onClick={() => setShowAIModelDropdown(!showAIModelDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center w-[85px] sm:w-[140px] h-[34px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-2 w-[100px] sm:w-[150px] h-[34px] sm:h-[40px]"
                 >
-                  <span className="text-gray-700 truncate">{activeAIModel === 'all' ? '전체' : activeAIModel}</span>
+                  {activeAIModel === 'all' ? (
+                    <span className="text-sm"></span>
+                  ) : (() => {
+                    const model = aiModels.find(m => m.name === activeAIModel);
+                    return model ? (
+                      model.icon === '🔧' ? (
+                        <span className="text-sm">{model.icon}</span>
+                      ) : (
+                        <img 
+                          src={model.icon} 
+                          alt={activeAIModel}
+                          className="w-4 h-4 object-contain flex-shrink-0"
+                        />
+                      )
+                    ) : (
+                      <span className="text-sm">🔧</span>
+                    );
+                  })()}
+                  <span className={`text-gray-700 truncate ${activeAIModel !== 'all' && activeAIModel.length > 12 ? 'text-xs' : 'text-sm'}`}>
+                    {activeAIModel === 'all' ? '전체' : activeAIModel}
+                  </span>
                 </button>
 
                 {showAIModelDropdown && (
@@ -473,11 +521,31 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                           setActiveAIModel(model);
                           setShowAIModelDropdown(false);
                         }}
-                        className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                        className={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
                           activeAIModel === model ? 'bg-orange-50 text-orange-700' : ''
                         }`}
                       >
-                        <span className="text-sm font-medium text-gray-700">{model === 'all' ? '전체' : model}</span>
+                        {model === 'all' ? (
+                          <span className="text-sm"></span>
+                        ) : (() => {
+                          const aiModel = aiModels.find(m => m.name === model);
+                          return aiModel ? (
+                            aiModel.icon === '🔧' ? (
+                              <span className="text-sm">{aiModel.icon}</span>
+                            ) : (
+                              <img 
+                                src={aiModel.icon} 
+                                alt={model}
+                                className="w-4 h-4 object-contain flex-shrink-0"
+                              />
+                            )
+                          ) : (
+                            <span className="text-sm">🔧</span>
+                          );
+                        })()}
+                        <span className={`font-medium text-gray-700 ${model !== 'all' && model.length > 12 ? 'text-xs' : 'text-sm'}`}>
+                          {model === 'all' ? '전체' : model}
+                        </span>
                       </button>
                     ))}
                   </div>

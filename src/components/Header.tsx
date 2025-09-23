@@ -84,7 +84,7 @@ const Header: React.FC = () => {
                     </div>
                   </div>
                   
-                  <span className="text-sm text-gray-600">{user?.name}님</span>
+                  <span className="text-sm text-gray-600">{user?.name || '사용자'}님</span>
                 </Link>
                 <button 
                   onClick={handleLogout}

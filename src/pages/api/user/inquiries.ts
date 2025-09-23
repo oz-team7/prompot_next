@@ -17,6 +17,7 @@ export default async function handler(
   // 인증 확인
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.error('No authorization header or invalid format');
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -24,20 +25,31 @@ export default async function handler(
   const { data: authData, error: authError } = await supabase.auth.getUser(token);
   
   if (authError || !authData.user) {
+    console.error('Auth error:', authError);
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
+    console.log('Fetching inquiries for user:', authData.user.id);
+    
     // 사용자의 이메일로 문의 내역 조회
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('email')
       .eq('id', authData.user.id)
       .single();
 
+    if (profileError) {
+      console.error('Profile error:', profileError);
+      return res.status(500).json({ error: 'Failed to fetch user profile' });
+    }
+
     if (!profile) {
+      console.error('User profile not found for ID:', authData.user.id);
       return res.status(404).json({ error: 'User profile not found' });
     }
+
+    console.log('User email:', profile.email);
 
     // 이메일 또는 user_id로 문의 내역 조회
     const { data: inquiries, error } = await supabase
@@ -46,8 +58,12 @@ export default async function handler(
       .or(`email.eq.${profile.email},user_id.eq.${authData.user.id}`)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Inquiries query error:', error);
+      throw error;
+    }
 
+    console.log('Found inquiries:', inquiries?.length || 0);
     return res.status(200).json(inquiries || []);
   } catch (error) {
     console.error('Error fetching user inquiries:', error);

@@ -63,10 +63,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div className="mt-8 pt-8 border-t">
             {isAuthenticated ? (
               <div className="space-y-4">
-                {user && (
+                {user && user.id && (
                   <div className="px-4 py-2 text-sm text-gray-600">
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-xs">{user.email}</p>
+                    <p className="font-medium">{user.name || '사용자'}</p>
+                    <p className="text-xs">{user.email || ''}</p>
                   </div>
                 )}
                 <Link

@@ -218,7 +218,7 @@ const AdminPage = () => {
   }>>({});
 
   useEffect(() => {
-    console.log('Admin page - user:', user, 'isAuthenticated:', isAuthenticated, 'authLoading:', authLoading);
+    console.log('Admin page - user:', user?.id, user?.name, user?.email, 'isAuthenticated:', isAuthenticated, 'authLoading:', authLoading);
     
     // 인증 상태를 확인하는 동안 대기
     if (authLoading) {

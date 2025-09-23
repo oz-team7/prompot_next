@@ -37,9 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.ok) {
         const data = await res.json();
         // 보안상 사용자 정보 로깅 제거
-        setUser(data.user);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user', JSON.stringify(data.user));
+        // user 객체가 유효한지 확인 후 설정
+        if (data.user && typeof data.user === 'object' && data.user.id) {
+          setUser(data.user);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
         }
       }
     } catch (error) {
@@ -68,9 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (res.ok) {
           const data = await res.json();
           // 보안상 사용자 정보 로깅 제거
-          setUser(data.user);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('user', JSON.stringify(data.user));
+          // user 객체가 유효한지 확인 후 설정
+          if (data.user && typeof data.user === 'object' && data.user.id) {
+            setUser(data.user);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('user', JSON.stringify(data.user));
+            }
           }
         } else {
           // 인증되지 않은 경우 로컬 스토리지도 클리어
@@ -87,7 +93,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const storedUser = localStorage.getItem('user');
           const token = localStorage.getItem('token');
           if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              // 파싱된 user 객체가 유효한지 확인
+              if (parsedUser && typeof parsedUser === 'object' && parsedUser.id) {
+                setUser(parsedUser);
+              } else {
+                // 유효하지 않은 user 데이터 제거
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                setUser(null);
+              }
+            } catch (e) {
+              // JSON 파싱 오류 시 저장된 데이터 제거
+              localStorage.removeItem('user');
+              localStorage.removeItem('token');
+              setUser(null);
+            }
           } else {
             // 토큰이 없으면 사용자 정보도 제거
             localStorage.removeItem('user');
@@ -122,9 +144,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(data.message || '로그인에 실패했습니다.');
     }
 
-    setUser(data.user);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(data.user));
+    // user 객체가 유효한지 확인 후 설정
+    if (data.user && typeof data.user === 'object' && data.user.id) {
+      setUser(data.user);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
     }
     
     // 토큰 저장
