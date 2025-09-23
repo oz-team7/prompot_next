@@ -144,10 +144,11 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
           ) : (
             <div className="space-y-3">
               {bookmarks
-                .filter((bookmark: any) => 
-                  selectedCategory === null || 
-                  bookmark.categoryId === selectedCategory
-                )
+                .filter((bookmark: any) => {
+                  if (selectedCategory === null) return true; // 전체
+                  if (selectedCategory === 'uncategorized') return !bookmark.categoryId; // 카테고리 없음
+                  return bookmark.categoryId === selectedCategory; // 특정 카테고리
+                })
                 .map(bookmark => (
                   <Link 
                     key={bookmark.id} 

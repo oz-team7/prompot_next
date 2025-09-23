@@ -915,7 +915,6 @@ const MyPage = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-gray-600">{user?.email || ''}</p>
                 {userStats && (
                   <div className="mt-3">
                     <p className="text-sm text-gray-700 font-medium">
@@ -996,8 +995,8 @@ const MyPage = () => {
                     <span className={`ml-1 text-sm ${
                       activeTab === tab.id
                         ? tab.id === 'bookmarks'
-                          ? 'text-orange-500'
-                          : 'text-gray-500'
+                          ? 'text-orange-600'
+                          : 'text-orange-500'
                         : 'text-gray-500'
                     }`}>
                       ({tab.count})
@@ -1085,38 +1084,47 @@ const MyPage = () => {
                 {/* 카테고리 필터와 관리 */}
                 <div className="flex justify-between items-center mb-4">
                   {/* 카테고리 필터 */}
-                  {bookmarkCategories.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedCategory(null)}
+                      className={`px-3 py-1 text-sm rounded transition-colors border ${
+                        selectedCategory === null
+                          ? "bg-primary text-white border-orange-500"
+                          : "bg-white text-orange-600 border-orange-300 hover:bg-orange-50"
+                      }`}
+                    >
+                      전체
+                    </button>
+                    <button
+                      onClick={() => setSelectedCategory('uncategorized')}
+                      className={`px-3 py-1 text-sm rounded transition-colors border ${
+                        selectedCategory === 'uncategorized'
+                          ? "bg-primary text-white border-orange-500"
+                          : "bg-white text-orange-600 border-orange-300 hover:bg-orange-50"
+                      }`}
+                    >
+                      카테고리 없음
+                      <span className="text-xs text-orange-600">({bookmarks.filter(b => !b.categoryId).length})</span>
+                    </button>
+                    {bookmarkCategories.map((category) => (
                       <button
-                        onClick={() => setSelectedCategory(null)}
-                        className={`px-3 py-1 text-sm rounded transition-colors border ${
-                          selectedCategory === null
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 border ${
+                          selectedCategory === category.id
                             ? "bg-primary text-white border-orange-500"
                             : "bg-white text-orange-600 border-orange-300 hover:bg-orange-50"
                         }`}
                       >
-                        전체
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        {category.name}
+                        <span className="text-xs text-orange-600">({category.bookmarkCount || 0})</span>
                       </button>
-                      {bookmarkCategories.map((category) => (
-                        <button
-                          key={category.id}
-                          onClick={() => setSelectedCategory(category.id)}
-                          className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 border ${
-                            selectedCategory === category.id
-                              ? "bg-primary text-white border-orange-500"
-                              : "bg-white text-orange-600 border-orange-300 hover:bg-orange-50"
-                          }`}
-                        >
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          />
-                          {category.name}
-                          <span className="text-xs text-orange-600">({category.bookmarkCount || 0})</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                    ))}
+                  </div>
                   
                   {/* 카테고리 관리 버튼 */}
                   <button
@@ -1146,10 +1154,11 @@ const MyPage = () => {
                   ) : bookmarks.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                       {bookmarks
-                        .filter((bookmark: any) => 
-                          selectedCategory === null || 
-                          bookmark.categoryId === selectedCategory
-                        )
+                        .filter((bookmark: any) => {
+                          if (selectedCategory === null) return true; // 전체
+                          if (selectedCategory === 'uncategorized') return !bookmark.categoryId; // 카테고리 없음
+                          return bookmark.categoryId === selectedCategory; // 특정 카테고리
+                        })
                         .map(bookmark => {
                           const convertedPrompt = convertBookmarkToPrompt(bookmark);
                           return (
@@ -1399,7 +1408,7 @@ const MyPage = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold">문의 내역</h2>
-                  <Link
+                  {/* <Link
                     href="/faq"
                     className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
                   >
@@ -1407,7 +1416,7 @@ const MyPage = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     새 문의하기
-                  </Link>
+                  </Link> */}
                 </div>
                 
                 {inquiriesLoading ? (
@@ -1427,7 +1436,7 @@ const MyPage = () => {
                       href="/faq"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
                     >
-                      FAQ
+                      FAQ 본 후 문의하기
                     </Link>
                   </div>
                 ) : (

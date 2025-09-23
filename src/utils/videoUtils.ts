@@ -29,6 +29,20 @@ export const getVideoThumbnail = (url: string): string | null => {
     }
   }
   
+  // 직접 동영상 파일 URL 처리 (MP4, WebM 등)
+  if (url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') || url.includes('.avi')) {
+    // 직접 동영상 파일의 경우 썸네일을 생성할 수 없으므로 null 반환
+    // 프론트엔드에서 video 태그를 사용하여 첫 번째 프레임을 썸네일로 사용
+    return null;
+  }
+  
+  // OpenAI 동영상 URL 처리
+  if (url.includes('videos.openai.com')) {
+    // OpenAI 동영상의 경우 썸네일을 생성할 수 없으므로 null 반환
+    // 프론트엔드에서 video 태그를 사용하여 첫 번째 프레임을 썸네일로 사용
+    return null;
+  }
+  
   return null;
 };
 
@@ -53,6 +67,18 @@ export const getFallbackThumbnail = (url: string): string | null => {
   return null;
 };
 
+// 직접 동영상 파일 URL인지 확인
+export const isDirectVideoUrl = (url: string): boolean => {
+  return url.includes('.mp4') || 
+         url.includes('.webm') || 
+         url.includes('.mov') || 
+         url.includes('.avi') ||
+         url.includes('videos.openai.com') ||
+         url.includes('storage.googleapis.com') ||
+         url.includes('amazonaws.com') ||
+         url.includes('blob:');
+};
+
 // 동영상 제목 가져오기 (선택사항)
 export const getVideoTitle = (url: string): string => {
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -62,6 +88,8 @@ export const getVideoTitle = (url: string): string => {
     return 'YouTube 동영상';
   } else if (url.includes('vimeo.com')) {
     return 'Vimeo 동영상';
+  } else if (isDirectVideoUrl(url)) {
+    return '동영상';
   }
   return '동영상';
 };

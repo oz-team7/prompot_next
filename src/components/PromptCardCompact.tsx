@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
-import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail } from '@/utils/videoUtils';
+import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail, isDirectVideoUrl } from '@/utils/videoUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useLike } from '@/hooks/useLike';
@@ -191,24 +191,53 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
             </div>
 
             {/* 이미지 */}
-            {(prompt.video_url || prompt.videoUrl) && getVideoThumbnail(prompt.video_url || prompt.videoUrl || '') ? (
+            {(() => {
+              const videoUrl = prompt.video_url || prompt.videoUrl;
+              const thumbnailUrl = videoUrl ? getVideoThumbnail(videoUrl) : null;
+              const isDirectVideo = videoUrl ? isDirectVideoUrl(videoUrl) : false;
+              return (videoUrl && (thumbnailUrl || isDirectVideo));
+            })() ? (
               <div className="relative w-full h-full">
-                <Image
-                  src={getVideoThumbnail(prompt.video_url || prompt.videoUrl || '')!}
-                  alt={getVideoTitle(prompt.video_url || prompt.videoUrl || '')}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  className="object-cover"
-                  onError={(e) => {
-                    const videoUrl = prompt.video_url || prompt.videoUrl;
-                    const fallbackUrl = videoUrl ? getFallbackThumbnail(videoUrl) : null;
-                    if (fallbackUrl) {
-                      e.currentTarget.src = fallbackUrl;
-                    } else {
-                      e.currentTarget.style.display = 'none';
-                    }
-                  }}
-                />
+                {(() => {
+                  const videoUrl = prompt.video_url || prompt.videoUrl || '';
+                  const thumbnailUrl = getVideoThumbnail(videoUrl);
+                  const isDirectVideo = isDirectVideoUrl(videoUrl);
+                  
+                  if (thumbnailUrl) {
+                    // YouTube, Vimeo 등 썸네일이 있는 경우
+                    return (
+                      <Image
+                        src={thumbnailUrl}
+                        alt={getVideoTitle(videoUrl)}
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="object-cover"
+                        onError={(e) => {
+                          const fallbackUrl = getFallbackThumbnail(videoUrl);
+                          if (fallbackUrl) {
+                            e.currentTarget.src = fallbackUrl;
+                          } else {
+                            e.currentTarget.style.display = 'none';
+                          }
+                        }}
+                      />
+                    );
+                  } else if (isDirectVideo) {
+                    // 직접 동영상 파일인 경우 video 태그 사용
+                    return (
+                      <video
+                        src={videoUrl}
+                        className="w-full h-full object-cover"
+                        muted
+                        preload="metadata"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             ) : prompt.preview_image ? (
               // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)

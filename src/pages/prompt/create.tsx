@@ -511,7 +511,7 @@ const CreatePromptPage = () => {
           ...formData,
           previewImage: thumbnailUrl,
           additionalImages: additionalImageUrls,
-          videoUrl: formData.resultType === 'image' ? formData.videoUrl : '',
+          videoUrl: formData.videoUrl,
         }),
       });
 

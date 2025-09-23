@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Prompt } from '@/types/prompt';
 import BookmarkCategorySelector from './BookmarkCategorySelector';
-import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail } from '@/utils/videoUtils';
+import { getVideoThumbnail, getVideoTitle, getFallbackThumbnail, isDirectVideoUrl } from '@/utils/videoUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSearch } from '@/contexts/SearchContext';
@@ -256,40 +256,69 @@ const PromptCard: React.FC<PromptCardProps> = ({
           {(() => {
             const videoUrl = prompt.video_url || prompt.videoUrl;
             const thumbnailUrl = videoUrl ? getVideoThumbnail(videoUrl) : null;
+            const isDirectVideo = videoUrl ? isDirectVideoUrl(videoUrl) : false;
             console.log('[DEBUG] PromptCard video check:', {
               promptId: prompt.id,
               title: prompt.title,
               video_url: prompt.video_url,
               videoUrl: prompt.videoUrl,
               finalVideoUrl: videoUrl,
-              thumbnailUrl: thumbnailUrl
+              thumbnailUrl: thumbnailUrl,
+              isDirectVideo: isDirectVideo
             });
-            return (videoUrl && thumbnailUrl);
+            return (videoUrl && (thumbnailUrl || isDirectVideo));
           })() ? (
             <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
-              <Image
-                src={getVideoThumbnail(prompt.video_url || prompt.videoUrl || '')!}
-                alt={getVideoTitle(prompt.video_url || prompt.videoUrl || '')}
-                fill
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                className="object-cover"
-                onError={(e) => {
-                  const videoUrl = prompt.video_url || prompt.videoUrl;
-                  console.error('썸네일 로드 실패:', videoUrl, e);
-                  // 대체 썸네일 시도
-                  const fallbackUrl = videoUrl ? getFallbackThumbnail(videoUrl) : null;
-                  if (fallbackUrl) {
-                    e.currentTarget.src = fallbackUrl;
-                    console.log('대체 썸네일 시도:', fallbackUrl);
-                  } else {
-                    e.currentTarget.style.display = 'none';
-                  }
-                }}
-                onLoad={() => {
-                  const videoUrl = prompt.video_url || prompt.videoUrl;
-                  console.log('썸네일 로드 성공:', videoUrl);
-                }}
-              />
+              {(() => {
+                const videoUrl = prompt.video_url || prompt.videoUrl || '';
+                const thumbnailUrl = getVideoThumbnail(videoUrl);
+                const isDirectVideo = isDirectVideoUrl(videoUrl);
+                
+                if (thumbnailUrl) {
+                  // YouTube, Vimeo 등 썸네일이 있는 경우
+                  return (
+                    <Image
+                      src={thumbnailUrl}
+                      alt={getVideoTitle(videoUrl)}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover"
+                      onError={(e) => {
+                        console.error('썸네일 로드 실패:', videoUrl, e);
+                        // 대체 썸네일 시도
+                        const fallbackUrl = getFallbackThumbnail(videoUrl);
+                        if (fallbackUrl) {
+                          e.currentTarget.src = fallbackUrl;
+                          console.log('대체 썸네일 시도:', fallbackUrl);
+                        } else {
+                          e.currentTarget.style.display = 'none';
+                        }
+                      }}
+                      onLoad={() => {
+                        console.log('썸네일 로드 성공:', videoUrl);
+                      }}
+                    />
+                  );
+                } else if (isDirectVideo) {
+                  // 직접 동영상 파일인 경우 video 태그 사용
+                  return (
+                    <video
+                      src={videoUrl}
+                      className="w-full h-full object-cover"
+                      muted
+                      preload="metadata"
+                      onLoadedData={(e) => {
+                        console.log('동영상 로드 성공:', videoUrl);
+                      }}
+                      onError={(e) => {
+                        console.error('동영상 로드 실패:', videoUrl, e);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  );
+                }
+                return null;
+              })()}
             </div>
           ) : prompt.preview_image ? (
             // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)

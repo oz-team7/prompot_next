@@ -470,8 +470,9 @@ export const useBookmarks = () => {
 
   // 카테고리별 북마크 필터링
   const getBookmarksByCategory = useCallback((categoryId: string | null) => {
-    if (categoryId === null) return bookmarks;
-    return bookmarks.filter(b => b.categoryId === categoryId);
+    if (categoryId === null) return bookmarks; // 전체
+    if (categoryId === 'uncategorized') return bookmarks.filter(b => !b.categoryId); // 카테고리 없음
+    return bookmarks.filter(b => b.categoryId === categoryId); // 특정 카테고리
   }, [bookmarks]);
 
   // 실시간 동기화 이벤트 리스너
