@@ -451,10 +451,10 @@ const PromptCard: React.FC<PromptCardProps> = ({
                     alt={prompt.author.name || '작성자'}
                     width={20}
                     height={20}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center rounded-full">
                     <span className="text-xs font-medium text-orange-600">
                       {(prompt.author?.name || '익명').charAt(0).toUpperCase()}
                     </span>

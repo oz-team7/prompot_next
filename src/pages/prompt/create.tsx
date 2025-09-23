@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,7 +80,6 @@ const CreatePromptPage = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
-  const [tagInput, setTagInput] = useState('');
   
   // 드롭다운 상태 추가
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -295,19 +294,29 @@ const CreatePromptPage = () => {
     }
   };
 
-  const handleTagInputKeyDown = (e: React.KeyboardEvent) => {
+  const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const addTagFromInput = () => {
+    if (!tagInputRef.current) return;
+    
+    const inputValue = tagInputRef.current.value.trim();
+    if (inputValue && !formData.tags.includes(inputValue) && formData.tags.length < 5) {
+      handleInputChange('tags', [...formData.tags, inputValue]);
+      tagInputRef.current.value = '';
+    }
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      const newTag = tagInput.trim();
-      if (newTag && !formData.tags.includes(newTag) && formData.tags.length < 5) {
-        handleInputChange('tags', [...formData.tags, newTag]);
-        setTagInput('');
-      }
+      e.stopPropagation();
+      addTagFromInput();
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    handleInputChange('tags', formData.tags.filter(tag => tag !== tagToRemove));
+    const updatedTags = formData.tags.filter(tag => tag !== tagToRemove);
+    handleInputChange('tags', updatedTags);
   };
 
   // 드래그 앤 드롭 핸들러
@@ -1006,10 +1015,9 @@ const CreatePromptPage = () => {
                   태그
                 </h3>
                 <input
+                  ref={tagInputRef}
                   type="text"
                   id="tags"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagInputKeyDown}
                   placeholder="태그를 입력하고 Enter를 누르세요. 최대 5개의 태그를 추가할 수 있습니다. (예: AI, 생산성, 팁)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -1018,9 +1026,19 @@ const CreatePromptPage = () => {
                   {formData.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
+                      className="inline-flex items-center gap-1 bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
                     >
                       #{tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 text-orange-600 hover:text-orange-800 transition-colors"
+                        title="태그 삭제"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </span>
                   ))}
                 </div>

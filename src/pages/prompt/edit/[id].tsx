@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Header from '@/components/Header';
@@ -59,7 +59,7 @@ const EditPromptPage = () => {
     title: '',
     category: 'work' as CategoryType,
     aiModel: 'chatgpt',
-    tags: '',
+    tags: [] as string[],
     description: '',
     content: '',
     isPublic: true,
@@ -190,7 +190,7 @@ const EditPromptPage = () => {
         title: prompt.title,
         category: prompt.category,
         aiModel: prompt.ai_model,
-        tags: Array.isArray(prompt.tags) ? prompt.tags.join(', ') : prompt.tags || '',
+        tags: Array.isArray(prompt.tags) ? prompt.tags : (prompt.tags ? prompt.tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag) : []),
         description: prompt.description,
         content: prompt.content,
         isPublic: prompt.is_public,
@@ -252,6 +252,31 @@ const EditPromptPage = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const tagInputRef = useRef<HTMLInputElement>(null);
+
+  const addTagFromInput = () => {
+    if (!tagInputRef.current) return;
+    
+    const inputValue = tagInputRef.current.value.trim();
+    if (inputValue && !formData.tags.includes(inputValue) && formData.tags.length < 5) {
+      setFormData(prev => ({ ...prev, tags: [...prev.tags, inputValue] }));
+      tagInputRef.current.value = '';
+    }
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      e.stopPropagation();
+      addTagFromInput();
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    const updatedTags = formData.tags.filter(tag => tag !== tagToRemove);
+    setFormData(prev => ({ ...prev, tags: updatedTags }));
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -493,7 +518,7 @@ const EditPromptPage = () => {
         prompt: formData.content,
         category: formData.category,
         aiModel: formData.aiModel,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        tags: formData.tags,
         resultType: formData.resultType,
         textResult: formData.textResult
       } : {
@@ -502,7 +527,7 @@ const EditPromptPage = () => {
         additional_images: allAdditionalImages,
         video_url: formData.videoUrl,
         is_public: formData.isPublic,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        tags: formData.tags,
         resultType: formData.resultType,
         textResult: formData.textResult
       };
@@ -1306,24 +1331,31 @@ const EditPromptPage = () => {
                   태그
                 </h3>
                 <input
+                  ref={tagInputRef}
                   type="text"
                   id="tags"
-                  name="tags"
-                  value={formData.tags}
-                  onChange={handleChange}
-                  placeholder="태그를 쉼표로 구분하여 입력하세요. 최대 5개의 태그를 추가할 수 있습니다. (예: AI, 생산성, 팁)"
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="태그를 입력하고 Enter를 누르세요. 최대 5개의 태그를 추가할 수 있습니다. (예: AI, 생산성, 팁)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.split(',').map((tag, index) => (
-                    tag.trim() && (
-                      <span
-                        key={index}
-                        className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
+                  {formData.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium"
+                    >
+                      #{tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 text-orange-600 hover:text-orange-800 transition-colors"
+                        title="태그 삭제"
                       >
-                        #{tag.trim()}
-                      </span>
-                    )
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
                   ))}
                 </div>
               </div>

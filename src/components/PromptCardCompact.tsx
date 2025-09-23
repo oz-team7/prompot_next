@@ -277,7 +277,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                       alt={prompt.author.name || '작성자'}
                       width={24}
                       height={24}
-                      className="rounded-full border border-white/30"
+                      className="w-6 h-6 object-cover rounded-full border border-white/30"
                     />
                   ) : (
                     <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
