@@ -146,7 +146,7 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
                   />
                   <div className="flex items-center">
                     <div className="w-5 h-5 bg-gray-300 dark:bg-gray-500 rounded-md mr-3 shadow-sm"></div>
-                    <span className="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">카테고리 없음</span>
+                    <span className="text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300 transition-colors">카테고리 없음</span>
                   </div>
                 </label>
 
@@ -167,7 +167,7 @@ const BookmarkCategorySelector: React.FC<BookmarkCategorySelectorProps> = ({
                         className="w-5 h-5 rounded-md mr-3 shadow-sm border border-white/20"
                         style={{ backgroundColor: category.color }}
                       ></div>
-                      <span className="text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{category.name}</span>
+                      <span className="text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300 transition-colors">{category.name}</span>
                     </div>
                   </label>
                 ))}

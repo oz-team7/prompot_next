@@ -101,7 +101,7 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
             <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-orange-100">
               <button
                 onClick={() => setSelectedCategory(null)}
-                className={`px-3 py-1.5 text-sm rounded-lg transition-all border ${
+                className={`px-2 py-1 text-xs rounded-lg transition-all border ${
                   selectedCategory === null
                     ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-md"
                     : "bg-white text-gray-700 border-orange-300 hover:bg-orange-50 hover:border-orange-400"
@@ -115,14 +115,14 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-all flex items-center gap-1.5 border ${
+                    className={`px-2 py-1 text-xs rounded-lg transition-all flex items-center gap-1 border ${
                       selectedCategory === category.id
                         ? "bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-600 shadow-md"
                         : "bg-white text-gray-700 border-orange-300 hover:bg-orange-50 hover:border-orange-400"
                     }`}
                   >
                     <div
-                      className="w-3 h-3 rounded-full border border-white/50"
+                      className="w-2.5 h-2.5 rounded-full border border-white/50"
                       style={{ backgroundColor: category.color }}
                     />
                     {category.name} ({count})
