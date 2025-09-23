@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Prompt } from '@/types/prompt';
 import PromptCardCompact from './PromptCardCompact';
 import BookmarkPanel from './BookmarkPanel';
-import TrendingPrompts from './TrendingPrompts';
+// import TrendingPrompts from './TrendingPrompts'; // 이제 SearchBar 내부로 이동됨
 import { useSearch } from '@/contexts/SearchContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePrompts } from '@/hooks/usePrompts';
@@ -522,8 +522,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             {/* Spacer to push buttons to the right */}
             <div className="flex-1"></div>
 
-            {/* Trending Prompts */}
-            <TrendingPrompts />
+            {/* Trending Prompts - 이제 SearchBar 내부로 이동됨 */}
 
             {/* Action Buttons */}
             <div className="flex gap-1 sm:gap-2 items-center">
