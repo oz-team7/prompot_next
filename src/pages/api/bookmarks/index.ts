@@ -52,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               created_at,
               updated_at,
               author_id,
-              profiles!inner(
+              profiles(
                 id,
                 name,
                 avatar_url
@@ -90,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             updatedAt: (bookmark.prompts as any)?.updated_at,
             author: (bookmark.prompts as any)?.profiles?.name || 'Unknown',
             authorId: (bookmark.prompts as any)?.author_id,
-            authorAvatarUrl: (bookmark.prompts as any)?.profiles?.avatar_url || undefined
+            authorAvatarUrl: (bookmark.prompts as any)?.profiles?.avatar_url || null
           }
         })) || [];
 
@@ -157,7 +157,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               created_at,
               updated_at,
               author_id,
-              profiles!inner(
+              profiles(
                 id,
                 name,
                 avatar_url
@@ -194,7 +194,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             updatedAt: (bookmark.prompts as any)?.updated_at,
             author: (bookmark.prompts as any)?.profiles?.name || 'Unknown',
             authorId: (bookmark.prompts as any)?.author_id,
-            authorAvatarUrl: (bookmark.prompts as any)?.profiles?.avatar_url || undefined
+            authorAvatarUrl: (bookmark.prompts as any)?.profiles?.avatar_url || null
           }
         };
 

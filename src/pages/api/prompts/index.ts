@@ -86,7 +86,7 @@ export default async function handler(
       .from('prompts')
       .select(`
         *,
-        author:profiles!author_id (
+        author:profiles (
           id,
           name,
           email,
