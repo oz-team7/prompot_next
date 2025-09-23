@@ -87,6 +87,13 @@ const MyPage = () => {
   const router = useRouter();
   const { user, isAuthenticated, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings' | 'support'>('prompts');
+  
+  // URL 쿼리 파라미터에서 탭 설정
+  useEffect(() => {
+    if (router.query.tab === 'bookmarks') {
+      setActiveTab('bookmarks');
+    }
+  }, [router.query.tab]);
   const [showProfileModal, setShowProfileModal] = useState(false);
   
   // useMemo를 사용하여 options 객체를 안정화
@@ -1085,7 +1092,7 @@ const MyPage = () => {
                         className={`px-3 py-1 text-sm rounded transition-colors border ${
                           selectedCategory === null
                             ? "bg-primary text-white border-orange-500"
-                            : "bg-white text-gray-700 border-orange-300 hover:bg-orange-50"
+                            : "bg-white text-orange-600 border-orange-300 hover:bg-orange-50"
                         }`}
                       >
                         전체
@@ -1097,7 +1104,7 @@ const MyPage = () => {
                           className={`px-3 py-1 text-sm rounded transition-colors flex items-center gap-1 border ${
                             selectedCategory === category.id
                               ? "bg-primary text-white border-orange-500"
-                              : "bg-white text-gray-700 border-orange-300 hover:bg-orange-50"
+                              : "bg-white text-orange-600 border-orange-300 hover:bg-orange-50"
                           }`}
                         >
                           <div
@@ -1105,7 +1112,7 @@ const MyPage = () => {
                             style={{ backgroundColor: category.color }}
                           />
                           {category.name}
-                          <span className="text-xs">({category.bookmarkCount || 0})</span>
+                          <span className="text-xs text-orange-600">({category.bookmarkCount || 0})</span>
                         </button>
                       ))}
                     </div>
@@ -1114,10 +1121,7 @@ const MyPage = () => {
                   {/* 카테고리 관리 버튼 */}
                   <button
                     onClick={() => {
-                      setShowBookmarks(true);
-                      setTimeout(() => {
-                        setShowCategoryManager(true);
-                      }, 100);
+                      setShowCategoryManager(true);
                     }}
                     className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-orange-600 transition-colors"
                   >

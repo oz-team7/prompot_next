@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Prompt } from '@/types/prompt';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import BookmarkCategoryManager from './BookmarkCategoryManager';
@@ -43,6 +44,7 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
   onCloseCategoryManager,
   onCategoryChange,
 }) => {
+  const router = useRouter();
   const { categories } = useBookmarkCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [internalShowCategoryManager, setInternalShowCategoryManager] = useState(false);
@@ -75,11 +77,8 @@ const BookmarkPanel: React.FC<BookmarkPanelProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                if (onOpenCategoryManager) {
-                  onOpenCategoryManager();
-                } else {
-                  setInternalShowCategoryManager(true);
-                }
+                onClose(); // 사이드바 닫기
+                router.push('/mypage?tab=bookmarks'); // 마이페이지 북마크 탭으로 이동
               }}
               className="px-3 py-1.5 text-sm bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors font-medium shadow-sm"
             >

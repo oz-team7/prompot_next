@@ -135,8 +135,7 @@ const BookmarkCategoryManager: React.FC<BookmarkCategoryManagerProps> = ({
 
         {/* 카테고리 목록 */}
         <div className="mb-3">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">카테고리 목록</h4>
+          <div className="flex justify-end items-center mb-2">
             <button
               onClick={() => setShowCreateForm(true)}
               className="text-sm text-orange-500 hover:text-orange-600 font-medium"
@@ -170,7 +169,7 @@ const BookmarkCategoryManager: React.FC<BookmarkCategoryManagerProps> = ({
                     <span className="text-sm font-medium text-orange-600">
                       {category.name}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-orange-600 font-medium">
                       ({category.bookmarkCount || 0})
                     </span>
                   </div>
