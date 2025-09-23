@@ -212,6 +212,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover"
+                        style={{ objectPosition: 'left top' }}
                         onError={(e) => {
                           const fallbackUrl = getFallbackThumbnail(videoUrl);
                           if (fallbackUrl) {
@@ -262,6 +263,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   alt={prompt.title}
                   fill
                   className="object-cover"
+                  style={{ objectPosition: 'left top' }}
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
@@ -274,6 +276,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                 alt={prompt.title}
                 fill
                 className="object-cover"
+                style={{ objectPosition: 'left top' }}
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';

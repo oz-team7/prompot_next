@@ -283,6 +283,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
                       fill
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover"
+                      style={{ objectPosition: 'left top' }}
                       onError={(e) => {
                         console.error('썸네일 로드 실패:', videoUrl, e);
                         // 대체 썸네일 시도
@@ -348,6 +349,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
                   alt={prompt.title}
                   fill
                   className="object-cover transition-transform group-hover:scale-105"
+                  style={{ objectPosition: 'left top' }}
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   onError={(e) => {
                     console.error('이미지 로드 실패:', prompt.preview_image, e);
@@ -366,6 +368,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
                 alt={prompt.title}
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
+                style={{ objectPosition: 'left top' }}
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 onError={(e) => {
                   console.error('추가 이미지 로드 실패:', prompt.additional_images?.[0], e);
