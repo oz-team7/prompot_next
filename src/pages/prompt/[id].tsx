@@ -471,7 +471,7 @@ const PromptDetailPage = () => {
     if (prompt?.resultType === 'text' && prompt?.textResult) {
       const generateTextImage = async () => {
         try {
-          const imageUrl = await createTextImage(prompt.textResult);
+          const imageUrl = await createTextImage(prompt.textResult!);
           setTextImageUrl(imageUrl);
         } catch (error) {
           console.error('텍스트 이미지 생성 오류:', error);
@@ -918,7 +918,7 @@ const PromptDetailPage = () => {
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">동영상</h3>
                   <div className="relative w-full max-w-2xl mx-auto">
-                    <VideoPreview url={prompt.videoUrl || prompt.video_url} />
+                    <VideoPreview url={prompt.videoUrl || prompt.video_url || ''} />
                   </div>
                 </div>
               )}
