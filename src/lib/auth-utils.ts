@@ -4,6 +4,7 @@ import * as cookie from 'cookie';
 
 export async function getUserIdFromRequest(req: NextApiRequest): Promise<string | null> {
   const user = await getAuthUser(req);
+  console.log('[DEBUG] getUserIdFromRequest:', { userId: user?.id, userEmail: user?.email });
   return user?.id ?? null;
 }
 

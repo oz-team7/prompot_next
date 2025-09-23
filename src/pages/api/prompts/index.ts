@@ -221,6 +221,7 @@ export default async function handler(
         is_liked: isLiked,
         views: prompt.views || 0, // 조회수
         comment_count: commentCount,
+        videoUrl: prompt.video_url || null, // video_url을 videoUrl로 변환
         // 클라이언트에서 필요한 데이터만 포함
         comments: undefined, // 댓글 내용은 제거하고 개수만 유지
         ratings: undefined, // 평점 내용은 제거하고 평균만 유지

@@ -167,8 +167,21 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse, id: string) 
     .eq('id', id)
     .single()
 
-  if (ownerErr || !ownerRow) return json(res, 404, { ok: false, error: 'NOT_FOUND' })
-  if (ownerRow.author_id !== userId) return json(res, 403, { ok: false, error: 'FORBIDDEN' })
+  console.log('[DEBUG] Owner check:', { ownerRow, ownerErr, userId, promptId: id });
+
+  if (ownerErr || !ownerRow) {
+    console.log('[DEBUG] Owner not found or error:', ownerErr);
+    return json(res, 404, { ok: false, error: 'NOT_FOUND' })
+  }
+  
+  if (ownerRow.author_id !== userId) {
+    console.log('[DEBUG] Permission denied:', { 
+      ownerId: ownerRow.author_id, 
+      userId, 
+      match: ownerRow.author_id === userId 
+    });
+    return json(res, 403, { ok: false, error: 'FORBIDDEN', message: '프롬프트 수정 권한이 없습니다.' })
+  }
 
   // 입력 정규화
   const {

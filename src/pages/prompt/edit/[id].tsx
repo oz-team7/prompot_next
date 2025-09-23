@@ -601,6 +601,10 @@ const EditPromptPage = () => {
       };
       
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      console.log('[DEBUG] Edit page - token:', token ? 'exists' : 'missing');
+      console.log('[DEBUG] Edit page - user:', user);
+      console.log('[DEBUG] Edit page - isAdmin:', isAdmin);
+      
       if (!token) {
         throw new Error('인증 정보가 없습니다. 다시 로그인해주세요.');
       }

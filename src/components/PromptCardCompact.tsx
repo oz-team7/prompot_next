@@ -191,21 +191,25 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
             </div>
 
             {/* 이미지 */}
-            {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
-              <Image
-                src={getVideoThumbnail(prompt.video_url)!}
-                alt={getVideoTitle(prompt.video_url)}
-                fill
-                className="object-cover"
-                onError={(e) => {
-                  const fallbackUrl = prompt.video_url ? getFallbackThumbnail(prompt.video_url) : null;
-                  if (fallbackUrl) {
-                    e.currentTarget.src = fallbackUrl;
-                  } else {
-                    e.currentTarget.style.display = 'none';
-                  }
-                }}
-              />
+            {(prompt.video_url || prompt.videoUrl) && getVideoThumbnail(prompt.video_url || prompt.videoUrl || '') ? (
+              <div className="relative w-full h-full">
+                <Image
+                  src={getVideoThumbnail(prompt.video_url || prompt.videoUrl || '')!}
+                  alt={getVideoTitle(prompt.video_url || prompt.videoUrl || '')}
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  className="object-cover"
+                  onError={(e) => {
+                    const videoUrl = prompt.video_url || prompt.videoUrl;
+                    const fallbackUrl = videoUrl ? getFallbackThumbnail(videoUrl) : null;
+                    if (fallbackUrl) {
+                      e.currentTarget.src = fallbackUrl;
+                    } else {
+                      e.currentTarget.style.display = 'none';
+                    }
+                  }}
+                />
+              </div>
             ) : prompt.preview_image ? (
               // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)
               prompt.resultType === 'text' || prompt.preview_image.startsWith('data:image') ? (

@@ -115,7 +115,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 setShowTrending(true);
               }
             }}
-            placeholder={showTrending && !isHovered ? "" : "검색어를 입력하세요"}
+            placeholder=""
             className="w-full px-3 sm:px-4 py-1.5 sm:py-2 pr-20 sm:pr-24 text-sm sm:text-base rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
           />
           {/* Clear button */}
@@ -146,12 +146,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </div>
       </form>
 
-      {/* 인기 프롬프트 버튼 - 검색창 내부 */}
-      {!loading && trendingPrompts.length > 0 && showTrending && !isHovered && (
+      {/* 인기 프롬프트 버튼 - 검색창 내부 - 항상 고정 */}
+      {!loading && trendingPrompts.length > 0 && showTrending && (
         <div className="absolute left-2 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+          {/* 인기태그 버튼 - 항상 표시 */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-colors font-medium text-xs whitespace-nowrap"
+            className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-colors font-medium text-xs"
             aria-expanded={isExpanded}
           >
             <span className="text-xs">🔥</span>
@@ -166,10 +167,17 @@ const SearchBar: React.FC<SearchBarProps> = ({
             </svg>
           </button>
 
-          {/* 롤링 뉴스 영역 */}
-          {!isExpanded && currentPrompt && (
+          {/* 검색어 입력 안내 문구 - 마우스 호버 시 표시 */}
+          {isHovered && (
+            <span className="text-gray-400 text-sm whitespace-nowrap">
+              검색어를 입력해주세요
+            </span>
+          )}
+
+          {/* 롤링 뉴스 영역 - 마우스 호버 시 숨김 */}
+          {!isExpanded && currentPrompt && !isHovered && (
             <div className="flex items-center overflow-hidden">
-              <div className="relative h-6 overflow-hidden w-[600px]">
+              <div className="relative h-6 overflow-hidden w-[300px]">
                 <div className="absolute inset-0 flex flex-col">
                   {trendingPrompts.map((prompt, index) => (
                     <div 
@@ -192,7 +200,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                         <span className="text-orange-500 font-bold text-xs">
                           {index + 1}위
                         </span>
-                        <span className="text-gray-700 whitespace-nowrap">
+                        <span className="text-gray-700 truncate max-w-[200px]">
                           {prompt.title}
                         </span>
                         <span className="text-gray-400 text-xs">
@@ -210,12 +218,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
       {/* 확장된 목록 */}
       {isExpanded && (
-        <div className="absolute top-full mt-2 left-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 w-96 max-h-[500px] overflow-y-auto">
+        <div className="absolute top-full mt-2 left-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 w-80 max-h-[400px] overflow-y-auto scrollbar-hide">
           <div className="p-4">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <span>🔥</span>
-              실시간 인기 프롬프트 TOP 10
-            </h3>
+            <div className="mb-3">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <span>🔥</span>
+                실시간 인기 프롬프트 TOP 10
+              </h3>
+            </div>
             
             <div className="space-y-3">
               {trendingPrompts.map((prompt, index) => (
@@ -225,7 +235,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   className="block p-3 rounded-lg hover:bg-orange-50 transition-colors group"
                   onClick={() => setIsExpanded(false)}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-3">
                     <div className={`
                       flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
                       ${index === 0 ? 'bg-orange-500 text-white' : 
@@ -240,36 +250,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
                       <h4 className="font-medium text-gray-900 group-hover:text-orange-600 transition-colors truncate">
                         {prompt.title}
                       </h4>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                        <span>{prompt.author.name}</span>
-                        <span>•</span>
-                        <span>
-                          {prompt.hours_ago < 1 ? '방금 전' : 
-                           prompt.hours_ago < 24 ? `${prompt.hours_ago}시간 전` :
-                           `${Math.floor(prompt.hours_ago / 24)}일 전`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 mt-1 text-xs">
-                        <span className="flex items-center gap-1 text-gray-600">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                          {prompt.views}
-                        </span>
-                        <span className="flex items-center gap-1 text-red-500">
-                          <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                          </svg>
-                          {prompt.likes_count}
-                        </span>
-                        <span className="flex items-center gap-1 text-orange-500">
-                          <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-                          </svg>
-                          {prompt.bookmark_count}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </Link>

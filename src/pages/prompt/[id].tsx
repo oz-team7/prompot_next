@@ -14,6 +14,7 @@ import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import ImageModal from '@/components/ImageModal';
 import FloatingHearts from '@/components/FloatingHearts';
 import { mutate as swrMutate } from 'swr';
+import { getVideoTitle, getVideoThumbnail, getFallbackThumbnail } from '@/utils/videoUtils';
 
 // 추가 이미지 컴포넌트
 const AdditionalImageItem = ({ imageUrl, index, onImageClick }: { imageUrl: string; index: number; onImageClick: (imageUrl: string, alt: string) => void }) => {
@@ -121,6 +122,7 @@ interface PromptDetail {
   previewImage?: string;
   additionalImages?: string[];
   videoUrl?: string;
+  video_url?: string;
   views?: number;
   likes?: number;
   likes_count?: number;
@@ -134,6 +136,8 @@ interface PromptDetail {
 const VideoPreview = ({ url }: { url: string }) => {
   const [videoError, setVideoError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showThumbnail, setShowThumbnail] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false);
 
   // YouTube URL 처리 (일반 동영상 및 숏츠 지원)
   const getYouTubeEmbedUrl = (url: string) => {
@@ -172,69 +176,178 @@ const VideoPreview = ({ url }: { url: string }) => {
     return null;
   };
 
+  // 직접 동영상 파일 URL인지 확인
+  const isDirectVideoUrl = (url: string) => {
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+    const videoMimeTypes = ['video/mp4', 'video/webm', 'video/ogg'];
+    
+    // 확장자로 확인
+    const hasVideoExtension = videoExtensions.some(ext => url.toLowerCase().includes(ext));
+    
+    // MIME 타입으로 확인 (URL에 포함된 경우)
+    const hasVideoMimeType = videoMimeTypes.some(mime => url.toLowerCase().includes(mime));
+    
+    // 일반적인 동영상 호스팅 서비스 확인
+    const videoHostingServices = [
+      'videos.openai.com',
+      'cdn.openai.com',
+      'storage.googleapis.com',
+      's3.amazonaws.com',
+      'blob:',
+      'data:video/'
+    ];
+    
+    const isVideoHosting = videoHostingServices.some(service => url.includes(service));
+    
+    return hasVideoExtension || hasVideoMimeType || isVideoHosting;
+  };
+
   const embedUrl = getEmbedUrl(url);
+  const thumbnailUrl = getVideoThumbnail(url);
+  const fallbackThumbnailUrl = getFallbackThumbnail(url);
 
-  if (videoError) {
+  // 동영상 로드 실패 시 썸네일로 전환
+  const handleVideoError = () => {
+    setVideoError(true);
+    setIsLoading(false);
+    if (thumbnailUrl) {
+      setShowThumbnail(true);
+    }
+  };
+
+  // 썸네일 클릭 시 동영상 재생
+  const handleThumbnailClick = () => {
+    if (embedUrl) {
+      setShowThumbnail(false);
+      setVideoError(false);
+      setIsLoading(true);
+    }
+  };
+
+  // 썸네일 표시 (동영상 로드 실패 시 또는 embed URL이 없을 때)
+  if (showThumbnail || (!embedUrl && !isDirectVideoUrl(url) && thumbnailUrl)) {
     return (
-      <div className="bg-gray-100 rounded-lg p-4 flex items-center gap-3">
-        <div className="text-2xl">🎥</div>
-        <div className="flex-1">
-          <p className="text-sm text-gray-600">동영상을 불러올 수 없습니다</p>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-500 hover:text-blue-700 underline inline-flex items-center gap-1"
-          >
-            동영상 보기
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
-        </div>
+      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden cursor-pointer group" onClick={handleThumbnailClick}>
+        {thumbnailUrl && !thumbnailError ? (
+          <>
+            <Image
+              src={thumbnailUrl}
+              alt={getVideoTitle(url) || '동영상 썸네일'}
+              fill
+              className="object-cover transition-transform group-hover:scale-105"
+              unoptimized={true}
+              onError={() => {
+                if (fallbackThumbnailUrl) {
+                  setThumbnailError(false);
+                } else {
+                  setThumbnailError(true);
+                }
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all">
+              <div className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg className="w-8 h-8 text-gray-700 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+            {getVideoTitle(url) && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                <p className="text-white text-sm font-medium truncate">{getVideoTitle(url)}</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-100">
+            <div className="text-center">
+              <div className="text-4xl mb-2">🎥</div>
+              <p className="text-sm text-gray-600 mb-2">동영상 미리보기</p>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-500 hover:text-blue-700 underline inline-flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                동영상 보기
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  if (!embedUrl) {
+  // 직접 동영상 파일 표시
+  if (isDirectVideoUrl(url) && !videoError) {
     return (
-      <div className="bg-gray-100 rounded-lg p-4 flex items-center gap-3">
-        <div className="text-2xl">🎥</div>
-        <div className="flex-1">
-          <p className="text-sm text-gray-600">동영상 미리보기를 사용할 수 없습니다</p>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-500 hover:text-blue-700 underline inline-flex items-center gap-1"
-          >
-            동영상 보기
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
-        </div>
+      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+            <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+        <video
+          src={url}
+          controls
+          className="w-full h-full object-contain bg-black"
+          onLoadedData={() => setIsLoading(false)}
+          onError={handleVideoError}
+          preload="metadata"
+        >
+          <source src={url} type="video/mp4" />
+          <source src={url} type="video/webm" />
+          <source src={url} type="video/ogg" />
+          브라우저가 동영상을 지원하지 않습니다.
+        </video>
       </div>
     );
   }
 
+  // 동영상 iframe 표시 (YouTube, Vimeo 등)
+  if (embedUrl && !videoError) {
+    return (
+      <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+            <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+        <iframe
+          src={embedUrl}
+          title="동영상 미리보기"
+          className="w-full h-full"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          onLoad={() => setIsLoading(false)}
+          onError={handleVideoError}
+        />
+      </div>
+    );
+  }
+
+  // 최종 fallback
   return (
-    <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-          <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
-      <iframe
-        src={embedUrl}
-        title="동영상 미리보기"
-        className="w-full h-full"
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        onLoad={() => setIsLoading(false)}
-        onError={() => setVideoError(true)}
-      />
+    <div className="bg-gray-100 rounded-lg p-4 flex items-center gap-3">
+      <div className="text-2xl">🎥</div>
+      <div className="flex-1">
+        <p className="text-sm text-gray-600">동영상을 불러올 수 없습니다</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-blue-500 hover:text-blue-700 underline inline-flex items-center gap-1"
+        >
+          동영상 보기
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      </div>
     </div>
   );
 };
@@ -782,11 +895,11 @@ const PromptDetailPage = () => {
             {/* Prompt content */}
             <div className="mt-6">
               {/* 동영상 (우선 표시) */}
-              {prompt.videoUrl && (
+              {(prompt.videoUrl || prompt.video_url) && (
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">동영상</h3>
                   <div className="relative w-full max-w-2xl mx-auto">
-                    <VideoPreview url={prompt.videoUrl} />
+                    <VideoPreview url={prompt.videoUrl || prompt.video_url} />
                   </div>
                 </div>
               )}

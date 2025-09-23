@@ -253,17 +253,31 @@ const PromptCard: React.FC<PromptCardProps> = ({
         
         {/* 미리보기 이미지 - 최대 확장된 높이 */}
         <div className="h-48 mb-3">
-          {prompt.video_url && getVideoThumbnail(prompt.video_url) ? (
+          {(() => {
+            const videoUrl = prompt.video_url || prompt.videoUrl;
+            const thumbnailUrl = videoUrl ? getVideoThumbnail(videoUrl) : null;
+            console.log('[DEBUG] PromptCard video check:', {
+              promptId: prompt.id,
+              title: prompt.title,
+              video_url: prompt.video_url,
+              videoUrl: prompt.videoUrl,
+              finalVideoUrl: videoUrl,
+              thumbnailUrl: thumbnailUrl
+            });
+            return (videoUrl && thumbnailUrl);
+          })() ? (
             <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">
               <Image
-                src={getVideoThumbnail(prompt.video_url)!}
-                alt={getVideoTitle(prompt.video_url)}
+                src={getVideoThumbnail(prompt.video_url || prompt.videoUrl || '')!}
+                alt={getVideoTitle(prompt.video_url || prompt.videoUrl || '')}
                 fill
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 className="object-cover"
                 onError={(e) => {
-                  console.error('썸네일 로드 실패:', prompt.video_url, e);
+                  const videoUrl = prompt.video_url || prompt.videoUrl;
+                  console.error('썸네일 로드 실패:', videoUrl, e);
                   // 대체 썸네일 시도
-                  const fallbackUrl = prompt.video_url ? getFallbackThumbnail(prompt.video_url) : null;
+                  const fallbackUrl = videoUrl ? getFallbackThumbnail(videoUrl) : null;
                   if (fallbackUrl) {
                     e.currentTarget.src = fallbackUrl;
                     console.log('대체 썸네일 시도:', fallbackUrl);
@@ -272,16 +286,10 @@ const PromptCard: React.FC<PromptCardProps> = ({
                   }
                 }}
                 onLoad={() => {
-                  console.log('썸네일 로드 성공:', prompt.video_url);
+                  const videoUrl = prompt.video_url || prompt.videoUrl;
+                  console.log('썸네일 로드 성공:', videoUrl);
                 }}
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20">
-                <div className="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-gray-700 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </div>
-              </div>
             </div>
           ) : prompt.preview_image ? (
             // 텍스트 기반 이미지인지 확인 (resultType이 text이거나 base64 인코딩된 이미지)

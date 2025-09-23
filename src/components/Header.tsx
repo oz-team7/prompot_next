@@ -33,7 +33,7 @@ const Header: React.FC = () => {
             {/* Hamburger Menu Button */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 rounded-lg"
               aria-label="Open menu"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +46,7 @@ const Header: React.FC = () => {
               onClick={handleLogoClick}
               className="flex items-center gap-2 flex-shrink-0 cursor-pointer"
             >
-              <Logo className="hover:scale-105 transition-transform w-8 h-8 sm:w-10 sm:h-10" />
+              <Logo className="w-8 h-8 sm:w-10 sm:h-10" />
               <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-primary">PROMPOT</h1>
             </button>
 
@@ -59,7 +59,7 @@ const Header: React.FC = () => {
             {isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-3">
                 {/* 프로필 사진과 닉네임을 Link로 감싸기 */}
-                <Link href="/mypage" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <Link href="/mypage" className="flex items-center gap-2">
                   {/* 프로필 사진 */}
                   <div className="relative">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200">
@@ -88,14 +88,14 @@ const Header: React.FC = () => {
                 </Link>
                 <button 
                   onClick={handleLogout}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0"
+                  className="px-4 py-2 border border-gray-300 rounded-lg flex-shrink-0"
                 >
                   로그아웃
                 </button>
               </div>
             ) : (
               <Link href="/login" className="hidden sm:block">
-                <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0">
+                <button className="px-4 py-2 border border-gray-300 rounded-lg flex-shrink-0">
                   로그인
                 </button>
               </Link>

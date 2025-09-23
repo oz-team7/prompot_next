@@ -513,7 +513,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                 </button>
 
                 {showAIModelDropdown && (
-                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto scrollbar-orange">
                     {uniqueAIModels.map((model) => (
                       <button
                         key={model}

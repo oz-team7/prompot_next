@@ -17,6 +17,25 @@
     display: none;  /* Chrome, Safari and Opera */
   }
   
+  .scrollbar-orange {
+    scrollbar-width: thin;
+    scrollbar-color: #fed7aa #fef3e2;  /* Firefox */
+  }
+  .scrollbar-orange::-webkit-scrollbar {
+    width: 8px;
+  }
+  .scrollbar-orange::-webkit-scrollbar-track {
+    background: #fef3e2;  /* 연한 주황색 배경 */
+    border-radius: 4px;
+  }
+  .scrollbar-orange::-webkit-scrollbar-thumb {
+    background: #fed7aa;  /* 연한 주황색 썸 */
+    border-radius: 4px;
+  }
+  .scrollbar-orange::-webkit-scrollbar-thumb:hover {
+    background: #fdba74;  /* 호버 시 조금 더 진한 주황색 */
+  }
+  
   @keyframes slide-in {
     from {
       transform: translateX(100%);
