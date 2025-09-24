@@ -93,19 +93,50 @@ export const useBookmarks = () => {
         return;
       }
 
-      // 서버 연결 상태 확인
-      try {
-        const healthCheck = await fetch('/api/test-basic', {
-          method: 'GET',
-          signal: AbortSignal.timeout(5000) // 5초 타임아웃
-        });
-        
-        if (!healthCheck.ok) {
-          throw new Error('서버가 응답하지 않습니다.');
+      // 서버 연결 상태 확인 (개발 환경에서만)
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const healthCheck = await fetch('/api/test-basic', {
+            method: 'GET',
+            signal: AbortSignal.timeout(3000) // 3초 타임아웃
+          });
+          
+          if (!healthCheck.ok) {
+            console.warn('[HEALTH] Server health check failed, using cached data');
+            // 캐시된 데이터 사용
+            const cached = localStorage.getItem(BOOKMARK_STORAGE_KEY);
+            if (cached) {
+              try {
+                const data = JSON.parse(cached);
+                if (data.bookmarks && Array.isArray(data.bookmarks)) {
+                  setBookmarks(data.bookmarks);
+                  return;
+                }
+              } catch (err) {
+                console.warn('[HEALTH] Failed to parse cached bookmarks:', err);
+              }
+            }
+            setBookmarks([]);
+            return;
+          }
+        } catch (healthError) {
+          console.warn('[HEALTH] Server health check failed:', healthError);
+          // 개발 환경에서 서버가 응답하지 않으면 캐시된 데이터 사용
+          const cached = localStorage.getItem(BOOKMARK_STORAGE_KEY);
+          if (cached) {
+            try {
+              const data = JSON.parse(cached);
+              if (data.bookmarks && Array.isArray(data.bookmarks)) {
+                setBookmarks(data.bookmarks);
+                return;
+              }
+            } catch (err) {
+              console.warn('[HEALTH] Failed to parse cached bookmarks:', err);
+            }
+          }
+          setBookmarks([]);
+          return;
         }
-      } catch (healthError) {
-        console.warn('[HEALTH] Server health check failed:', healthError);
-        // 서버가 응답하지 않아도 계속 진행 (캐시된 데이터 사용)
       }
 
       // console.log('[DEBUG] Fetching bookmarks from API...');
@@ -137,8 +168,30 @@ export const useBookmarks = () => {
           }
           throw new Error(errorData.message || '북마크를 가져오는데 실패했습니다.');
         } else {
-          // HTML 응답인 경우 (에러 페이지 등)
-          throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+          // HTML 응답인 경우 (에러 페이지 등) - 개발 환경에서 자주 발생하는 문제
+          console.warn(`[DEBUG] Received HTML response instead of JSON (${res.status}): ${res.statusText}`);
+          
+          // 개발 환경에서는 캐시된 데이터 사용, 프로덕션에서는 오류 표시
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[DEBUG] Development mode: Using cached data due to server error');
+            // 캐시된 데이터가 있으면 사용, 없으면 빈 배열
+            const cached = localStorage.getItem(BOOKMARK_STORAGE_KEY);
+            if (cached) {
+              try {
+                const data = JSON.parse(cached);
+                if (data.bookmarks && Array.isArray(data.bookmarks)) {
+                  setBookmarks(data.bookmarks);
+                  return;
+                }
+              } catch (err) {
+                console.warn('[DEBUG] Failed to parse cached bookmarks:', err);
+              }
+            }
+            setBookmarks([]);
+            return;
+          } else {
+            throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+          }
         }
       }
 
@@ -270,8 +323,15 @@ export const useBookmarks = () => {
           const errorData = await res.json();
           throw new Error(errorData.message || '북마크 추가에 실패했습니다.');
         } else {
-          // HTML 응답인 경우 (에러 페이지 등)
-          throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+          // HTML 응답인 경우 (에러 페이지 등) - 개발 환경에서 자주 발생하는 문제
+          console.warn(`[DEBUG] Add bookmark received HTML response (${res.status}): ${res.statusText}`);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[DEBUG] Development mode: Bookmark add failed due to server error');
+            throw new Error('개발 서버에 문제가 있습니다. 서버를 재시작해주세요.');
+          } else {
+            throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+          }
         }
       }
 
@@ -411,8 +471,15 @@ export const useBookmarks = () => {
           const errorData = await res.json();
           throw new Error(errorData.message || '북마크 삭제에 실패했습니다.');
         } else {
-          // HTML 응답인 경우 (에러 페이지 등)
-          throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+          // HTML 응답인 경우 (에러 페이지 등) - 개발 환경에서 자주 발생하는 문제
+          console.warn(`[DEBUG] Remove bookmark received HTML response (${res.status}): ${res.statusText}`);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[DEBUG] Development mode: Bookmark remove failed due to server error');
+            throw new Error('개발 서버에 문제가 있습니다. 서버를 재시작해주세요.');
+          } else {
+            throw new Error(`서버 오류 (${res.status}): ${res.statusText}`);
+          }
         }
       }
       

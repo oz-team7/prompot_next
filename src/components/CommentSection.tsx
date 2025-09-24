@@ -164,20 +164,22 @@ export default function CommentSection({ promptId, className = '', onCommentCoun
       {/* 댓글 작성 폼 */}
       {user && (
         <form onSubmit={handleSubmit} className="mb-6">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="댓글을 작성해주세요"
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            rows={3}
-          />
-          <button
-            type="submit"
-            disabled={!content.trim()}
-            className="mt-2 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 font-medium"
-          >
-            댓글 작성
-          </button>
+          <div className="flex gap-3">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="댓글을 작성해주세요"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              rows={1}
+            />
+            <button
+              type="submit"
+              disabled={!content.trim()}
+              className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 font-medium self-start"
+            >
+              댓글 작성
+            </button>
+          </div>
         </form>
       )}
 
@@ -193,26 +195,28 @@ export default function CommentSection({ promptId, className = '', onCommentCoun
             <div key={comment.id} className="bg-white p-3 rounded-lg shadow-sm">
               {editingId === comment.id ? (
                 <div>
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    rows={3}
-                  />
-                  <div className="mt-2 flex gap-2 justify-end">
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={() => handleEdit(comment.id)}
-                      disabled={!editContent.trim()}
-                      className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-orange-600 disabled:opacity-50"
-                    >
-                      수정 완료
-                    </button>
+                  <div className="flex gap-3 mb-3">
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                      rows={1}
+                    />
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handleEdit(comment.id)}
+                        disabled={!editContent.trim()}
+                        className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 font-medium"
+                      >
+                        수정 완료
+                      </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      >
+                        취소
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
