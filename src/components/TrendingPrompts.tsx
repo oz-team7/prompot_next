@@ -88,8 +88,8 @@ const TrendingPrompts: React.FC = () => {
 
         {/* 롤링 뉴스 영역 */}
         {!isExpanded && (
-          <div className="flex items-center overflow-hidden">
-            <div className="relative h-6 overflow-hidden w-[400px]">
+          <div className="flex items-center overflow-hidden min-w-0">
+            <div className="relative h-6 overflow-hidden w-64 sm:w-80 lg:w-96">
               <div className="absolute inset-0 flex flex-col">
                 {trendingPrompts.map((prompt, index) => (
                   <div 
@@ -112,7 +112,7 @@ const TrendingPrompts: React.FC = () => {
                       <span className="text-orange-500 font-bold text-xs">
                         {index + 1}위
                       </span>
-                      <span className="text-gray-700 truncate max-w-[250px]">
+                      <span className="text-gray-700 truncate max-w-[150px] sm:max-w-[200px] lg:max-w-[250px]">
                         {prompt.title}
                       </span>
                       <span className="text-gray-400 text-xs">
@@ -129,7 +129,7 @@ const TrendingPrompts: React.FC = () => {
 
       {/* 확장된 목록 */}
       {isExpanded && (
-        <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 w-96 max-h-[500px] overflow-y-auto">
+        <div className="absolute top-full mt-2 right-0 z-50 bg-white rounded-lg shadow-lg border border-gray-200 w-80 sm:w-96 max-h-[500px] overflow-y-auto">
           <div className="p-4">
             <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <span>🔥</span>

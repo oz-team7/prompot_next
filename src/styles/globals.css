@@ -6,6 +6,15 @@
   html {
     font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
   }
+  
+  body {
+    overflow-x: hidden; /* 가로 스크롤 방지 */
+    max-width: 100vw; /* 뷰포트 너비 제한 */
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
 }
 
 @layer utilities {
