@@ -217,38 +217,9 @@ const PromptCard: React.FC<PromptCardProps> = ({
       {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
       <div className="flex-shrink-0 mb-4">
         <div className="flex justify-between items-start mb-0">
-          <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" title={prompt.title}>
+          <h3 className="text-lg font-semibold line-clamp-1 flex-1 min-w-0 opacity-100 transition-opacity duration-300" title={prompt.title}>
             {prompt.title}
           </h3>
-          {/* 북마크 아이콘 */}
-          {isAuthenticated && (
-            <button
-              ref={bookmarkButtonRef}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleBookmarkClick();
-              }}
-              className="flex items-center hover:scale-110 transition-all duration-300 ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100"
-              title={actualIsBookmarked ? '북마크 제거' : '북마크 추가'}
-            >
-              <svg
-                className={`w-5 h-5 ${
-                  actualIsBookmarked ? 'text-primary fill-current' : 'text-gray-500'
-                }`}
-                viewBox="0 0 24 24"
-                fill={actualIsBookmarked ? 'currentColor' : 'none'}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                />
-              </svg>
-            </button>
-          )}
         </div>
         
         {/* 미리보기 이미지 - 최대 확장된 높이 */}
@@ -404,7 +375,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
       {/* 중간 고정 영역: 설명 */}
       <div className="flex-shrink-0 mb-3">
         <div className="h-12">
-          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 opacity-100 transition-opacity duration-300">
             {prompt.description}
           </p>
         </div>
@@ -417,7 +388,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           {(() => {
             const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 260); // 더 보수적인 카드 너비
             return displayTags.length > 0 || remainingCount > 0 ? (
-              <div className="flex flex-nowrap gap-1 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="flex flex-nowrap gap-1 overflow-hidden opacity-100 transition-opacity duration-300">
                 {displayTags.map((tag, index) => (
                   <button
                     key={index}
@@ -440,7 +411,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
         </div>
         
         {/* Footer - 카테고리/AI모델/작성자 */}
-        <div className="space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="space-y-2 opacity-100 transition-opacity duration-300">
           {/* 첫 번째 줄: 카테고리와 AI 모델 */}
           <div className="flex items-center gap-2">
             {/* 카테고리 */}
@@ -461,7 +432,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
             {prompt.aiModel && (
               <button
                 onClick={handleAIModelClick}
-                className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer opacity-100 transition-opacity duration-300"
               >
                 <div className="flex items-center gap-1">
                   {prompt.aiModel.icon && (

@@ -149,7 +149,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
           {/* 이미지 영역 */}
           <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
             {/* 카테고리와 AI 모델 표시 (왼쪽 상단) */}
-            <div className="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute top-3 left-3 z-10 opacity-100 transition-opacity duration-300">
               <div className="flex items-center gap-2">
                 {/* 카테고리 */}
                 {prompt.category && (
@@ -192,24 +192,10 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                 className="group/bookmark transition-all duration-300"
                 title={actualIsBookmarked ? '북마크 제거' : '북마크 추가'}
               >
-                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm group-hover/bookmark:bg-white transition-colors opacity-0 group-hover:opacity-100">
+                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm group-hover/bookmark:bg-white transition-colors opacity-100">
                   <svg
                     className={`w-5 h-5 ${
                       actualIsBookmarked ? 'text-orange-500 fill-current' : 'text-gray-600'
-                    }`}
-                    viewBox="0 0 24 24"
-                    fill={actualIsBookmarked ? 'currentColor' : 'none'}
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-                  </svg>
-                </div>
-                {/* 호버하지 않을 때 심플한 북마크 아이콘 */}
-                <div className="absolute top-0 right-0 opacity-100 group-hover:opacity-0 transition-opacity duration-300">
-                  <svg
-                    className={`w-6 h-6 ${
-                      actualIsBookmarked ? 'text-orange-500 fill-current' : 'text-white drop-shadow-lg'
                     }`}
                     viewBox="0 0 24 24"
                     fill={actualIsBookmarked ? 'currentColor' : 'none'}
@@ -335,7 +321,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
             )}
 
             {/* 하단 정보 오버레이 */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-3 sm:p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-3 sm:p-4 opacity-100 transition-opacity duration-300">
               {/* 제목 */}
               <h3 className="font-semibold text-white text-base sm:text-lg mb-2 line-clamp-2 drop-shadow-lg" title={prompt.title}>
                 {prompt.title}
