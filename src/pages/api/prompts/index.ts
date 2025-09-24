@@ -74,7 +74,7 @@ export default async function handler(
       console.log('[DEBUG] Supabase client created successfully');
     }
     
-    const { category, author, isPublic, sort = 'latest', page = '1', limit = '20' } = req.query;
+    const { category, author, aiModel, isPublic, sort = 'latest', page = '1', limit = '20' } = req.query;
 
     // 페이지네이션 설정
     const pageNum = parseInt(page as string) || 1;
@@ -114,6 +114,11 @@ export default async function handler(
     // 카테고리 필터
     if (category && category !== 'all') {
       query = query.eq('category', category);
+    }
+
+    // AI모델 필터
+    if (aiModel && aiModel !== 'all') {
+      query = query.eq('ai_model', aiModel);
     }
 
     // 작성자 필터 (author=true인 경우 현재 사용자의 프롬프트만 조회)
@@ -251,6 +256,9 @@ export default async function handler(
 
     if (category && category !== 'all') {
       countQuery = countQuery.eq('category', category);
+    }
+    if (aiModel && aiModel !== 'all') {
+      countQuery = countQuery.eq('ai_model', aiModel);
     }
     if (author === 'true') {
       if (userId) {

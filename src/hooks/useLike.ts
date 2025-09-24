@@ -15,18 +15,32 @@ const fetcher = async (key: string[]) => {
   const promptId = key[1];
   const token = localStorage.getItem('token');
   
-  const res = await fetch(`/api/prompts/${promptId}/likes`, {
-    method: 'GET',
-    headers: token ? {
-      'Authorization': `Bearer ${token}`
-    } : {}
-  });
+  try {
+    const res = await fetch(`/api/prompts/${promptId}/likes`, {
+      method: 'GET',
+      headers: token ? {
+        'Authorization': `Bearer ${token}`
+      } : {}
+    });
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch like status');
+    if (!res.ok) {
+      console.error(`Like API error for ${promptId}:`, res.status, res.statusText);
+      // 에러가 발생해도 기본값 반환하여 무한 재시도 방지
+      return {
+        likes_count: 0,
+        is_liked: false
+      };
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error(`Like API fetch error for ${promptId}:`, error);
+    // 네트워크 에러 등이 발생해도 기본값 반환
+    return {
+      likes_count: 0,
+      is_liked: false
+    };
   }
-
-  return res.json();
 };
 
 export function useLike(promptId?: string | number) {
@@ -39,7 +53,10 @@ export function useLike(promptId?: string | number) {
     fetcher,
     {
       revalidateOnFocus: false,    // 포커스 리페치 금지
-      dedupingInterval: 1500,
+      revalidateOnReconnect: false, // 재연결 시 리페치 금지
+      dedupingInterval: 5000,      // 중복 요청 방지 간격 증가
+      errorRetryCount: 2,          // 재시도 횟수 제한
+      errorRetryInterval: 1000,    // 재시도 간격
       fallbackData: {
         is_liked: false,
         likes_count: 0

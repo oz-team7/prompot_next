@@ -79,7 +79,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
   const { isAuthenticated } = useAuth();
   // 최적화된 북마크 훅 사용
   const { bookmarks, addBookmark, removeBookmark, isBookmarked: checkIsBookmarked } = useBookmarks();
-  const { setSearchQuery, setAuthorFilter } = useSearch();
+  const { setSearchQuery } = useSearch();
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -146,32 +146,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
     }
   };
 
-  // 카테고리 클릭 핸들러
-  const handleCategoryClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!prompt.category) return;
-    if (onCategoryClick) {
-      onCategoryClick(prompt.category);
-    } else {
-      const categoryLabel = getCategoryLabel(prompt.category);
-      setSearchQuery(categoryLabel);
-      router.push('/prompts');
-    }
-  };
-
-  // AI 모델 클릭 핸들러
-  const handleAIModelClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const aiModelName = prompt.aiModel?.name || '';
-    if (onAIModelClick) {
-      onAIModelClick(aiModelName);
-    } else {
-      setSearchQuery(aiModelName);
-      router.push('/prompts');
-    }
-  };
 
   // 태그 클릭 핸들러
   const handleTagClick = (e: React.MouseEvent, tag: string) => {
@@ -197,17 +171,10 @@ const PromptCard: React.FC<PromptCardProps> = ({
     return categoryLabels[category] || category;
   };
   return (
-    <Link href={`/prompt/${prompt.id}`} className="block">
-      <div 
-        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 px-6 pt-5 pb-6 h-[400px] flex flex-col w-full mb-2 overflow-hidden group"
-        onClick={(e) => {
-          // 북마크 카테고리 선택기가 열려있을 때는 페이지 이동 방지
-          if (showCategorySelector) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
-      >
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 px-6 pt-5 pb-6 h-[400px] flex flex-col w-full mb-2 overflow-hidden group">
+      {/* 클릭 가능한 영역을 별도로 분리 */}
+      <Link href={`/prompt/${prompt.id}`} className="block flex-1">
+        <div className="h-full flex flex-col">
       {/* 상단 고정 영역: 제목 + 미리보기 이미지 */}
       <div className="flex-shrink-0 mb-4">
         <div className="flex justify-between items-start mb-0">
@@ -366,140 +333,179 @@ const PromptCard: React.FC<PromptCardProps> = ({
         </div>
       </div>
 
-      {/* 하단 고정 영역: 태그 + 카테고리/AI모델/작성자 */}
-      <div className="flex-shrink-0 space-y-2">
-        {/* Tags - 고정 높이 */}
-        <div className="h-6 flex items-center">
-          {(() => {
-            const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 260); // 더 보수적인 카드 너비
-            return displayTags.length > 0 || remainingCount > 0 ? (
-              <div className="flex flex-nowrap gap-1 overflow-hidden opacity-100 transition-opacity duration-300">
-                {displayTags.map((tag, index) => (
-                  <button
-                    key={index}
-                    onClick={(e) => handleTagClick(e, tag)}
-                    className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0 hover:bg-orange-200 transition-colors cursor-pointer"
-                  >
-                    {tag}
-                  </button>
-                ))}
-                {remainingCount > 0 && (
-                  <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
-                    +{remainingCount}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <div className="h-6"></div>
-            );
-          })()}
-        </div>
-        
-        {/* Footer - 카테고리/AI모델/작성자 */}
-        <div className="space-y-2 opacity-100 transition-opacity duration-300">
-          {/* 첫 번째 줄: 카테고리와 AI 모델 */}
-          <div className="flex items-center gap-2">
-            {/* 카테고리 */}
-            {prompt.category && (
-              <button
-                onClick={handleCategoryClick}
-                className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer"
-              >
-                {prompt.category === 'work' && '⚡ 업무/마케팅'}
-                {prompt.category === 'dev' && '⚙️ 개발/코드'}
-                {prompt.category === 'design' && '✨ 디자인/브랜드'}
-                {prompt.category === 'edu' && '🎯 교육/학습'}
-                {prompt.category === 'image' && '🎬 이미지/동영상'}
-                {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
-              </button>
-            )}
-            {/* AI 모델 */}
-            {prompt.aiModel && (
-              <button
-                onClick={handleAIModelClick}
-                className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer opacity-100 transition-opacity duration-300"
-              >
-                <div className="flex items-center gap-1">
-                  {prompt.aiModel.icon && (
-                    <img 
-                      src={prompt.aiModel.icon} 
-                      alt={prompt.aiModel.name}
-                      className="w-3 h-3 object-contain"
-                    />
-                  )}
-                  {prompt.aiModel.name}
-                </div>
-              </button>
-            )}
+          {/* 하단 고정 영역: 태그 */}
+          <div className="flex-shrink-0 space-y-2">
+            {/* Tags - 고정 높이 */}
+            <div className="h-6 flex items-center">
+              {(() => {
+                const { displayTags, remainingCount } = getDisplayTags(prompt.tags, 260); // 더 보수적인 카드 너비
+                return displayTags.length > 0 || remainingCount > 0 ? (
+                  <div className="flex flex-nowrap gap-1 overflow-hidden opacity-100 transition-opacity duration-300">
+                    {displayTags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {remainingCount > 0 && (
+                      <span className="inline-block bg-orange-100 text-orange-400 text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">
+                        +{remainingCount}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-6"></div>
+                );
+              })()}
+            </div>
           </div>
-          
-          {/* 두 번째 줄: 작성자와 통계 정보 */}
-          <div className="flex justify-between items-center">
+        </div>
+      </Link>
+
+      {/* 버튼 영역 - Link 밖에 배치 */}
+      <div className="flex-shrink-0 space-y-2 opacity-100 transition-opacity duration-300">
+        {/* 첫 번째 줄: 카테고리와 AI 모델 */}
+        <div className="flex items-center gap-2">
+          {/* 카테고리 */}
+          {prompt.category && (
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const authorName = prompt.author?.name || '익명';
-                setAuthorFilter(authorName);
-                router.push('/');
+                console.log('카테고리 버튼 클릭됨:', prompt.category);
+                const categoryLabel = getCategoryLabel(prompt.category || '');
+                setSearchQuery(categoryLabel);
+                router.push('/prompts');
               }}
-              className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 transition-all duration-200 group"
+              className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 hover:border-orange-500 hover:text-orange-500 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-opacity-50 transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95"
+              title="카테고리로 필터링"
             >
-              {/* 작성자 프로필사진 */}
-              <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
-                {prompt.author?.avatar_url ? (
-                  <Image
-                    src={prompt.author.avatar_url}
-                    alt={prompt.author.name || '작성자'}
-                    width={20}
-                    height={20}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center rounded-full">
-                    <span className="text-xs font-medium text-orange-600">
-                      {(prompt.author?.name || '익명').charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {/* 작성자 이름 */}
-              <span className="text-xs text-gray-500 group-hover:text-orange-600 whitespace-nowrap min-w-0 flex-shrink-0 transition-colors">
-                {prompt.author?.name || '익명'}
-              </span>
+              {prompt.category === 'work' && '⚡ 업무/마케팅'}
+              {prompt.category === 'dev' && '⚙️ 개발/코드'}
+              {prompt.category === 'design' && '✨ 디자인/브랜드'}
+              {prompt.category === 'edu' && '🎯 교육/학습'}
+              {prompt.category === 'image' && '🎬 이미지/동영상'}
+              {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
             </button>
-            
-            {/* 통계 정보 */}
-            <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span>{prompt.views || 0}</span>
+          )}
+          {/* AI 모델 */}
+          {prompt.aiModel && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const aiModelName = prompt.aiModel?.name || '';
+                console.log('AI모델 버튼 클릭됨:', aiModelName);
+                setSearchQuery(aiModelName);
+                router.push('/prompts');
+              }}
+              className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 hover:border-orange-500 hover:text-orange-500 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-opacity-50 transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95 opacity-100 transition-opacity duration-300"
+              title="AI 모델로 필터링"
+            >
+              <div className="flex items-center gap-1">
+                {prompt.aiModel.icon && (
+                  <img 
+                    src={prompt.aiModel.icon} 
+                    alt={prompt.aiModel.name}
+                    className="w-3 h-3 object-contain"
+                  />
+                )}
+                {prompt.aiModel.name}
               </div>
-              <div className="relative">
-                <button 
-                  className="flex items-center gap-1.5 hover:text-red-500 transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onLike(prompt.id);
-                  }}
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path>
-                  </svg>
-                  <span>{prompt.likes_count || prompt.likes || 0}</span>
-                </button>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
-                </svg>
-                <span>{prompt.comment_count || prompt.commentCount || prompt.comments?.length || 0}</span>
-              </div>
+            </button>
+          )}
+        </div>
+        
+        {/* 두 번째 줄: 작성자와 통계 정보 */}
+        <div className="flex justify-between items-center">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const authorName = prompt.author?.name || '익명';
+              console.log('작성자 버튼 클릭됨:', authorName);
+              setSearchQuery(authorName);
+              router.push('/prompts');
+            }}
+            className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-opacity-50 transition-all duration-200 group cursor-pointer transform hover:scale-105 active:scale-95"
+            title="작성자로 필터링"
+          >
+            {/* 작성자 프로필사진 */}
+            <div className="w-5 h-5 rounded-full overflow-hidden bg-white flex-shrink-0">
+              {prompt.author?.avatar_url ? (
+                <Image
+                  src={prompt.author.avatar_url}
+                  alt={prompt.author.name || '작성자'}
+                  width={20}
+                  height={20}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center rounded-full">
+                  <span className="text-xs font-medium text-orange-600">
+                    {(prompt.author?.name || '익명').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
             </div>
+            {/* 작성자 이름 */}
+            <span className="text-xs text-gray-500 group-hover:text-orange-600 whitespace-nowrap min-w-0 flex-shrink-0 transition-colors">
+              {prompt.author?.name || '익명'}
+            </span>
+          </button>
+          
+          {/* 통계 정보 */}
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <span>{prompt.views || 0}</span>
+            </div>
+            <div className="relative">
+              <button 
+                className="flex items-center gap-1.5 hover:text-red-500 hover:bg-red-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-opacity-50 transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95 rounded-lg px-1 py-0.5"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onLike(prompt.id);
+                }}
+                title="좋아요"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path>
+                </svg>
+                <span>{prompt.likes_count || prompt.likes || 0}</span>
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
+              </svg>
+              <span>{prompt.comment_count || prompt.commentCount || prompt.comments?.length || 0}</span>
+            </div>
+            {/* 북마크 버튼 */}
+            <button
+              ref={bookmarkButtonRef}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleBookmarkClick();
+              }}
+              className={`flex items-center gap-1.5 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-opacity-50 transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95 rounded-lg px-1 py-0.5 ${
+                actualIsBookmarked 
+                  ? 'text-orange-500 hover:text-orange-600 hover:bg-orange-50' 
+                  : 'text-gray-400 hover:text-orange-500 hover:bg-orange-50'
+              }`}
+              title={actualIsBookmarked ? "북마크 제거" : "북마크 추가"}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill={actualIsBookmarked ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2}>
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -520,8 +526,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
           onClose={() => setShowToast(false)}
         />
       )}
-      </div>
-    </Link>
+    </div>
   );
 };
 

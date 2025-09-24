@@ -29,7 +29,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   useAPI = true 
 }) => {
   const router = useRouter();
-  const { searchQuery, authorFilter, setAuthorFilter, clearFilters } = useSearch();
+  const { searchQuery, authorFilter, setAuthorFilter, categoryFilter, setCategoryFilter, aiModelFilter, setAiModelFilter, clearFilters } = useSearch();
   const { isAuthenticated } = useAuth();
   
   // Hook을 항상 호출하되, 인증되지 않은 경우 빈 배열 사용
@@ -287,6 +287,20 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       );
     }
 
+    // Category filter
+    if (categoryFilter) {
+      filtered = filtered.filter(prompt => 
+        prompt.category === categoryFilter
+      );
+    }
+
+    // AI Model filter
+    if (aiModelFilter) {
+      filtered = filtered.filter(prompt => 
+        prompt.aiModel?.name === aiModelFilter
+      );
+    }
+
 
     // Sorting
     switch (sortBy) {
@@ -309,7 +323,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
 
     setFilteredPrompts(filtered);
-  }, [prompts, activeCategory, sortBy, searchQuery, activeAIModel, activeTag, authorFilter]);
+  }, [prompts, activeCategory, sortBy, searchQuery, activeAIModel, activeTag, authorFilter, categoryFilter, aiModelFilter]);
 
   const handleCreatePrompt = () => {
     if (isAuthenticated) {
@@ -376,7 +390,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
           )}
 
           {/* 활성 필터 표시 - 상단 별도 영역 */}
-          {(activeCategory !== 'all' || activeAIModel !== 'all' || activeTag !== 'all' || authorFilter) && (
+          {(activeCategory !== 'all' || activeAIModel !== 'all' || activeTag !== 'all' || authorFilter || categoryFilter || aiModelFilter) && (
             <div className="mb-4">
               <div className="flex items-center gap-2 flex-wrap bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <span className="text-sm font-medium text-orange-600">활성 필터:</span>
@@ -429,6 +443,30 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                   </span>
                 )}
                 
+                {categoryFilter && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
+                    카테고리: {categories.find(c => c.value === categoryFilter)?.label || categoryFilter}
+                    <button
+                      onClick={() => setCategoryFilter(null)}
+                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                
+                {aiModelFilter && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
+                    AI모델: {aiModelFilter}
+                    <button
+                      onClick={() => setAiModelFilter(null)}
+                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                
                 <button
                   onClick={() => {
                     setActiveCategory('all');
@@ -453,10 +491,10 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               <div className="category-dropdown-container relative">
                 <button
                   onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-2 w-[100px] sm:w-[130px] h-[34px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-1 sm:gap-2 w-[120px] sm:w-[130px] h-[30px] sm:h-[40px]"
                 >
-                  <span className="text-sm">{selectedCategoryOption.icon}</span>
-                  <span className="text-gray-700 truncate">{selectedCategoryOption.label}</span>
+                  <span className="text-xs sm:text-sm">{selectedCategoryOption.icon}</span>
+                  <span className="text-gray-700 truncate text-xs sm:text-sm">{selectedCategoryOption.label}</span>
                 </button>
 
                 {showCategoryDropdown && (
@@ -468,12 +506,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                           setActiveCategory(category.value as CategoryType);
                           setShowCategoryDropdown(false);
                         }}
-                        className={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                        className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
                           selectedCategoryOption.value === category.value ? 'bg-orange-50 text-orange-700' : ''
                         }`}
                       >
-                        <span className="text-sm">{category.icon}</span>
-                        <span className="text-sm font-medium text-gray-700">{category.label}</span>
+                        <span className="text-xs sm:text-sm">{category.icon}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">{category.label}</span>
                       </button>
                     ))}
                   </div>
@@ -487,27 +525,27 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               <div className="aimodel-dropdown-container relative">
                 <button
                   onClick={() => setShowAIModelDropdown(!showAIModelDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-2 w-[100px] sm:w-[150px] h-[34px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-1 sm:gap-2 w-[120px] sm:w-[150px] h-[30px] sm:h-[40px]"
                 >
                   {activeAIModel === 'all' ? (
-                    <span className="text-sm"></span>
+                    <span className="text-xs sm:text-sm"></span>
                   ) : (() => {
                     const model = aiModels.find(m => m.name === activeAIModel);
                     return model ? (
                       model.icon === '🔧' ? (
-                        <span className="text-sm">{model.icon}</span>
+                        <span className="text-xs sm:text-sm">{model.icon}</span>
                       ) : (
                         <img 
                           src={model.icon} 
                           alt={activeAIModel}
-                          className="w-4 h-4 object-contain flex-shrink-0"
+                          className="w-3 h-3 sm:w-4 sm:h-4 object-contain flex-shrink-0"
                         />
                       )
                     ) : (
-                      <span className="text-sm">🔧</span>
+                      <span className="text-xs sm:text-sm">🔧</span>
                     );
                   })()}
-                  <span className={`text-gray-700 truncate ${activeAIModel !== 'all' && activeAIModel.length > 12 ? 'text-xs' : 'text-sm'}`}>
+                  <span className="text-gray-700 truncate text-xs sm:text-sm">
                     {activeAIModel === 'all' ? '전체' : activeAIModel}
                   </span>
                 </button>
@@ -521,29 +559,29 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                           setActiveAIModel(model);
                           setShowAIModelDropdown(false);
                         }}
-                        className={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                        className={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
                           activeAIModel === model ? 'bg-orange-50 text-orange-700' : ''
                         }`}
                       >
                         {model === 'all' ? (
-                          <span className="text-sm"></span>
+                          <span className="text-xs sm:text-sm"></span>
                         ) : (() => {
                           const aiModel = aiModels.find(m => m.name === model);
                           return aiModel ? (
                             aiModel.icon === '🔧' ? (
-                              <span className="text-sm">{aiModel.icon}</span>
+                              <span className="text-xs sm:text-sm">{aiModel.icon}</span>
                             ) : (
                               <img 
                                 src={aiModel.icon} 
                                 alt={model}
-                                className="w-4 h-4 object-contain flex-shrink-0"
+                                className="w-3 h-3 sm:w-4 sm:h-4 object-contain flex-shrink-0"
                               />
                             )
                           ) : (
-                            <span className="text-sm">🔧</span>
+                            <span className="text-xs sm:text-sm">🔧</span>
                           );
                         })()}
-                        <span className={`font-medium text-gray-700 ${model !== 'all' && model.length > 12 ? 'text-xs' : 'text-sm'}`}>
+                        <span className={`font-medium text-gray-700 ${model !== 'all' && model.length > 12 ? 'text-xs' : 'text-xs sm:text-sm'}`}>
                           {model === 'all' ? '전체' : model}
                         </span>
                       </button>
@@ -559,9 +597,9 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               <div className="sort-dropdown-container relative">
                 <button
                   onClick={() => setShowSortDropdown(!showSortDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[75px] sm:w-[100px] h-[34px] sm:h-[40px]"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2.5 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-300 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-between w-[120px] sm:w-[100px] h-[30px] sm:h-[40px]"
                 >
-                  <span className="text-gray-700 text-xs sm:text-sm">{selectedSortOption.label}</span>
+                  <span className="text-gray-700 truncate text-xs sm:text-sm">{selectedSortOption.label}</span>
                   <span className="text-gray-700 ml-1 sm:ml-2 text-xs sm:text-sm">{selectedSortOption.icon}</span>
                 </button>
 
@@ -574,12 +612,12 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                           setSortBy(option.value as SortType);
                           setShowSortDropdown(false);
                         }}
-                        className={`w-full flex items-center justify-between p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
+                        className={`w-full flex items-center justify-between p-2 sm:p-3 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl transition-colors ${
                           selectedSortOption.value === option.value ? 'bg-orange-50 text-orange-700' : ''
                         }`}
                       >
-                        <span className="text-sm font-medium text-gray-700">{option.label}</span>
-                        <span className="text-sm text-gray-700">{option.icon}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-700">{option.label}</span>
+                        <span className="text-xs sm:text-sm text-gray-700">{option.icon}</span>
                       </button>
                     ))}
                   </div>
@@ -597,7 +635,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               {/* New 버튼 - 로그인한 사용자만 표시 */}
               {isAuthenticated && (
                 <Link href="/prompt/create">
-                  <button className="flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-xs sm:text-sm h-[36px] sm:h-10">
+                  <button className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-xs sm:text-sm h-[30px] sm:h-10">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
@@ -615,7 +653,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                   }
                   setShowBookmarks(!showBookmarks);
                 }}
-                className="px-2 sm:px-3 py-2 text-xs sm:text-sm h-[36px] sm:h-10 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md justify-center"
+                className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm h-[30px] sm:h-10 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md justify-center"
                 title="최근 북마크"
               >
                 <svg className="w-3 sm:w-4 h-3 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

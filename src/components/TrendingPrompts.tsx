@@ -68,10 +68,10 @@ const TrendingPrompts: React.FC = () => {
   return (
     <div className="relative">
       {/* 메인 컨테이너 */}
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2 text-xs sm:text-sm">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-colors font-medium"
+          className="flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-600 rounded-full hover:bg-orange-100 transition-colors font-medium text-xs sm:text-sm"
           aria-expanded={isExpanded}
         >
           <span className="text-xs">🔥</span>
@@ -112,11 +112,11 @@ const TrendingPrompts: React.FC = () => {
                       <span className="text-orange-500 font-bold text-xs">
                         {index + 1}위
                       </span>
-                      <span className="text-gray-700 truncate max-w-[150px] sm:max-w-[200px] lg:max-w-[250px]">
+                      <span className="text-gray-700 truncate max-w-[150px] sm:max-w-[200px] lg:max-w-[250px] text-xs sm:text-sm">
                         {prompt.title}
                       </span>
                       <span className="text-gray-400 text-xs">
-                        by {prompt.author.name}
+                        by {typeof prompt.author === 'object' ? prompt.author?.name || '익명' : prompt.author || '익명'}
                       </span>
                     </Link>
                   </div>
@@ -160,7 +160,7 @@ const TrendingPrompts: React.FC = () => {
                         {prompt.title}
                       </h4>
                       <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                        <span>{prompt.author.name}</span>
+                        <span>{typeof prompt.author === 'object' ? prompt.author?.name || '익명' : prompt.author || '익명'}</span>
                         <span>•</span>
                         <span>
                           {prompt.hours_ago < 1 ? '방금 전' : 

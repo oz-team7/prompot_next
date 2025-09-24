@@ -40,11 +40,23 @@ export default async function handler(
   }
 
   const { id } = req.query;
-  const promptId = id as string; // UUID로 처리
+  const promptId = id as string;
 
   if (!promptId) {
     return res.status(400).json({ error: 'Invalid prompt ID' });
   }
+
+  // 프롬프트 ID가 UUID인지 숫자인지 확인
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(promptId);
+  const numericPromptId = parseInt(promptId);
+  const isNumeric = !isNaN(numericPromptId);
+
+  if (!isUUID && !isNumeric) {
+    return res.status(400).json({ error: 'Invalid prompt ID format' });
+  }
+
+  // UUID인 경우 문자열로, 숫자인 경우 정수로 사용
+  const finalPromptId = isUUID ? promptId : numericPromptId;
 
   // Authorization 헤더에서 토큰 추출
   const authHeader = req.headers.authorization;
@@ -59,7 +71,7 @@ export default async function handler(
       const { count, error: countError } = await supabase
         .from('prompt_likes')
         .select('*', { count: 'exact', head: true })
-        .eq('prompt_id', promptId);
+        .eq('prompt_id', finalPromptId);
 
       if (countError) {
         console.error('Error counting likes:', countError);
@@ -75,7 +87,7 @@ export default async function handler(
           const { data: likeData, error: likeError } = await supabase
             .from('prompt_likes')
             .select('id')
-            .eq('prompt_id', promptId)
+            .eq('prompt_id', numericPromptId)
             .eq('user_id', user.id)
             .single();
 
@@ -113,7 +125,7 @@ export default async function handler(
       // 좋아요 추가 (멱등적 처리)
       const { error: insertError } = await supabase
         .from('prompt_likes')
-        .insert([{ prompt_id: promptId, user_id: user.id }]);
+        .insert([{ prompt_id: finalPromptId, user_id: user.id }]);
 
       if (insertError) {
         // 이미 좋아요한 경우도 성공으로 처리 (멱등성)
@@ -122,7 +134,7 @@ export default async function handler(
           const { count } = await supabase
             .from('prompt_likes')
             .select('*', { count: 'exact', head: true })
-            .eq('prompt_id', promptId);
+            .eq('prompt_id', finalPromptId);
 
           return res.status(200).json({ 
             likes_count: count || 0,
@@ -137,7 +149,7 @@ export default async function handler(
       const { count } = await supabase
         .from('prompt_likes')
         .select('*', { count: 'exact', head: true })
-        .eq('prompt_id', promptId);
+        .eq('prompt_id', finalPromptId);
 
       return res.status(200).json({ 
         likes_count: count || 0,
@@ -148,7 +160,7 @@ export default async function handler(
       const { error: deleteError } = await supabase
         .from('prompt_likes')
         .delete()
-        .eq('prompt_id', promptId)
+        .eq('prompt_id', finalPromptId)
         .eq('user_id', user.id);
 
       if (deleteError) {
@@ -162,7 +174,7 @@ export default async function handler(
       const { count } = await supabase
         .from('prompt_likes')
         .select('*', { count: 'exact', head: true })
-        .eq('prompt_id', promptId);
+        .eq('prompt_id', finalPromptId);
 
       return res.status(200).json({ 
         likes_count: count || 0,

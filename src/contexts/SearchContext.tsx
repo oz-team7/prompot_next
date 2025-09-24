@@ -5,6 +5,10 @@ interface SearchContextType {
   setSearchQuery: (query: string) => void;
   authorFilter: string | null;
   setAuthorFilter: (author: string | null) => void;
+  categoryFilter: string | null;
+  setCategoryFilter: (category: string | null) => void;
+  aiModelFilter: string | null;
+  setAiModelFilter: (aiModel: string | null) => void;
   clearFilters: () => void;
 }
 
@@ -25,10 +29,14 @@ interface SearchProviderProps {
 export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [authorFilter, setAuthorFilter] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [aiModelFilter, setAiModelFilter] = useState<string | null>(null);
 
   const clearFilters = () => {
     setSearchQuery('');
     setAuthorFilter(null);
+    setCategoryFilter(null);
+    setAiModelFilter(null);
   };
 
   return (
@@ -37,6 +45,10 @@ export const SearchProvider: React.FC<SearchProviderProps> = ({ children }) => {
       setSearchQuery, 
       authorFilter, 
       setAuthorFilter,
+      categoryFilter,
+      setCategoryFilter,
+      aiModelFilter,
+      setAiModelFilter,
       clearFilters 
     }}>
       {children}

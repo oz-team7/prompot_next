@@ -33,7 +33,7 @@ const Header: React.FC = () => {
           {/* Desktop Layout */}
           <div className="hidden sm:flex items-center h-16 min-w-0">
             {/* Left Section - Hamburger + Logo */}
-            <div className="flex items-center flex-shrink-0 gap-4 lg:gap-[50px]">
+            <div className="flex items-center flex-shrink-0 gap-2 lg:gap-4">
               {/* Hamburger Menu Button */}
               <button
                 onClick={() => setIsSidebarOpen(true)}
@@ -121,17 +121,8 @@ const Header: React.FC = () => {
 
           {/* Mobile Layout */}
           <div className="sm:hidden flex flex-col py-2 min-w-0">
-            {/* Top Row - Logo + Hamburger */}
-            <div className="flex items-center justify-between mb-3 min-w-0">
-              {/* Logo */}
-              <button 
-                onClick={handleLogoClick}
-                className="flex items-center gap-2 cursor-pointer flex-shrink-0"
-              >
-                <Logo className="w-8 h-8" />
-                <h1 className="text-lg font-bold text-primary">PROMPOT</h1>
-              </button>
-
+            {/* Top Row - Hamburger + Logo + User Info */}
+            <div className="flex items-center mb-3 min-w-0">
               {/* Hamburger Menu Button */}
               <button
                 onClick={() => setIsSidebarOpen(true)}
@@ -142,22 +133,18 @@ const Header: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-            </div>
 
-            {/* Search Bar - Full Width */}
-            <div className="mb-3 min-w-0">
-              <SearchBar className="w-full" />
-            </div>
+              {/* Logo - Center with margin */}
+              <button 
+                onClick={handleLogoClick}
+                className="flex items-center gap-2 cursor-pointer flex-shrink-0 mx-[7px]"
+              >
+                <Logo className="w-8 h-8" />
+                <h1 className="text-lg font-bold text-primary">PROMPOT</h1>
+              </button>
 
-            {/* Bottom Row - Trending Prompts + User Info */}
-            <div className="flex items-center justify-between min-w-0">
-              {/* Trending Prompts */}
-              <div className="flex-1 min-w-0">
-                <TrendingPrompts />
-              </div>
-
-              {/* User Info */}
-              <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+              {/* User Info - Right */}
+              <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                 {isAuthenticated ? (
                   <>
                     <Link href="/mypage" className="flex items-center gap-1">
@@ -198,6 +185,16 @@ const Header: React.FC = () => {
                   </Link>
                 )}
               </div>
+            </div>
+
+            {/* Search Bar - Full Width */}
+            <div className="mb-3 min-w-0">
+              <SearchBar className="w-full" />
+            </div>
+
+            {/* Trending Prompts - Full Width */}
+            <div className="min-w-0">
+              <TrendingPrompts />
             </div>
           </div>
         </div>
