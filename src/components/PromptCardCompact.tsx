@@ -138,7 +138,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
     <>
       <Link href={`/prompt/${prompt.id}`} className="block">
         <div 
-          className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group"
+          className="bg-white rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ease-out overflow-hidden group cursor-pointer"
           onClick={(e) => {
             if (showCategorySelector) {
               e.preventDefault();
@@ -189,13 +189,13 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
             <div className="absolute top-3 right-3 z-10">
               <button
                 onClick={handleBookmarkClick}
-                className="group/bookmark transition-all duration-300"
+                className="group/bookmark transition-all duration-200 ease-out"
                 title={actualIsBookmarked ? '북마크 제거' : '북마크 추가'}
               >
-                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm group-hover/bookmark:bg-white transition-colors opacity-100">
+                <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-sm group-hover/bookmark:bg-white group-hover:scale-110 transition-all duration-200 ease-out opacity-100">
                   <svg
-                    className={`w-5 h-5 ${
-                      actualIsBookmarked ? 'text-orange-500 fill-current' : 'text-gray-600'
+                    className={`w-5 h-5 group-hover:scale-110 transition-transform duration-200 ease-out ${
+                      actualIsBookmarked ? 'text-orange-500 fill-current' : 'text-gray-600 group-hover:text-orange-400'
                     }`}
                     viewBox="0 0 24 24"
                     fill={actualIsBookmarked ? 'currentColor' : 'none'}
@@ -229,7 +229,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                         alt={getVideoTitle(videoUrl)}
                         fill
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-cover"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                         style={{ objectPosition: 'left top' }}
                         onError={(e) => {
                           const fallbackUrl = getFallbackThumbnail(videoUrl);
@@ -246,7 +246,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                     return (
                       <video
                         src={videoUrl}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                         muted
                         preload="metadata"
                         onError={(e) => {
@@ -273,7 +273,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                       src={imageUrl}
                       alt={prompt.title}
                       fill
-                      className="object-cover"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                       style={{ objectPosition: 'left top' }}
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       onError={(e) => {
@@ -287,7 +287,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                     src={imageUrl}
                     alt={prompt.title}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                     style={{ objectPosition: 'left top' }}
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     onError={(e) => {
@@ -301,7 +301,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                 src={prompt.additional_images[0]}
                 alt={prompt.title}
                 fill
-                className="object-cover"
+                className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                 style={{ objectPosition: 'left top' }}
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 onError={(e) => {
@@ -321,7 +321,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
             )}
 
             {/* 하단 정보 오버레이 */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-3 sm:p-4 opacity-100 transition-opacity duration-300">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent group-hover:from-black/90 group-hover:via-black/70 p-3 sm:p-4 opacity-100 transition-all duration-300 ease-out">
               {/* 제목 */}
               <h3 className="font-semibold text-white text-base sm:text-lg mb-2 line-clamp-2 drop-shadow-lg" title={prompt.title}>
                 {prompt.title}
@@ -354,9 +354,9 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                 {/* 통계 정보 */}
                 <div className="flex items-center gap-3">
                   {/* 댓글 */}
-                  <div className="flex items-center gap-1.5 text-white/90">
+                  <div className="flex items-center gap-1.5 text-white/90 group-hover:text-blue-300 transition-colors duration-200 ease-out">
                     <svg 
-                      className="w-4 h-4 sm:w-5 sm:h-5" 
+                      className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform duration-200 ease-out" 
                       viewBox="0 0 24 24" 
                       fill="none" 
                       stroke="currentColor" 
@@ -368,9 +368,9 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   </div>
 
                   {/* 조회수 */}
-                  <div className="flex items-center gap-1.5 text-white/90">
+                  <div className="flex items-center gap-1.5 text-white/90 group-hover:text-green-300 transition-colors duration-200 ease-out">
                     <svg 
-                      className="w-4 h-4 sm:w-5 sm:h-5" 
+                      className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform duration-200 ease-out" 
                       viewBox="0 0 24 24" 
                       fill="none" 
                       stroke="currentColor" 
@@ -386,11 +386,11 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   <div className="relative">
                     <button
                       onClick={handleLikeClick}
-                      className="flex items-center gap-1.5 text-white/90 hover:text-red-400 transition-colors"
+                      className="flex items-center gap-1.5 text-white/90 hover:text-red-400 group-hover:text-pink-300 transition-colors duration-200 ease-out"
                       disabled={isBusy}
                     >
                       <svg
-                        className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? 'text-red-400 fill-current' : ''}`}
+                        className={`w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform duration-200 ease-out ${isLiked ? 'text-red-400 fill-current' : ''}`}
                         viewBox="0 0 24 24"
                         fill={isLiked ? 'currentColor' : 'none'}
                         stroke="currentColor"
