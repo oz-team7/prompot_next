@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Header from '@/components/Header';
+import ClientOnly from '@/components/ClientOnly';
 import PromptGrid from '@/components/PromptGrid';
 import { Prompt } from '@/types/prompt';
 import Toast from '@/components/Toast';
@@ -71,7 +72,9 @@ const AuthorProfilePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-orange-50/20">
+        <ClientOnly>
         <Header />
+      </ClientOnly>
         <div className="flex items-center justify-center h-[70vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
         </div>
@@ -82,7 +85,9 @@ const AuthorProfilePage = () => {
   if (!author) {
     return (
       <div className="min-h-screen bg-orange-50/20">
+        <ClientOnly>
         <Header />
+      </ClientOnly>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-16">
             <h2 className="text-2xl font-bold mb-4">작성자를 찾을 수 없습니다</h2>
@@ -100,7 +105,9 @@ const AuthorProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-orange-50/20">
-      <Header />
+      <ClientOnly>
+        <Header />
+      </ClientOnly>
       
       <main className="container mx-auto px-4 py-8">
         {/* 작성자 프로필 헤더 */}

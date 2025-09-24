@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Header from '@/components/Header';
 import PromptGrid from '@/components/PromptGrid';
+import ClientOnly from '@/components/ClientOnly';
 import { mockPrompts } from '@/utils/mockData';
 
 export default function Home() {
@@ -15,7 +16,9 @@ export default function Home() {
       </Head>
       
       <main>
-        <Header />
+        <ClientOnly>
+          <Header />
+        </ClientOnly>
         {/* Hero 섹션을 PromptGrid에 포함 */}
         <PromptGrid 
           showHero={true} 

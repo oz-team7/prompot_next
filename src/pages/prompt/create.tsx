@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
+import ClientOnly from '@/components/ClientOnly';
 import Toast from '@/components/Toast';
 import ThumbnailEditor from '@/components/ThumbnailEditor';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
@@ -550,7 +551,9 @@ const CreatePromptPage = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-orange-50/20">
+        <ClientOnly>
         <Header />
+      </ClientOnly>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
@@ -569,7 +572,9 @@ const CreatePromptPage = () => {
 
   return (
     <div className="min-h-screen bg-orange-50/20">
-      <Header />
+      <ClientOnly>
+        <Header />
+      </ClientOnly>
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

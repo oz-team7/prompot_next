@@ -7,6 +7,7 @@ import { useBookmarks } from '@/hooks/useBookmarks';
 import { useLike } from '@/hooks/useLike';
 import { useSearch } from '@/contexts/SearchContext';
 import Header from '@/components/Header';
+import ClientOnly from '@/components/ClientOnly';
 import Toast from '@/components/Toast';
 import CommentSection from '@/components/CommentSection';
 import SharePrompt from '@/components/SharePrompt';
@@ -488,7 +489,9 @@ const PromptDetailPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-orange-50/20">
+        <ClientOnly>
         <Header />
+      </ClientOnly>
         <div className="flex items-center justify-center h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
         </div>
@@ -499,7 +502,9 @@ const PromptDetailPage = () => {
   if (!prompt) {
     return (
       <div className="min-h-screen bg-orange-50/20">
+        <ClientOnly>
         <Header />
+      </ClientOnly>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">프롬프트를 찾을 수 없습니다</h2>
@@ -731,7 +736,9 @@ const PromptDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-orange-50/20">
-      <Header />
+      <ClientOnly>
+        <Header />
+      </ClientOnly>
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 px-6 pt-5 pb-6 relative">

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
+import ClientOnly from '@/components/ClientOnly';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePrompts } from '@/hooks/usePrompts';
 import { useBookmarks } from '@/hooks/useBookmarks';
@@ -896,7 +897,9 @@ const MyPage = () => {
 
   return (
     <>
-      <Header />
+      <ClientOnly>
+        <Header />
+      </ClientOnly>
       <main className="min-h-screen bg-orange-50/20">
         <div className="container mx-auto px-4 py-6 max-w-6xl">
           {/* 프로필 헤더 */}

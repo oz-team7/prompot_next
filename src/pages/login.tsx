@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import ClientOnly from '@/components/ClientOnly';
 import Toast from '@/components/Toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -131,7 +132,9 @@ const LoginPage = () => {
 
   return (
     <>
-      <Header />
+      <ClientOnly>
+        <Header />
+      </ClientOnly>
       {showToast && (
         <Toast
           message={toastMessage}

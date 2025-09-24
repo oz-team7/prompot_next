@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Header from '@/components/Header';
+import ClientOnly from '@/components/ClientOnly';
 
 interface AITool {
   id: string;
@@ -67,7 +68,9 @@ const ToolsPage = () => {
 
   return (
     <>
-      <Header />
+      <ClientOnly>
+        <Header />
+      </ClientOnly>
       <main className="min-h-screen bg-orange-50/20">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* 헤더 섹션 */}

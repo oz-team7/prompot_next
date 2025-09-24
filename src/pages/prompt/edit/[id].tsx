@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import Header from '@/components/Header';
+import ClientOnly from '@/components/ClientOnly';
 import { useAuth } from '@/contexts/AuthContext';
 import Toast from '@/components/Toast';
 import ThumbnailEditor from '@/components/ThumbnailEditor';
@@ -686,7 +687,9 @@ const EditPromptPage = () => {
   if (!isAuthenticated) {
     return (
       <>
+        <ClientOnly>
         <Header />
+      </ClientOnly>
         <main className="min-h-screen bg-orange-50/20">
           <div className="container mx-auto px-4 py-6 max-w-4xl">
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -703,7 +706,9 @@ const EditPromptPage = () => {
   if (loading) {
     return (
       <>
+        <ClientOnly>
         <Header />
+      </ClientOnly>
         <main className="min-h-screen bg-orange-50/20">
           <div className="container mx-auto px-4 py-6 max-w-4xl">
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -720,7 +725,9 @@ const EditPromptPage = () => {
 
   return (
     <div className="min-h-screen bg-orange-50/20">
-      <Header />
+      <ClientOnly>
+        <Header />
+      </ClientOnly>
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
