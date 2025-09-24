@@ -16,18 +16,25 @@ export default async function handler(
 
   // 인증 확인
   const authHeader = req.headers.authorization;
+  console.log('Authorization header:', authHeader ? 'Present' : 'Missing');
+  
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.error('No authorization header or invalid format');
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const token = authHeader.substring(7);
+  console.log('Token received:', token.substring(0, 20) + '...');
+  
   const { data: authData, error: authError } = await supabase.auth.getUser(token);
   
   if (authError || !authData.user) {
     console.error('Auth error:', authError);
+    console.error('Auth data:', authData);
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  
+  console.log('User authenticated:', authData.user.id);
 
   try {
     console.log('Fetching inquiries for user:', authData.user.id);

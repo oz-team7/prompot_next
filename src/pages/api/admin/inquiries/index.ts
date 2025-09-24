@@ -48,10 +48,18 @@ export default async function handler(
       const limitNum = parseInt(limit as string);
       const offset = (pageNum - 1) * limitNum;
 
-      // 기본 쿼리
+      // 기본 쿼리 (사용자 정보 포함)
       let query = supabase
         .from('inquiries')
-        .select('*', { count: 'exact' })
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            email,
+            avatar_url
+          )
+        `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
       // 필터 적용

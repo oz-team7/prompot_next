@@ -139,8 +139,6 @@ export const useBookmarks = () => {
         }
       }
 
-      // console.log('[DEBUG] Fetching bookmarks from API...');
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
       
@@ -153,15 +151,12 @@ export const useBookmarks = () => {
 
       clearTimeout(timeoutId);
 
-      // console.log('[DEBUG] Bookmarks API response status:', res.status);
-
       if (!res.ok) {
         // 응답이 JSON인지 확인
         const contentType = res.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           const errorData = await res.json();
           if (res.status === 401 || res.status === 403) {
-            // console.log('[DEBUG] Authentication required for bookmarks');
             setBookmarks([]);
             saveCachedBookmarks([]);
             return;
@@ -256,7 +251,6 @@ export const useBookmarks = () => {
       // 이미 북마크되어 있는지 확인
       const existingBookmark = bookmarks.find(b => b.prompt.id === numericPromptId);
       if (existingBookmark) {
-        // console.log('[DEBUG] Bookmark already exists for prompt:', numericPromptId);
         return existingBookmark;
       }
 

@@ -41,7 +41,15 @@ export default async function handler(
     try {
       const { data: inquiry, error } = await supabase
         .from('inquiries')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            email,
+            avatar_url
+          )
+        `)
         .eq('id', id)
         .single();
 

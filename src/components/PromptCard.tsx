@@ -100,8 +100,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
       return;
     }
 
-    console.log('[DEBUG] Bookmark toggle - prompt ID:', prompt.id, 'current state:', actualIsBookmarked);
-
     try {
       if (actualIsBookmarked) {
         // 북마크 제거 (즉시 UI 반영됨)
@@ -130,15 +128,11 @@ const PromptCard: React.FC<PromptCardProps> = ({
 
   const handleCategorySelect = async (categoryIds: (string | null)[]) => {
     try {
-      console.log('[DEBUG] Adding bookmark with category IDs:', categoryIds);
-      
       // 첫 번째 카테고리 ID 사용 (기존 API 호환성)
       const primaryCategoryId = categoryIds.length > 0 ? categoryIds[0] : null;
       
       // 실제 프롬프트 데이터를 전달 (낙관적 업데이트를 위해)
       await addBookmark(prompt.id, primaryCategoryId, prompt);
-      
-      console.log('[DEBUG] Bookmark added successfully');
       setToastMessage('북마크에 추가되었습니다!');
       setToastType('bookmark');
       setShowToast(true);
@@ -228,15 +222,6 @@ const PromptCard: React.FC<PromptCardProps> = ({
             const videoUrl = prompt.video_url || prompt.videoUrl;
             const thumbnailUrl = videoUrl ? getVideoThumbnail(videoUrl) : null;
             const isDirectVideo = videoUrl ? isDirectVideoUrl(videoUrl) : false;
-            console.log('[DEBUG] PromptCard video check:', {
-              promptId: prompt.id,
-              title: prompt.title,
-              video_url: prompt.video_url,
-              videoUrl: prompt.videoUrl,
-              finalVideoUrl: videoUrl,
-              thumbnailUrl: thumbnailUrl,
-              isDirectVideo: isDirectVideo
-            });
             return (videoUrl && (thumbnailUrl || isDirectVideo));
           })() ? (
             <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden">

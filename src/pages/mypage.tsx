@@ -85,7 +85,7 @@ const getAuthorName = (author: any): string => {
 
 const MyPage = () => {
   const router = useRouter();
-  const { user, isAuthenticated, refreshUser } = useAuth();
+  const { user, isAuthenticated, refreshUser, logout, validateToken } = useAuth();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings' | 'support'>('prompts');
   
   // URL 쿼리 파라미터에서 탭 설정
@@ -390,37 +390,25 @@ const MyPage = () => {
 
   useEffect(() => {
     // author=true로 호출했으므로 이미 현재 사용자의 프롬프트만 받아옴
-    console.log('[DEBUG] MyPage useEffect - allPrompts:', allPrompts);
-    console.log('[DEBUG] MyPage useEffect - user:', user?.id, user?.name, user?.email);
-    console.log('[DEBUG] MyPage useEffect - isAuthenticated:', isAuthenticated);
-    
     if (allPrompts.length > 0) {
-      console.log('[DEBUG] Setting prompts directly (already filtered by author=true):', allPrompts);
-      console.log('[DEBUG] First prompt category and aiModel:', {
-        category: allPrompts[0]?.category,
-        aiModel: allPrompts[0]?.aiModel
-      });
-      console.log('[DEBUG] First prompt author info:', {
-        author: allPrompts[0]?.author,
-        authorName: allPrompts[0]?.author?.name,
-        authorAvatarUrl: allPrompts[0]?.author?.avatar_url
-      });
       setMyPrompts(allPrompts);
     } else {
-      console.log('[DEBUG] No prompts available');
       setMyPrompts([]);
     }
   }, [allPrompts, user, isAuthenticated]);
 
   // 페이지 방문 시 자동 새로고침 추가 (한 번만 실행)
   useEffect(() => {
-    if (isAuthenticated && activeTab === 'prompts') {
-      console.log('[DEBUG] Initial load - fetching prompts');
-      refetch();
-    } else if (isAuthenticated && activeTab === 'support') {
-      fetchInquiries();
+    if (isAuthenticated && user?.id) {
+      if (activeTab === 'prompts') {
+        console.log('[DEBUG] Initial load - fetching prompts');
+        refetch();
+      } else if (activeTab === 'support') {
+        console.log('[DEBUG] Initial load - fetching inquiries');
+        fetchInquiries();
+      }
     }
-  }, [isAuthenticated, activeTab]); // refetch 의존성 제거
+  }, [isAuthenticated, user?.id, activeTab]); // refetch 의존성 제거
 
   const handleDelete = (id: number) => {
     setDeleteTargetId(id);
@@ -668,32 +656,83 @@ const MyPage = () => {
   };
 
   const fetchInquiries = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.log('No user ID, skipping inquiry fetch');
+      return;
+    }
     
     setInquiriesLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      let token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('인증 토큰이 없습니다.');
+        console.error('No token found in localStorage');
+        throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
       }
       
-      const res = await fetch('/api/user/inquiries', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      console.log('Fetching inquiries with token:', token.substring(0, 20) + '...');
       
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('API Error:', res.status, errorData);
-        throw new Error(`문의 내역을 불러올 수 없습니다. (${res.status})`);
-      }
+      const makeRequest = async (authToken: string) => {
+        const res = await fetch('/api/user/inquiries', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('Inquiry API response status:', res.status);
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('API Error:', res.status, errorData);
+          
+          if (res.status === 401) {
+            // 토큰 유효성 재검사
+            console.log('Token expired, validating token...');
+            
+            const isValid = await validateToken();
+            
+            if (isValid) {
+              // 토큰이 유효하다면 재시도
+              console.log('Token is valid, retrying request...');
+              return await makeRequest(token);
+            } else {
+              // 토큰이 완전히 만료된 경우 로그아웃 처리
+              console.log('Token validation failed, redirecting to login...');
+              await logout();
+              router.push('/login');
+              throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+            }
+          } else if (res.status === 404) {
+            throw new Error('사용자 프로필을 찾을 수 없습니다.');
+          } else {
+            throw new Error(`문의 내역을 불러올 수 없습니다. (${res.status})`);
+          }
+        }
+        
+        return res;
+      };
       
+      const res = await makeRequest(token);
       const data = await res.json();
-      setInquiries(data);
+      console.log('Fetched inquiries:', data?.length || 0);
+      setInquiries(data || []);
     } catch (error) {
       console.error('Error fetching inquiries:', error);
-      setToastMessage(error instanceof Error ? error.message : '문의 내역을 불러올 수 없습니다.');
+      
+      // 에러 메시지 개선
+      let errorMessage = '문의 내역을 불러올 수 없습니다.';
+      if (error instanceof Error) {
+        if (error.message.includes('인증이 만료')) {
+          errorMessage = '세션이 만료되었습니다. 페이지를 새로고침하거나 다시 로그인해주세요.';
+        } else if (error.message.includes('프로필을 찾을 수 없습니다')) {
+          errorMessage = '사용자 정보를 찾을 수 없습니다. 관리자에게 문의해주세요.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setToastMessage(errorMessage);
       setToastType('error');
       setShowToast(true);
     } finally {

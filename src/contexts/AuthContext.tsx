@@ -14,6 +14,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   refreshUser: () => Promise<void>;
+  validateToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -163,6 +164,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // 토큰 유효성 검사 함수
+  const validateToken = async (): Promise<boolean> => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (!token) return false;
+
+      const res = await fetch('/api/auth/validate-token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user && typeof data.user === 'object' && data.user.id) {
+          setUser(data.user);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+          return true;
+        }
+      }
+      
+      // 토큰이 유효하지 않으면 로컬 스토리지 클리어
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+      setUser(null);
+      return false;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
+  };
+
   const logout = async () => {
     await fetch('/api/auth/logout', {
       method: 'POST',
@@ -179,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, isAuthenticated, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, isAuthenticated, refreshUser, validateToken }}>
       {children}
     </AuthContext.Provider>
   );
