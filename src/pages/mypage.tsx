@@ -1107,19 +1107,6 @@ const MyPage = () => {
                 </button>
               ))}
             </div>
-            
-            {/* 내 프롬프트 탭에서만 추가 버튼 표시 */}
-            {activeTab === 'prompts' && (
-              <Link
-                href="/prompt/create"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                New
-              </Link>
-            )}
           </div>
 
           {/* 탭 콘텐츠 */}
@@ -1127,6 +1114,19 @@ const MyPage = () => {
             {/* 내 프롬프트 탭 */}
             {activeTab === 'prompts' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
+                {/* New 버튼 */}
+                <div className="mb-6 flex justify-end">
+                  <Link
+                    href="/prompt/create"
+                    className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1.5 text-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    New
+                  </Link>
+                </div>
+                
                 {loading ? (
                   <div className="text-center py-16">
                     <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -1410,7 +1410,7 @@ const MyPage = () => {
                     <h3 className="text-lg font-medium text-gray-800">보안 설정</h3>
                     <button
                       onClick={() => setShowPasswordChange(!showPasswordChange)}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium flex items-center gap-2"
+                      className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -1510,21 +1510,21 @@ const MyPage = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold">문의 내역</h2>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <Link
                       href="/faq"
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                      className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1.5 text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       FAQ
                     </Link>
                     <button
                       onClick={() => setShowContactModal(true)}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+                      className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-1.5 text-sm"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                       새 문의하기
