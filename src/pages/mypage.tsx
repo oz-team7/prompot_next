@@ -14,6 +14,8 @@ import ProfileImageModal from '@/components/ProfileImageModal';
 import BookmarkCategoryManager from '@/components/BookmarkCategoryManager';
 import BookmarkCategorySelector from '@/components/BookmarkCategorySelector';
 import BookmarkPanel from '@/components/BookmarkPanel';
+import Modal from '@/components/Modal';
+import ContactForm from '@/components/ContactForm';
 import { useBookmarkCategories } from '@/hooks/useBookmarkCategories';
 import { getVideoThumbnail, getVideoTitle } from '@/utils/videoUtils';
 import PromptCardCompact from '@/components/PromptCardCompact';
@@ -121,6 +123,7 @@ const MyPage = () => {
   const [inquiriesLoading, setInquiriesLoading] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   
   // 이름 수정 관련 상태
   const [isEditingName, setIsEditingName] = useState(false);
@@ -1450,15 +1453,15 @@ const MyPage = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold">문의 내역</h2>
-                  {/* <Link
-                    href="/faq"
+                  <button
+                    onClick={() => setShowContactModal(true)}
                     className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     새 문의하기
-                  </Link> */}
+                  </button>
                 </div>
                 
                 {inquiriesLoading ? (
@@ -1774,6 +1777,11 @@ const MyPage = () => {
           </div>
         </div>
       )}
+
+      {/* 새 문의하기 모달 */}
+      <Modal isOpen={showContactModal} onClose={() => setShowContactModal(false)}>
+        <ContactForm supportEmail="support@prompot.com" />
+      </Modal>
     </>
   );
 };
