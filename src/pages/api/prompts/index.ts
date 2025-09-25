@@ -116,9 +116,49 @@ export default async function handler(
       query = query.eq('category', category);
     }
 
-    // AI모델 필터
+    // AI모델 필터 (정확한 매치로 변경)
     if (aiModel && aiModel !== 'all') {
-      query = query.eq('ai_model', aiModel);
+      // aiModel이 배열인 경우 첫 번째 요소 사용
+      const modelName = Array.isArray(aiModel) ? aiModel[0] : aiModel;
+      
+      // AI모델 정의에서 정규화된 이름으로 매칭
+      const aiModels = [
+        { id: 'chatgpt', name: 'ChatGPT' },
+        { id: 'claude', name: 'Claude' },
+        { id: 'gemini', name: 'Gemini' },
+        { id: 'perplexity', name: 'Perplexity' },
+        { id: 'copilot', name: 'GitHub Copilot' },
+        { id: 'cursor', name: 'Cursor' },
+        { id: 'replit', name: 'Replit' },
+        { id: 'v0', name: 'v0' },
+        { id: 'dalle', name: 'DALL-E' },
+        { id: 'midjourney', name: 'Midjourney' },
+        { id: 'stable-diffusion', name: 'Stable Diffusion' },
+        { id: 'leonardo', name: 'Leonardo AI' },
+        { id: 'runway', name: 'Runway' },
+        { id: 'pika', name: 'Pika Labs' },
+        { id: 'kling', name: 'Kling' },
+        { id: 'sora', name: 'Sora' },
+        { id: 'elevenlabs', name: 'ElevenLabs' },
+        { id: 'jasper', name: 'Jasper' },
+        { id: 'copy-ai', name: 'Copy.ai' },
+        { id: 'other', name: '기타' },
+      ];
+      
+      // 필터 모델을 정규화된 이름으로 변환
+      const normalizedFilterModel = modelName.toLowerCase();
+      const filterModel = aiModels.find(m => 
+        m.id.toLowerCase() === normalizedFilterModel || 
+        m.name.toLowerCase() === normalizedFilterModel
+      );
+      
+      if (filterModel) {
+        // 정규화된 이름을 기준으로 필터링 (정규화된 이름과 원본 ID 모두 매칭)
+        query = query.or(`ai_model.eq.${filterModel.name},ai_model.eq.${filterModel.id},ai_model.eq.${filterModel.name.toLowerCase()},ai_model.eq.${filterModel.id.toLowerCase()}`);
+      } else {
+        // 정의되지 않은 모델인 경우 원본 이름으로 정확한 매칭
+        query = query.or(`ai_model.eq.${modelName},ai_model.eq.${modelName.toLowerCase()}`);
+      }
     }
 
     // 작성자 필터 (author=true인 경우 현재 사용자의 프롬프트만 조회)

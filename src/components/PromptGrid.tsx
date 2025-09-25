@@ -46,17 +46,37 @@ const PromptGrid: React.FC<PromptGridProps> = ({
   const [activeAIModel, setActiveAIModel] = useState<string>('all');
   const [activeTag, setActiveTag] = useState<string>('all');
   
-  // 페이지 경로 변경 시 필터 초기화 (홈으로 이동 시)
+  // URL 쿼리 파라미터에서 필터 설정
   useEffect(() => {
-    if (router.pathname === '/' && router.query.reset === 'true') {
+    const { category, aiModel, author, reset } = router.query;
+    
+    if (reset === 'true') {
       setActiveCategory('all');
       setActiveAIModel('all');
       setActiveTag('all');
       clearFilters(); // 작성자 필터도 초기화
       // URL에서 reset 파라미터 제거
       router.replace('/', undefined, { shallow: true });
+    } else {
+      // URL 쿼리 파라미터에서 필터 설정
+      if (category && typeof category === 'string') {
+        console.log('[DEBUG] URL category filter:', category);
+        setCategoryFilter(category);
+        setActiveCategory(category as CategoryType);
+      }
+      
+      if (aiModel && typeof aiModel === 'string') {
+        // 정규화된 이름으로 변환하여 사용
+        const normalizedName = normalizeAIModelName(aiModel);
+        setAiModelFilter(normalizedName);
+        setActiveAIModel(normalizedName);
+      }
+      
+      if (author && typeof author === 'string') {
+        setAuthorFilter(author);
+      }
     }
-  }, [router.pathname, router.query.reset, clearFilters]);
+  }, [router.query, clearFilters, setCategoryFilter, setAiModelFilter, setAuthorFilter]);
   
   // 정렬 옵션 정의
   const sortOptions = [
@@ -66,6 +86,41 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     { value: 'bookmarks', label: '북마크순', icon: '' },
   ];
   
+  // AI모델 이름 정규화 함수 - 정규화된 이름을 기준으로 통일
+  const normalizeAIModelName = (modelName: string): string => {
+    const aiModels = [
+      { id: 'chatgpt', name: 'ChatGPT' },
+      { id: 'claude', name: 'Claude' },
+      { id: 'gemini', name: 'Gemini' },
+      { id: 'perplexity', name: 'Perplexity' },
+      { id: 'copilot', name: 'GitHub Copilot' },
+      { id: 'cursor', name: 'Cursor' },
+      { id: 'replit', name: 'Replit' },
+      { id: 'v0', name: 'v0' },
+      { id: 'dalle', name: 'DALL-E' },
+      { id: 'midjourney', name: 'Midjourney' },
+      { id: 'stable-diffusion', name: 'Stable Diffusion' },
+      { id: 'leonardo', name: 'Leonardo AI' },
+      { id: 'runway', name: 'Runway' },
+      { id: 'pika', name: 'Pika Labs' },
+      { id: 'kling', name: 'Kling' },
+      { id: 'sora', name: 'Sora' },
+      { id: 'elevenlabs', name: 'ElevenLabs' },
+      { id: 'jasper', name: 'Jasper' },
+      { id: 'copy-ai', name: 'Copy.ai' },
+      { id: 'other', name: '기타' },
+    ];
+    
+    const normalizedName = modelName.toLowerCase();
+    const model = aiModels.find(m => 
+      m.id.toLowerCase() === normalizedName || 
+      m.name.toLowerCase() === normalizedName
+    );
+    
+    // 항상 정규화된 이름 반환 (대문자로 시작하는 표준 이름)
+    return model?.name || modelName;
+  };
+
   const { 
     prompts: apiPrompts, 
     loading, 
@@ -76,8 +131,25 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     hasMore 
   } = usePrompts({ 
     sort: sortBy,
-    limit: 20
+    limit: 20,
+    category: (() => {
+      const currentCategory = activeCategory !== 'all' ? activeCategory : categoryFilter;
+      console.log('[DEBUG] usePrompts category - activeCategory:', activeCategory, 'categoryFilter:', categoryFilter, 'currentCategory:', currentCategory);
+      return currentCategory && currentCategory !== 'all' ? currentCategory : undefined;
+    })(),
+    aiModel: (() => {
+      const currentAIModel = activeAIModel !== 'all' ? activeAIModel : aiModelFilter;
+      return currentAIModel && currentAIModel !== 'all' ? normalizeAIModelName(currentAIModel) : undefined;
+    })(),
+    authorFilter: authorFilter || undefined
   });
+  
+  // 필터링 변경 시 API 재호출
+  useEffect(() => {
+    if (useAPI) {
+      refetch();
+    }
+  }, [activeCategory, activeAIModel, authorFilter, categoryFilter, aiModelFilter, refetch, useAPI]);
   
   // API 사용 시 apiPrompts, 아니면 initialPrompts 사용
   const promptsData = useAPI ? apiPrompts : (initialPrompts || []);
@@ -246,84 +318,125 @@ const PromptGrid: React.FC<PromptGridProps> = ({
     }
   };
 
+  // API 사용 시에는 서버에서 필터링된 데이터를 받아오므로 로컬 필터링 불필요
+  // initialPrompts 사용 시에만 로컬 필터링 적용
   useEffect(() => {
-    let filtered = [...prompts];
+    console.log('[DEBUG] PromptGrid filtering - useAPI:', useAPI, 'prompts count:', prompts.length);
+    console.log('[DEBUG] Current filters - activeCategory:', activeCategory, 'activeAIModel:', activeAIModel, 'categoryFilter:', categoryFilter, 'aiModelFilter:', aiModelFilter);
+    
+    if (useAPI) {
+      // API 사용 시에는 서버에서 이미 필터링된 데이터를 받아옴
+      console.log('[DEBUG] Using API data directly, no client-side filtering');
+      setFilteredPrompts(prompts);
+    } else {
+      // initialPrompts 사용 시에만 로컬 필터링 적용
+      let filtered = [...prompts];
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(prompt => 
-        prompt.title.toLowerCase().includes(query) ||
-        prompt.description.toLowerCase().includes(query) ||
-        prompt.tags.some(tag => tag.toLowerCase().includes(query)) ||
-        (prompt.author?.name || '').toLowerCase().includes(query)
-      );
-    }
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(prompt => 
+          prompt.title.toLowerCase().includes(query) ||
+          prompt.description.toLowerCase().includes(query) ||
+          prompt.tags.some(tag => tag.toLowerCase().includes(query)) ||
+          (prompt.author?.name || '').toLowerCase().includes(query)
+        );
+      }
 
-    // Category filter
-    if (activeCategory !== 'all') {
-      filtered = filtered.filter(prompt => prompt.category === activeCategory);
-    }
+      // Category filter (로컬 상태 우선, 없으면 SearchContext 사용)
+      const currentCategory = activeCategory !== 'all' ? activeCategory : categoryFilter;
+      if (currentCategory && currentCategory !== 'all') {
+        filtered = filtered.filter(prompt => prompt.category === currentCategory);
+      }
 
-    // AI Model filter
-    if (activeAIModel !== 'all') {
-      filtered = filtered.filter(prompt => {
-        const aiModelName = typeof prompt.aiModel === 'object' ? prompt.aiModel?.name : prompt.aiModel;
-        return aiModelName === activeAIModel;
-      });
-    }
-
-    // Tag filter
-    if (activeTag !== 'all') {
-      filtered = filtered.filter(prompt => 
-        prompt.tags.some(tag => tag === activeTag)
-      );
-    }
-
-    // Author filter
-    if (authorFilter) {
-      filtered = filtered.filter(prompt => 
-        (prompt.author?.name || '익명') === authorFilter
-      );
-    }
-
-    // Category filter
-    if (categoryFilter) {
-      filtered = filtered.filter(prompt => 
-        prompt.category === categoryFilter
-      );
-    }
-
-    // AI Model filter
-    if (aiModelFilter) {
-      filtered = filtered.filter(prompt => 
-        prompt.aiModel?.name === aiModelFilter
-      );
-    }
-
-
-    // Sorting
-    switch (sortBy) {
-      case 'latest':
-        filtered.sort((a, b) => {
-          const dateA = a.created_at || a.date || '';
-          const dateB = b.created_at || b.date || '';
-          return new Date(dateB).getTime() - new Date(dateA).getTime();
+      // AI Model filter (로컬 상태 우선, 없으면 SearchContext 사용)
+      const currentAIModel = activeAIModel !== 'all' ? activeAIModel : aiModelFilter;
+      if (currentAIModel && currentAIModel !== 'all') {
+        filtered = filtered.filter(prompt => {
+          // AI모델 이름 추출 (여러 필드 확인)
+          const aiModelName = prompt.aiModel?.name || prompt.ai_model || '';
+          
+          // 대소문자 무시하고 정확한 매칭
+          const normalizedPromptModel = aiModelName.toLowerCase();
+          const normalizedFilterModel = currentAIModel.toLowerCase();
+          
+          // AI모델 정의에서 정규화된 이름으로 매칭
+          const aiModels = [
+            { id: 'chatgpt', name: 'ChatGPT' },
+            { id: 'claude', name: 'Claude' },
+            { id: 'gemini', name: 'Gemini' },
+            { id: 'perplexity', name: 'Perplexity' },
+            { id: 'copilot', name: 'GitHub Copilot' },
+            { id: 'cursor', name: 'Cursor' },
+            { id: 'replit', name: 'Replit' },
+            { id: 'v0', name: 'v0' },
+            { id: 'dalle', name: 'DALL-E' },
+            { id: 'midjourney', name: 'Midjourney' },
+            { id: 'stable-diffusion', name: 'Stable Diffusion' },
+            { id: 'leonardo', name: 'Leonardo AI' },
+            { id: 'runway', name: 'Runway' },
+            { id: 'pika', name: 'Pika Labs' },
+            { id: 'kling', name: 'Kling' },
+            { id: 'sora', name: 'Sora' },
+            { id: 'elevenlabs', name: 'ElevenLabs' },
+            { id: 'jasper', name: 'Jasper' },
+            { id: 'copy-ai', name: 'Copy.ai' },
+            { id: 'other', name: '기타' },
+          ];
+          
+          // 프롬프트의 AI모델을 정규화된 이름으로 변환
+          const promptModel = aiModels.find(m => 
+            m.id.toLowerCase() === normalizedPromptModel || 
+            m.name.toLowerCase() === normalizedPromptModel
+          )?.name || aiModelName;
+          
+          // 필터의 AI모델을 정규화된 이름으로 변환
+          const filterModel = aiModels.find(m => 
+            m.id.toLowerCase() === normalizedFilterModel || 
+            m.name.toLowerCase() === normalizedFilterModel
+          )?.name || currentAIModel;
+          
+          return promptModel.toLowerCase() === filterModel.toLowerCase();
         });
-        break;
-      case 'likes':
-        filtered.sort((a, b) => (b.likes_count || b.likes || 0) - (a.likes_count || a.likes || 0));
-        break;
-      case 'views':
-        filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
-        break;
-      case 'bookmarks':
-        filtered.sort((a, b) => (b.bookmarkCount || b.bookmarks || 0) - (a.bookmarkCount || a.bookmarks || 0));
-        break;
-    }
+      }
 
-    setFilteredPrompts(filtered);
-  }, [prompts, activeCategory, sortBy, searchQuery, activeAIModel, activeTag, authorFilter, categoryFilter, aiModelFilter]);
+      // Tag filter
+      if (activeTag !== 'all') {
+        filtered = filtered.filter(prompt => 
+          prompt.tags.some(tag => tag === activeTag)
+        );
+      }
+
+      // Author filter
+      if (authorFilter) {
+        filtered = filtered.filter(prompt => 
+          (prompt.author?.name || '익명') === authorFilter
+        );
+      }
+
+      // Sorting
+      switch (sortBy) {
+        case 'latest':
+          filtered.sort((a, b) => {
+            const dateA = a.created_at || a.date || '';
+            const dateB = b.created_at || b.date || '';
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
+          });
+          break;
+        case 'likes':
+          filtered.sort((a, b) => (b.likes_count || b.likes || 0) - (a.likes_count || a.likes || 0));
+          break;
+        case 'views':
+          filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+          break;
+        case 'bookmarks':
+          filtered.sort((a, b) => (b.bookmarkCount || b.bookmarks || 0) - (a.bookmarkCount || a.bookmarks || 0));
+          break;
+      }
+
+      setFilteredPrompts(filtered);
+    }
+  }, [prompts, activeCategory, sortBy, searchQuery, activeAIModel, activeTag, authorFilter, categoryFilter, aiModelFilter, useAPI]);
 
   const handleCreatePrompt = () => {
     if (isAuthenticated) {
@@ -335,21 +448,34 @@ const PromptGrid: React.FC<PromptGridProps> = ({
 
   // 카테고리 클릭 핸들러
   const handleCategoryClick = (category: string) => {
-    if (activeCategory === category) {
+    console.log('[DEBUG] handleCategoryClick - category:', category, 'activeCategory:', activeCategory, 'categoryFilter:', categoryFilter);
+    if (activeCategory === category || categoryFilter === category) {
       // 같은 카테고리를 다시 클릭하면 필터 해제
+      console.log('[DEBUG] Same category clicked, clearing filter');
       setActiveCategory('all');
+      setCategoryFilter(null);
     } else {
+      console.log('[DEBUG] Setting new category filter:', category);
       setActiveCategory(category as CategoryType);
+      setCategoryFilter(category);
+      setActiveAIModel('all'); // 다른 필터 초기화
+      setActiveTag('all');
+      setAiModelFilter(null);
     }
   };
 
   // AI모델 클릭 핸들러
   const handleAIModelClick = (aiModel: string) => {
-    if (activeAIModel === aiModel) {
+    if (activeAIModel === aiModel || aiModelFilter === aiModel) {
       // 같은 AI 모델을 다시 클릭하면 필터 해제
       setActiveAIModel('all');
+      setAiModelFilter(null);
     } else {
       setActiveAIModel(aiModel);
+      setAiModelFilter(aiModel);
+      setActiveCategory('all'); // 다른 필터 초기화
+      setActiveTag('all');
+      setCategoryFilter(null);
     }
   };
 
@@ -360,6 +486,25 @@ const PromptGrid: React.FC<PromptGridProps> = ({
       setActiveTag('all');
     } else {
       setActiveTag(tag);
+      setActiveCategory('all'); // 다른 필터 초기화
+      setActiveAIModel('all');
+      setCategoryFilter(null);
+      setAiModelFilter(null);
+    }
+  };
+
+  // 작성자 클릭 핸들러
+  const handleAuthorClick = (author: string) => {
+    if (authorFilter === author) {
+      // 같은 작성자를 다시 클릭하면 필터 해제
+      setAuthorFilter(null);
+    } else {
+      setAuthorFilter(author);
+      setActiveCategory('all'); // 다른 필터 초기화
+      setActiveAIModel('all');
+      setActiveTag('all');
+      setCategoryFilter(null);
+      setAiModelFilter(null);
     }
   };
 
@@ -395,11 +540,22 @@ const PromptGrid: React.FC<PromptGridProps> = ({
               <div className="flex items-center gap-2 flex-wrap bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <span className="text-sm font-medium text-orange-600">활성 필터:</span>
                 
-                {activeCategory !== 'all' && (
+                {/* 카테고리 필터 - 통일된 로직 */}
+                {(categoryFilter || activeCategory !== 'all') && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
-                    카테고리: {categories.find(cat => cat.value === activeCategory)?.label}
+                    카테고리: {categoryFilter ? 
+                      (categories.find(c => c.value === categoryFilter)?.label || categoryFilter) : 
+                      categories.find(cat => cat.value === activeCategory)?.label
+                    }
                     <button
-                      onClick={() => setActiveCategory('all')}
+                      onClick={() => {
+                        console.log('[DEBUG] 카테고리 필터 제거 - categoryFilter:', categoryFilter, 'activeCategory:', activeCategory);
+                        setCategoryFilter(null);
+                        setActiveCategory('all');
+                        // URL에서 카테고리 파라미터 제거
+                        const { category, ...restQuery } = router.query;
+                        router.replace({ pathname: router.pathname, query: restQuery }, undefined, { shallow: true });
+                      }}
                       className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
                     >
                       ×
@@ -407,11 +563,19 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                   </span>
                 )}
                 
-                {activeAIModel !== 'all' && (
+                {/* AI모델 필터 - 통일된 로직 */}
+                {(aiModelFilter || activeAIModel !== 'all') && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
-                    AI모델: {activeAIModel}
+                    AI모델: {aiModelFilter || activeAIModel}
                     <button
-                      onClick={() => setActiveAIModel('all')}
+                      onClick={() => {
+                        console.log('[DEBUG] AI모델 필터 제거 - aiModelFilter:', aiModelFilter, 'activeAIModel:', activeAIModel);
+                        setAiModelFilter(null);
+                        setActiveAIModel('all');
+                        // URL에서 AI모델 파라미터 제거
+                        const { aiModel, ...restQuery } = router.query;
+                        router.replace({ pathname: router.pathname, query: restQuery }, undefined, { shallow: true });
+                      }}
                       className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
                     >
                       ×
@@ -419,11 +583,18 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                   </span>
                 )}
                 
+                {/* 태그 필터 - 통일된 로직 */}
                 {activeTag !== 'all' && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
                     태그: {activeTag}
                     <button
-                      onClick={() => setActiveTag('all')}
+                      onClick={() => {
+                        console.log('[DEBUG] 태그 필터 제거 - activeTag:', activeTag);
+                        setActiveTag('all');
+                        // URL에서 태그 파라미터 제거
+                        const { tag, ...restQuery } = router.query;
+                        router.replace({ pathname: router.pathname, query: restQuery }, undefined, { shallow: true });
+                      }}
                       className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
                     >
                       ×
@@ -431,35 +602,18 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                   </span>
                 )}
                 
+                {/* 작성자 필터 - 통일된 로직 */}
                 {authorFilter && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
                     작성자: {authorFilter}
                     <button
-                      onClick={() => setAuthorFilter(null)}
-                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                
-                {categoryFilter && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
-                    카테고리: {categories.find(c => c.value === categoryFilter)?.label || categoryFilter}
-                    <button
-                      onClick={() => setCategoryFilter(null)}
-                      className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                
-                {aiModelFilter && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm border border-orange-200">
-                    AI모델: {aiModelFilter}
-                    <button
-                      onClick={() => setAiModelFilter(null)}
+                      onClick={() => {
+                        console.log('[DEBUG] 작성자 필터 제거 - authorFilter:', authorFilter);
+                        setAuthorFilter(null);
+                        // URL에서 작성자 파라미터 제거
+                        const { author, ...restQuery } = router.query;
+                        router.replace({ pathname: router.pathname, query: restQuery }, undefined, { shallow: true });
+                      }}
                       className="ml-1 hover:text-orange-900 text-orange-500 font-bold"
                     >
                       ×
@@ -469,10 +623,15 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                 
                 <button
                   onClick={() => {
+                    console.log('[DEBUG] 모든 필터 제거');
                     setActiveCategory('all');
                     setActiveAIModel('all');
                     setActiveTag('all');
+                    setCategoryFilter(null);
+                    setAiModelFilter(null);
                     clearFilters();
+                    // URL을 홈으로 이동 (모든 쿼리 파라미터 제거)
+                    router.replace('/', undefined, { shallow: true });
                   }}
                   className="ml-2 px-3 py-1 bg-orange-200 text-orange-800 rounded-full text-sm hover:bg-orange-300 transition-colors"
                 >
@@ -683,7 +842,7 @@ const PromptGrid: React.FC<PromptGridProps> = ({
             </div>
           ) : filteredPrompts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
-              {filteredPrompts.map(prompt => (
+              {filteredPrompts.map((prompt, index) => (
                 <div key={prompt.id} className="w-full mb-6">
                   <PromptCardCompact
                     prompt={prompt}
@@ -693,6 +852,8 @@ const PromptGrid: React.FC<PromptGridProps> = ({
                     onCategoryClick={handleCategoryClick}
                     onAIModelClick={handleAIModelClick}
                     onTagClick={handleTagClick}
+                    onAuthorClick={handleAuthorClick}
+                    priority={index === 0}
                   />
                 </div>
               ))}

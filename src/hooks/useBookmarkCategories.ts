@@ -12,8 +12,11 @@ export const useBookmarkCategories = () => {
     timestamp: null
   });
   const isRequestInProgress = useRef(false);
+  const requestId = useRef(0); // 요청 ID 추가
 
   const fetchCategories = useCallback(async (forceRefresh = false) => {
+    let currentRequestId = 0; // 함수 스코프에서 정의
+    
     try {
       // 캐시 확인 (5분간 유효)
       const now = Date.now();
@@ -32,6 +35,7 @@ export const useBookmarkCategories = () => {
         return;
       }
       
+      currentRequestId = ++requestId.current;
       isRequestInProgress.current = true;
       setLoading(true);
       setError(null);
@@ -43,11 +47,18 @@ export const useBookmarkCategories = () => {
         return;
       }
 
+      console.log(`[DEBUG] Fetching categories (request ${currentRequestId})`);
       const res = await fetch('/api/bookmark-categories', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
+
+      // 요청이 취소되었는지 확인
+      if (currentRequestId !== requestId.current) {
+        console.log(`[DEBUG] Request ${currentRequestId} cancelled`);
+        return;
+      }
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -56,24 +67,31 @@ export const useBookmarkCategories = () => {
 
       const data = await res.json();
       
-      if (data && Array.isArray(data.categories)) {
-        setCategories(data.categories);
-        cache.current = { data: data.categories, timestamp: now };
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[DEBUG] Categories fetched and cached:', data.categories.length);
+      // 요청이 여전히 유효한 경우에만 상태 업데이트
+      if (currentRequestId === requestId.current) {
+        if (data && Array.isArray(data.categories)) {
+          setCategories(data.categories);
+          cache.current = { data: data.categories, timestamp: now };
+          console.log(`[DEBUG] Categories fetched and cached: ${data.categories.length} (request ${currentRequestId})`);
+        } else {
+          console.warn('[DEBUG] Invalid categories data:', data);
+          setCategories([]);
+          cache.current = { data: [], timestamp: now };
         }
-      } else {
-        console.warn('[DEBUG] Invalid categories data:', data);
-        setCategories([]);
-        cache.current = { data: [], timestamp: now };
       }
     } catch (err: unknown) {
       console.error('[DEBUG] useBookmarkCategories error:', err);
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
-      setCategories([]);
+      // 현재 요청이 여전히 유효한 경우에만 에러 상태 업데이트
+      if (currentRequestId === requestId.current) {
+        setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+        setCategories([]);
+      }
     } finally {
-      setLoading(false);
-      isRequestInProgress.current = false;
+      // 현재 요청이 여전히 유효한 경우에만 상태 업데이트
+      if (currentRequestId === requestId.current) {
+        setLoading(false);
+        isRequestInProgress.current = false;
+      }
     }
   }, []);
 

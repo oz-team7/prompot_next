@@ -112,6 +112,7 @@ interface PromptDetail {
   description?: string;
   category: string;
   aiModel: AIModel | string;
+  ai_model?: string; // API에서 받는 실제 AI모델 이름
   tags?: string[];
   author: {
     id: string;
@@ -334,23 +335,38 @@ const PromptDetailPage = () => {
   // 카테고리 클릭 핸들러
   const handleCategoryClick = () => {
     if (!prompt) return;
-    const categoryLabel = getCategoryLabel(prompt.category);
-    setSearchQuery(categoryLabel);
-    router.push('/prompts');
+    // 검색 쿼리 대신 필터링을 위해 홈으로 이동
+    router.push(`/?category=${prompt.category}`);
   };
 
   // AI 모델 클릭 핸들러
   const handleAIModelClick = () => {
     if (!prompt) return;
-    const aiModelName = typeof prompt.aiModel === 'object' ? prompt.aiModel.name : prompt.aiModel;
-    setSearchQuery(aiModelName);
-    router.push('/prompts');
+    
+    // AI모델 이름 추출 (여러 필드 확인)
+    let aiModelName = '';
+    if (typeof prompt.aiModel === 'object' && prompt.aiModel?.name) {
+      aiModelName = prompt.aiModel.name;
+    } else if (typeof prompt.aiModel === 'string') {
+      aiModelName = prompt.aiModel;
+    } else if (prompt.ai_model) {
+      aiModelName = prompt.ai_model;
+    }
+    
+    if (aiModelName) {
+      // 정규화된 이름으로 변환하여 사용
+      const normalizedName = aiModelName.toLowerCase();
+      const model = aiModels.find(m => m.id.toLowerCase() === normalizedName || m.name.toLowerCase() === normalizedName);
+      const displayName = model?.name || aiModelName;
+      console.log('[DEBUG] AI Model click - using normalized name:', displayName);
+      router.push(`/?aiModel=${encodeURIComponent(displayName)}`);
+    }
   };
 
   // 태그 클릭 핸들러
   const handleTagClick = (tag: string) => {
-    setSearchQuery(tag);
-    router.push('/prompts');
+    // 검색 쿼리 대신 필터링을 위해 홈으로 이동
+    router.push(`/?tag=${encodeURIComponent(tag)}`);
   };
 
   // 카테고리 라벨 가져오기
@@ -923,15 +939,17 @@ const PromptDetailPage = () => {
                       )}
                       
                       {/* AI 모델 */}
-                      {prompt.aiModel && (
+                      {(prompt.aiModel || prompt.ai_model) && (
                         <button
                           onClick={handleAIModelClick}
                           className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 transition-colors cursor-pointer"
                         >
                           <div className="flex items-center gap-2">
                             {(() => {
-                              const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
-                              const model = aiModels.find(m => m.id === modelId);
+                              const aiModelName = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name || prompt.ai_model || '';
+                              // AI모델 정의에서 대소문자 무시하고 찾기
+                              const normalizedName = aiModelName.toLowerCase();
+                              const model = aiModels.find(m => m.id.toLowerCase() === normalizedName || m.name.toLowerCase() === normalizedName);
                               if (model?.icon === '🔧') {
                                 return <span>{model.icon}</span>;
                               } else if (model?.icon) {
@@ -942,9 +960,11 @@ const PromptDetailPage = () => {
                             })()}
                             <span>
                               {(() => {
-                                const modelId = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.id;
-                                const model = aiModels.find(m => m.id === modelId);
-                                return model?.name || (typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name) || '기타';
+                                const aiModelName = typeof prompt.aiModel === 'string' ? prompt.aiModel : prompt.aiModel?.name || prompt.ai_model || '';
+                                // AI모델 정의에서 대소문자 무시하고 찾기
+                                const normalizedName = aiModelName.toLowerCase();
+                                const model = aiModels.find(m => m.id.toLowerCase() === normalizedName || m.name.toLowerCase() === normalizedName);
+                                return model?.name || aiModelName || '기타';
                               })()}
                             </span>
                           </div>

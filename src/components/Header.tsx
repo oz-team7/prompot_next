@@ -31,7 +31,7 @@ const Header: React.FC = () => {
       <header className="bg-white shadow-sm sticky top-0 z-30">
         <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 max-w-full overflow-hidden">
           {/* Desktop Layout - XL 이상에서만 표시 */}
-          <div className="hidden xl:flex items-center min-h-16 min-w-0 relative">
+          <div className="hidden xl:flex items-center min-h-16 min-w-0">
             {/* Left Section - Hamburger + Logo */}
             <div className="flex items-center flex-shrink-0 gap-2 lg:gap-4">
               {/* Hamburger Menu Button */}
@@ -55,9 +55,11 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Search Bar - 중앙 위치 */}
-            <div className="absolute left-1/2 transform -translate-x-1/2 w-full max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px]">
-              <SearchBar className="w-full" />
+            {/* Search Bar - 중앙 위치, 줄어든 너비 */}
+            <div className="flex items-center justify-center flex-1 mx-4 lg:mx-8 xl:mx-12 2xl:mx-20">
+              <div className="w-full max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px]">
+                <SearchBar className="w-full" />
+              </div>
             </div>
 
             {/* Trending Prompts - 더 오른쪽 위치 */}

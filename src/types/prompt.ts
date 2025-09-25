@@ -29,6 +29,7 @@ export interface Prompt {
     name: string;
     icon: string;
   };
+  ai_model?: string; // API에서 받는 실제 AI모델 이름
   content?: string;
   isPublic?: boolean;
   comments?: any[]; // 추가

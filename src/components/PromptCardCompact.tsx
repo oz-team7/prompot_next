@@ -20,6 +20,8 @@ interface PromptCardCompactProps {
   onCategoryClick?: (category: string) => void;
   onAIModelClick?: (aiModel: string) => void;
   onTagClick?: (tag: string) => void;
+  onAuthorClick?: (author: string) => void;
+  priority?: boolean;
 }
 
 const PromptCardCompact: React.FC<PromptCardCompactProps> = ({ 
@@ -29,12 +31,14 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
   isBookmarked = false,
   onCategoryClick,
   onAIModelClick,
-  onTagClick
+  onTagClick,
+  onAuthorClick,
+  priority = false
 }) => {
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
   const { bookmarks, addBookmark, removeBookmark, isBookmarked: checkIsBookmarked } = useBookmarks();
-  const { setSearchQuery, setAuthorFilter } = useSearch();
+  const { setSearchQuery, setAuthorFilter, setCategoryFilter, setAiModelFilter } = useSearch();
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -153,21 +157,73 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
               <div className="flex items-center gap-2">
                 {/* 카테고리 */}
                 {prompt.category && (
-                  <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center shadow-sm">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('카테고리 버튼 클릭됨:', prompt.category);
+                      if (onCategoryClick && prompt.category) {
+                        onCategoryClick(prompt.category);
+                      } else if (prompt.category) {
+                        router.push(`/?category=${prompt.category}`);
+                      }
+                    }}
+                    className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center shadow-sm hover:bg-white hover:shadow-md transition-all duration-200 cursor-pointer"
+                    title="카테고리로 필터링"
+                  >
                     <span className="text-xs font-medium text-gray-700">
-                      {prompt.category === 'work' && '💼 업무/생산성'}
-                      {prompt.category === 'dev' && '💻 개발/프로그래밍'}
-                      {prompt.category === 'design' && '🎨 디자인/크리에이티브'}
+                      {prompt.category === 'work' && '⚡ 업무/마케팅'}
+                      {prompt.category === 'dev' && '⚙️ 개발/코드'}
+                      {prompt.category === 'design' && '✨ 디자인/브랜드'}
                       {prompt.category === 'edu' && '🎯 교육/학습'}
                       {prompt.category === 'image' && '🎬 이미지/동영상'}
                       {!['work', 'dev', 'design', 'edu', 'image'].includes(prompt.category) && prompt.category}
                     </span>
-                  </div>
+                  </button>
                 )}
                 {/* AI 모델 */}
-                {prompt.aiModel && (
-                  <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1.5 shadow-sm">
-                    {prompt.aiModel.icon && (
+                {(prompt.aiModel || prompt.ai_model) && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const aiModelName = prompt.aiModel?.name || prompt.ai_model || '';
+                      // 정규화된 이름으로 변환하여 사용
+                      const normalizedName = aiModelName.toLowerCase();
+                      const model = [
+                        { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
+                        { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
+                        { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
+                        { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
+                        { id: 'copilot', name: 'GitHub Copilot', icon: '/image/icon_gpt-4_code.png' },
+                        { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
+                        { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
+                        { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
+                        { id: 'dalle', name: 'DALL-E', icon: '/image/icon_dall_e_3.png' },
+                        { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
+                        { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
+                        { id: 'leonardo', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
+                        { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
+                        { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
+                        { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
+                        { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
+                        { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
+                        { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
+                        { id: 'copy-ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
+                        { id: 'other', name: '기타', icon: '🔧' },
+                      ].find(m => m.id.toLowerCase() === normalizedName || m.name.toLowerCase() === normalizedName);
+                      const displayName = model?.name || aiModelName;
+                      console.log('AI모델 버튼 클릭됨 (정규화된 이름):', displayName);
+                      if (onAIModelClick) {
+                        onAIModelClick(displayName);
+                      } else {
+                        router.push(`/?aiModel=${encodeURIComponent(displayName)}`);
+                      }
+                    }}
+                    className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1.5 shadow-sm hover:bg-white hover:shadow-md transition-all duration-200 cursor-pointer"
+                    title="AI 모델로 필터링"
+                  >
+                    {prompt.aiModel?.icon && (
                       <img 
                         src={prompt.aiModel.icon} 
                         alt={prompt.aiModel.name}
@@ -178,9 +234,37 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                       />
                     )}
                     <span className="text-xs font-medium text-gray-700">
-                      {prompt.aiModel.name}
+                      {(() => {
+                        const aiModelName = prompt.aiModel?.name || prompt.ai_model || '';
+                        // AI모델 정의에서 대소문자 무시하고 찾기
+                        const normalizedName = aiModelName.toLowerCase();
+                        const model = [
+                          { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
+                          { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
+                          { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
+                          { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
+                          { id: 'copilot', name: 'GitHub Copilot', icon: '/image/icon_gpt-4_code.png' },
+                          { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
+                          { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
+                          { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
+                          { id: 'dalle', name: 'DALL-E', icon: '/image/icon_dall_e_3.png' },
+                          { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
+                          { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
+                          { id: 'leonardo', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
+                          { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
+                          { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
+                          { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
+                          { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
+                          { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
+                          { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
+                          { id: 'copy-ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
+                          { id: 'other', name: '기타', icon: '🔧' },
+                        ].find(m => m.id.toLowerCase() === normalizedName || m.name.toLowerCase() === normalizedName);
+                        
+                        return model ? model.name : aiModelName;
+                      })()}
                     </span>
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
@@ -231,6 +315,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                         style={{ objectPosition: 'left top' }}
+                        priority={priority}
                         onError={(e) => {
                           const fallbackUrl = getFallbackThumbnail(videoUrl);
                           if (fallbackUrl) {
@@ -276,6 +361,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                       className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                       style={{ objectPosition: 'left top' }}
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      priority={priority}
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
@@ -290,6 +376,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                     className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                     style={{ objectPosition: 'left top' }}
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    priority={priority}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -304,6 +391,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                 className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
                 style={{ objectPosition: 'left top' }}
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                priority={priority}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
@@ -330,7 +418,21 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
               {/* 작성자 및 통계 정보 */}
               <div className="flex items-center justify-between">
                 {/* 작성자 정보 */}
-                <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const authorName = prompt.author?.name || '익명';
+                    console.log('작성자 버튼 클릭됨:', authorName);
+                    if (onAuthorClick) {
+                      onAuthorClick(authorName);
+                    } else {
+                      router.push(`/?author=${encodeURIComponent(authorName)}`);
+                    }
+                  }}
+                  className="flex items-center gap-2 hover:bg-white/10 rounded-lg px-2 py-1 transition-all duration-200 cursor-pointer"
+                  title="작성자로 필터링"
+                >
                   {prompt.author?.avatar_url ? (
                     <Image
                       src={prompt.author.avatar_url}
@@ -349,7 +451,7 @@ const PromptCardCompact: React.FC<PromptCardCompactProps> = ({
                   <span className="text-sm sm:text-base text-white/90 drop-shadow font-medium">
                     {prompt.author?.name || '익명'}
                   </span>
-                </div>
+                </button>
 
                 {/* 통계 정보 */}
                 <div className="flex items-center gap-3">

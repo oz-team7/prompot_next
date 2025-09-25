@@ -7,6 +7,9 @@ interface UsePromptsOptions {
   sort?: string;
   page?: number;
   limit?: number;
+  category?: string;
+  aiModel?: string;
+  authorFilter?: string;
 }
 
 interface PaginationInfo {
@@ -41,6 +44,15 @@ export const usePrompts = (options?: UsePromptsOptions) => {
       }
       if (options?.sort) {
         params.append('sort', options.sort);
+      }
+      if (options?.category) {
+        params.append('category', options.category);
+      }
+      if (options?.aiModel) {
+        params.append('aiModel', options.aiModel);
+      }
+      if (options?.authorFilter) {
+        params.append('author', options.authorFilter);
       }
       
       // 페이지네이션 파라미터 추가
@@ -181,7 +193,7 @@ export const usePrompts = (options?: UsePromptsOptions) => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [options?.sort, options?.author, options?.page, options?.limit]);
+  }, [options?.sort, options?.author, options?.page, options?.limit, options?.category, options?.aiModel, options?.authorFilter]);
 
   useEffect(() => {
     fetchPrompts();

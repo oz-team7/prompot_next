@@ -64,6 +64,8 @@ interface PromptCardProps {
   onCategoryClick?: (category: string) => void;
   onAIModelClick?: (aiModel: string) => void;
   onTagClick?: (tag: string) => void;
+  onAuthorClick?: (author: string) => void;
+  priority?: boolean;
 }
 
 const PromptCard: React.FC<PromptCardProps> = ({ 
@@ -73,13 +75,15 @@ const PromptCard: React.FC<PromptCardProps> = ({
   isBookmarked = false,
   onCategoryClick,
   onAIModelClick,
-  onTagClick
+  onTagClick,
+  onAuthorClick,
+  priority = false
 }) => {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   // 최적화된 북마크 훅 사용
   const { bookmarks, addBookmark, removeBookmark, isBookmarked: checkIsBookmarked } = useBookmarks();
-  const { setSearchQuery } = useSearch();
+  const { setSearchQuery, setCategoryFilter, setAuthorFilter, setAiModelFilter } = useSearch();
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
@@ -207,6 +211,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover"
                       style={{ objectPosition: 'left top' }}
+                      priority={priority}
                       onError={(e) => {
                         console.error('썸네일 로드 실패:', videoUrl, e);
                         // 대체 썸네일 시도
@@ -262,6 +267,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
                     className="object-cover"
                     style={{ objectPosition: 'left top' }}
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    priority={priority}
                     onError={(e) => {
                       console.error('이미지 로드 실패:', imageUrl, e);
                       e.currentTarget.style.display = 'none';
@@ -281,6 +287,7 @@ const PromptCard: React.FC<PromptCardProps> = ({
                     className="object-cover transition-transform group-hover:scale-105"
                     style={{ objectPosition: 'left top' }}
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    priority={priority}
                     onError={(e) => {
                       console.error('이미지 로드 실패:', imageUrl, e);
                       e.currentTarget.style.display = 'none';
@@ -375,9 +382,11 @@ const PromptCard: React.FC<PromptCardProps> = ({
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('카테고리 버튼 클릭됨:', prompt.category);
-                const categoryLabel = getCategoryLabel(prompt.category || '');
-                setSearchQuery(categoryLabel);
-                router.push('/prompts');
+                if (onCategoryClick && prompt.category) {
+                  onCategoryClick(prompt.category);
+                } else if (prompt.category) {
+                  router.push(`/?category=${prompt.category}`);
+                }
               }}
               className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 hover:border-orange-500 hover:text-orange-500 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-opacity-50 transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95"
               title="카테고리로 필터링"
@@ -391,28 +400,93 @@ const PromptCard: React.FC<PromptCardProps> = ({
             </button>
           )}
           {/* AI 모델 */}
-          {prompt.aiModel && (
+          {(prompt.aiModel || prompt.ai_model) && (
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const aiModelName = prompt.aiModel?.name || '';
-                console.log('AI모델 버튼 클릭됨:', aiModelName);
-                setSearchQuery(aiModelName);
-                router.push('/prompts');
+                const aiModelName = prompt.aiModel?.name || prompt.ai_model || '';
+                // 정규화된 이름으로 변환하여 사용
+                const normalizedName = aiModelName.toLowerCase();
+                const model = [
+                  { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
+                  { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
+                  { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
+                  { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
+                  { id: 'copilot', name: 'GitHub Copilot', icon: '/image/icon_gpt-4_code.png' },
+                  { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
+                  { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
+                  { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
+                  { id: 'dalle', name: 'DALL-E', icon: '/image/icon_dall_e_3.png' },
+                  { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
+                  { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
+                  { id: 'leonardo', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
+                  { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
+                  { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
+                  { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
+                  { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
+                  { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
+                  { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
+                  { id: 'copy-ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
+                  { id: 'other', name: '기타', icon: '🔧' },
+                ].find(m => m.id.toLowerCase() === normalizedName || m.name.toLowerCase() === normalizedName);
+                const displayName = model?.name || aiModelName;
+                console.log('AI모델 버튼 클릭됨 (정규화된 이름):', displayName);
+                if (onAIModelClick) {
+                  onAIModelClick(displayName);
+                } else {
+                  router.push(`/?aiModel=${encodeURIComponent(displayName)}`);
+                }
               }}
               className="inline-block bg-white text-orange-400 border border-orange-400 text-xs px-2 py-0.5 rounded font-medium hover:bg-orange-50 hover:border-orange-500 hover:text-orange-500 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-opacity-50 transition-all duration-200 cursor-pointer transform hover:scale-105 active:scale-95 opacity-100 transition-opacity duration-300"
               title="AI 모델로 필터링"
             >
               <div className="flex items-center gap-1">
-                {prompt.aiModel.icon && (
-                  <img 
-                    src={prompt.aiModel.icon} 
-                    alt={prompt.aiModel.name}
-                    className="w-3 h-3 object-contain"
-                  />
-                )}
-                {prompt.aiModel.name}
+                {(() => {
+                  const aiModelName = prompt.aiModel?.name || prompt.ai_model || '';
+                  // AI모델 정의에서 대소문자 무시하고 찾기
+                  const normalizedName = aiModelName.toLowerCase();
+                  const model = [
+                    { id: 'chatgpt', name: 'ChatGPT', icon: '/image/icon_chatgpt.png' },
+                    { id: 'claude', name: 'Claude', icon: '/image/icon_claude.png' },
+                    { id: 'gemini', name: 'Gemini', icon: '/image/icon_gemini.png' },
+                    { id: 'perplexity', name: 'Perplexity', icon: '/image/icon_perplexity.png' },
+                    { id: 'copilot', name: 'GitHub Copilot', icon: '/image/icon_gpt-4_code.png' },
+                    { id: 'cursor', name: 'Cursor', icon: '/image/icon_cursor-ai.png' },
+                    { id: 'replit', name: 'Replit', icon: '/image/icon_Replit.png' },
+                    { id: 'v0', name: 'v0', icon: '/image/icon_v0.png' },
+                    { id: 'dalle', name: 'DALL-E', icon: '/image/icon_dall_e_3.png' },
+                    { id: 'midjourney', name: 'Midjourney', icon: '/image/icon_midjourney.png' },
+                    { id: 'stable-diffusion', name: 'Stable Diffusion', icon: '/image/icon_Stable_Diffusion.png' },
+                    { id: 'leonardo', name: 'Leonardo AI', icon: '/image/icon_leonardo_ai.png' },
+                    { id: 'runway', name: 'Runway', icon: '/image/icon_runway.png' },
+                    { id: 'pika', name: 'Pika Labs', icon: '/image/icon_PikaLabs.png' },
+                    { id: 'kling', name: 'Kling', icon: '/image/icon_kling.png' },
+                    { id: 'sora', name: 'Sora', icon: '/image/icon_Sora.png' },
+                    { id: 'elevenlabs', name: 'ElevenLabs', icon: '/image/icon_ElevenLabs.png' },
+                    { id: 'jasper', name: 'Jasper', icon: '/image/icon_jasper.png' },
+                    { id: 'copy-ai', name: 'Copy.ai', icon: '/image/icon_Copy-ai.png' },
+                    { id: 'other', name: '기타', icon: '🔧' },
+                  ].find(m => m.id.toLowerCase() === normalizedName || m.name.toLowerCase() === normalizedName);
+                  
+                  if (model) {
+                    return (
+                      <>
+                        {model.icon === '🔧' ? (
+                          <span className="text-xs">{model.icon}</span>
+                        ) : (
+                          <img 
+                            src={model.icon} 
+                            alt={model.name}
+                            className="w-3 h-3 object-contain"
+                          />
+                        )}
+                        <span>{model.name}</span>
+                      </>
+                    );
+                  }
+                  return <span>{aiModelName}</span>;
+                })()}
               </div>
             </button>
           )}
@@ -426,8 +500,11 @@ const PromptCard: React.FC<PromptCardProps> = ({
               e.stopPropagation();
               const authorName = prompt.author?.name || '익명';
               console.log('작성자 버튼 클릭됨:', authorName);
-              setSearchQuery(authorName);
-              router.push('/prompts');
+              if (onAuthorClick) {
+                onAuthorClick(authorName);
+              } else {
+                router.push(`/?author=${encodeURIComponent(authorName)}`);
+              }
             }}
             className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-orange-100 hover:bg-opacity-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:ring-opacity-50 transition-all duration-200 group cursor-pointer transform hover:scale-105 active:scale-95"
             title="작성자로 필터링"
