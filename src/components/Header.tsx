@@ -55,9 +55,9 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Search Bar - 반응형 너비 */}
-            <div className="flex items-center ml-4 lg:ml-8 xl:ml-12 2xl:ml-20 flex-1">
-              <div className="w-full max-w-[600px] xl:max-w-[800px] 2xl:max-w-[1000px]">
+            {/* Search Bar - 중앙 위치, 줄어든 너비 */}
+            <div className="flex items-center justify-center flex-1 mx-4 lg:mx-8 xl:mx-12 2xl:mx-20">
+              <div className="w-full max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px]">
                 <SearchBar className="w-full" />
               </div>
             </div>
