@@ -55,15 +55,15 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Search Bar - 고정 너비 */}
-            <div className="flex items-center ml-4 lg:ml-8 xl:ml-12 2xl:ml-20">
-              <div className="w-[400px]">
+            {/* Search Bar - 반응형 너비 */}
+            <div className="flex items-center ml-4 lg:ml-8 xl:ml-12 2xl:ml-20 flex-1">
+              <div className="w-full max-w-[600px] xl:max-w-[800px] 2xl:max-w-[1000px]">
                 <SearchBar className="w-full" />
               </div>
             </div>
 
-            {/* Trending Prompts - 고정 위치 */}
-            <div className="flex items-center flex-shrink-0 ml-24">
+            {/* Trending Prompts - 더 오른쪽 위치 */}
+            <div className="flex items-center flex-shrink-0 ml-8 xl:ml-12 2xl:ml-16">
               <TrendingPrompts />
             </div>
 
