@@ -256,7 +256,14 @@ const FAQPage = () => {
           {isAuthenticated ? '문의하기' : '로그인하여 문의하기'}
         </button>
         <Modal isOpen={showContactModal} onClose={() => setShowContactModal(false)}>
-          <ContactForm supportEmail="support@prompot.com" />
+          <ContactForm 
+            supportEmail="support@prompot.com" 
+            onSuccess={() => {
+              setShowContactModal(false);
+              // 마이페이지 고객지원 탭으로 이동
+              router.push('/mypage?tab=support');
+            }}
+          />
         </Modal>
       </div>
         </div>

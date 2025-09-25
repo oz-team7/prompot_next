@@ -1848,7 +1848,14 @@ const MyPage = () => {
 
       {/* 새 문의하기 모달 */}
       <Modal isOpen={showContactModal} onClose={() => setShowContactModal(false)}>
-        <ContactForm supportEmail="support@prompot.com" />
+        <ContactForm 
+          supportEmail="support@prompot.com" 
+          onSuccess={() => {
+            setShowContactModal(false);
+            // 문의 내역 새로고침
+            fetchInquiries();
+          }}
+        />
       </Modal>
     </>
   );

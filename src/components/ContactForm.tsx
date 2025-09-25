@@ -4,9 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface ContactFormProps {
   supportEmail: string;
+  onSuccess?: () => void;
 }
 
-export default function ContactForm({ supportEmail }: ContactFormProps) {
+export default function ContactForm({ supportEmail, onSuccess }: ContactFormProps) {
   const { user, isAuthenticated } = useAuth();
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -86,6 +87,14 @@ export default function ContactForm({ supportEmail }: ContactFormProps) {
       // 폼 초기화
       setSubject('');
       setMessage('');
+      
+      // 성공 콜백 호출 (모달 닫기 등)
+      if (onSuccess) {
+        // 토스트 메시지가 표시된 후 콜백 실행
+        setTimeout(() => {
+          onSuccess();
+        }, 2000); // 2초 후 모달 닫기
+      }
     } catch (error) {
       setToastMessage('문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       setToastType('error');
