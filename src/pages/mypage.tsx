@@ -90,13 +90,33 @@ const MyPage = () => {
   const router = useRouter();
   const { user, isAuthenticated, refreshUser, logout, validateToken } = useAuth();
   const [activeTab, setActiveTab] = useState<'prompts' | 'bookmarks' | 'settings' | 'support'>('prompts');
+  const [hasError, setHasError] = useState(false);
   
   // URL 쿼리 파라미터에서 탭 설정
   useEffect(() => {
-    if (router.query.tab === 'bookmarks') {
-      setActiveTab('bookmarks');
+    try {
+      if (router.query.tab === 'bookmarks') {
+        setActiveTab('bookmarks');
+      } else if (router.query.tab === 'settings') {
+        setActiveTab('settings');
+      } else if (router.query.tab === 'support') {
+        setActiveTab('support');
+      }
+    } catch (error) {
+      console.error('Error setting tab from query:', error);
+      setHasError(true);
     }
   }, [router.query.tab]);
+
+  // 에러 상태 초기화
+  useEffect(() => {
+    if (hasError) {
+      const timer = setTimeout(() => {
+        setHasError(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasError]);
   const [showProfileModal, setShowProfileModal] = useState(false);
   
   // useMemo를 사용하여 options 객체를 안정화
@@ -667,6 +687,8 @@ const MyPage = () => {
     
     setInquiriesLoading(true);
     try {
+      // 에러 상태 초기화
+      setHasError(false);
       let token = localStorage.getItem('token');
       if (!token) {
         console.error('No token found in localStorage');
@@ -723,6 +745,15 @@ const MyPage = () => {
       setInquiries(data || []);
     } catch (error) {
       console.error('Error fetching inquiries:', error);
+      
+      // 심각한 에러인 경우 에러 상태 설정
+      if (error instanceof Error && (
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('NetworkError') ||
+        error.message.includes('서버 연결')
+      )) {
+        setHasError(true);
+      }
       
       // 에러 메시지 개선
       let errorMessage = '문의 내역을 불러올 수 없습니다.';
@@ -896,6 +927,32 @@ const MyPage = () => {
 
   if (!isAuthenticated || !user) {
     return null;
+  }
+
+  // 에러 상태일 때 에러 메시지 표시
+  if (hasError) {
+    return (
+      <>
+        <ClientOnly>
+          <Header />
+        </ClientOnly>
+        <main className="min-h-screen bg-orange-50/20">
+          <div className="container mx-auto px-4 py-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <div className="text-red-500 text-6xl mb-4">⚠️</div>
+              <h2 className="text-xl font-semibold text-red-800 mb-2">페이지 로드 중 오류가 발생했습니다</h2>
+              <p className="text-red-600 mb-4">잠시 후 자동으로 복구됩니다.</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                페이지 새로고침
+              </button>
+            </div>
+          </div>
+        </main>
+      </>
+    );
   }
 
   return (
@@ -1453,15 +1510,26 @@ const MyPage = () => {
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold">문의 내역</h2>
-                  <button
-                    onClick={() => setShowContactModal(true)}
-                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    새 문의하기
-                  </button>
+                  <div className="flex gap-3">
+                    <Link
+                      href="/faq"
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      FAQ
+                    </Link>
+                    <button
+                      onClick={() => setShowContactModal(true)}
+                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      새 문의하기
+                    </button>
+                  </div>
                 </div>
                 
                 {inquiriesLoading ? (
