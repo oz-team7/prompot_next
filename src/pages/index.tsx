@@ -13,6 +13,9 @@ export default function Home() {
         <meta name="description" content="창의적인 프롬프트를 공유하고 발견하는 한국형 프롬프트 커뮤니티" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
+        {/* FOUC 방지를 위한 메타 태그 */}
+        <meta name="theme-color" content="#ffffff" />
+        <meta name="color-scheme" content="light" />
       </Head>
       
       <main>

@@ -118,6 +118,10 @@ export const getVideoPlatformInfo = (url: string): { platform: string; title: st
   }
   
   if (isDirectVideoUrl(url)) {
+    // OpenAI Videos 특별 처리
+    if (url.includes('videos.openai.com')) {
+      return { platform: 'openai', title: 'OpenAI Sora 동영상' };
+    }
     return { platform: 'direct', title: '동영상' };
   }
   

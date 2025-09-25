@@ -5,15 +5,35 @@
 @layer base {
   html {
     font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+    /* FOUC 방지를 위한 기본 스타일 */
+    visibility: visible;
+    opacity: 1;
   }
   
   body {
     overflow-x: hidden; /* 가로 스크롤 방지 */
     max-width: 100vw; /* 뷰포트 너비 제한 */
+    /* FOUC 방지를 위한 기본 스타일 */
+    background-color: #ffffff;
+    color: #000000;
+    margin: 0;
+    padding: 0;
+    /* 폰트 로딩 최적화 */
+    font-display: swap;
   }
   
   * {
     box-sizing: border-box;
+  }
+  
+  /* 로딩 중 기본 스타일 */
+  .loading {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  .loaded {
+    opacity: 1;
   }
 }
 

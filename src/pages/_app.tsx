@@ -4,6 +4,7 @@ import { SearchProvider } from '@/contexts/SearchContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import ClientOnlyWrapper from '@/components/ClientOnlyWrapper';
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function App({ Component, pageProps }: AppProps) {
     };
 
     router.events.on('routeChangeComplete', handleRouteChange);
+    
     return () => {
       router.events.off('routeChangeComplete', handleRouteChange);
     };
@@ -27,7 +29,9 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <AuthProvider>
       <SearchProvider>
-        <Component {...pageProps} />
+        <ClientOnlyWrapper>
+          <Component {...pageProps} />
+        </ClientOnlyWrapper>
       </SearchProvider>
     </AuthProvider>
   );

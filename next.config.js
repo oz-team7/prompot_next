@@ -80,7 +80,6 @@ const nextConfig = {
   // Vercel 배포 최적화
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['@supabase/supabase-js'],
   },
   // 압축 및 최적화
   compress: true,
