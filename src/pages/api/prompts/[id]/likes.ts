@@ -55,8 +55,8 @@ export default async function handler(
     return res.status(400).json({ error: 'Invalid prompt ID format' });
   }
 
-  // UUID인 경우 문자열로, 숫자인 경우 정수로 사용
-  const finalPromptId = isUUID ? promptId : numericPromptId;
+  // 모든 경우에 문자열로 사용 (UUID와 숫자 모두 문자열로 처리)
+  const finalPromptId = promptId;
 
   // Authorization 헤더에서 토큰 추출
   const authHeader = req.headers.authorization;
@@ -75,7 +75,11 @@ export default async function handler(
 
       if (countError) {
         console.error('Error counting likes:', countError);
-        return res.status(500).json({ error: 'Failed to count likes' });
+        return res.status(500).json({ 
+          error: 'Failed to count likes', 
+          details: countError.message,
+          code: countError.code 
+        });
       }
 
       // 현재 사용자가 좋아요 했는지 확인
@@ -87,7 +91,7 @@ export default async function handler(
           const { data: likeData, error: likeError } = await supabase
             .from('prompt_likes')
             .select('id')
-            .eq('prompt_id', numericPromptId)
+            .eq('prompt_id', finalPromptId)
             .eq('user_id', user.id)
             .single();
 
@@ -118,18 +122,28 @@ export default async function handler(
     
     if (userError || !user) {
       console.error('User auth error:', userError);
-      return res.status(401).json({ error: 'Invalid authentication' });
+      console.error('Token provided:', token ? 'Yes' : 'No');
+      console.error('Token length:', token?.length || 0);
+      return res.status(401).json({ 
+        error: 'Invalid authentication',
+        details: userError?.message || 'No user found',
+        code: userError?.code || 'AUTH_ERROR'
+      });
     }
 
     if (req.method === 'POST') {
       // 좋아요 추가 (멱등적 처리)
+      console.log('Adding like for prompt:', finalPromptId, 'user:', user.id);
+      
       const { error: insertError } = await supabase
         .from('prompt_likes')
         .insert([{ prompt_id: finalPromptId, user_id: user.id }]);
 
       if (insertError) {
+        console.error('Insert error details:', insertError);
         // 이미 좋아요한 경우도 성공으로 처리 (멱등성)
         if (insertError.code === '23505') { // unique constraint violation
+          console.log('Like already exists, treating as success');
           // 이미 존재하므로 성공으로 처리
           const { count } = await supabase
             .from('prompt_likes')
@@ -142,7 +156,11 @@ export default async function handler(
           });
         }
         console.error('Error adding like:', insertError);
-        return res.status(500).json({ error: 'Failed to add like' });
+        return res.status(500).json({ 
+          error: 'Failed to add like',
+          details: insertError.message,
+          code: insertError.code
+        });
       }
 
       // 업데이트된 좋아요 수 반환

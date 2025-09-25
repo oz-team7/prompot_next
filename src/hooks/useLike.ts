@@ -69,7 +69,30 @@ export function useLike(promptId?: string | number) {
     
     const token = localStorage.getItem('token');
     if (!token) {
-      // 로그인 필요
+      console.warn('No token found for like operation');
+      return;
+    }
+
+    // 토큰 유효성 간단 검사 (JWT 형식 확인)
+    if (!token.includes('.') || token.split('.').length !== 3) {
+      console.error('Invalid token format:', token.substring(0, 20) + '...');
+      // 토큰이 유효하지 않으면 localStorage에서 제거
+      localStorage.removeItem('token');
+      return;
+    }
+
+    // 토큰 만료 확인 (간단한 방법)
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < now) {
+        console.error('Token expired');
+        localStorage.removeItem('token');
+        return;
+      }
+    } catch (e) {
+      console.error('Token decode error:', e);
+      localStorage.removeItem('token');
       return;
     }
 
@@ -98,7 +121,9 @@ export function useLike(promptId?: string | number) {
       });
       
       if (!res.ok) {
-        throw new Error('Failed to update like');
+        const errorData = await res.json().catch(() => ({}));
+        console.error(`Like API error for ${id}:`, res.status, res.statusText, errorData);
+        throw new Error(`Failed to update like: ${res.status} ${res.statusText}`);
       }
 
       const body = await res.json() as LikeState;

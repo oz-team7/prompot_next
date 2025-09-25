@@ -8,7 +8,10 @@ const nextConfig = {
       'localhost',
       '*.supabase.co',
       'img.youtube.com',
-      'i.ytimg.com'
+      'i.ytimg.com',
+      'vumbnail.com',
+      'player.vimeo.com',
+      'vumbnail.io'
     ],
     remotePatterns: [
       {
@@ -34,6 +37,24 @@ const nextConfig = {
         hostname: 'i.ytimg.com',
         port: '',
         pathname: '/vi/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vumbnail.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'player.vimeo.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vumbnail.io',
+        port: '',
+        pathname: '/**',
       },
       {
         protocol: 'http',
