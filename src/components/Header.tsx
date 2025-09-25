@@ -68,7 +68,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Right Section - User Info */}
-            <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 -ml-8">
+            <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 ml-auto">
               {/* User Avatar/Name */}
               {isAuthenticated ? (
                 <Link href="/mypage" className="flex items-center gap-2">
