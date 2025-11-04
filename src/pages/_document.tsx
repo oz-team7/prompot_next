@@ -4,27 +4,21 @@ export default function Document() {
   return (
     <Html lang="ko">
       <Head>
-        {/* 폰트 프리로딩 - FOUC 방지 */}
+        {/* 폰트 프리커넥트 - FOUC 방지 */}
         <link
           rel="preconnect"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+          href="https://cdn.jsdelivr.net"
+          crossOrigin="anonymous"
         />
         <link
-          rel="preload"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
-          as="style"
-          onLoad={(e) => {
-            const target = e.target as HTMLLinkElement;
-            target.onload = null;
-            target.rel = 'stylesheet';
-          }}
+          rel="dns-prefetch"
+          href="https://cdn.jsdelivr.net"
         />
-        <noscript>
-          <link
-            rel="stylesheet"
-            href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
-          />
-        </noscript>
+        {/* 폰트 스타일시트 직접 로드 */}
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
+        />
         
         {/* CSS 최적화 */}
         <style
